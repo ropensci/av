@@ -67,7 +67,7 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
   AVStream *out_stream = avformat_new_stream(ofmt_ctx, NULL);
   bail_if_null(out_stream, "avformat_new_stream");
-  AVCodec *codec = avcodec_find_encoder_by_name("libx264");
+  AVCodec *codec = avcodec_find_encoder_by_name("libx264rgb");
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
   bail_if_null(codec_ctx, "avcodec_alloc_context3");
@@ -149,8 +149,10 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
       while(1){
         Rprintf("Trying to read packet from encoder...\n");
         ret = avcodec_receive_packet(output->codec_ctx, pkt);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+        if (ret == AVERROR(EAGAIN))
           break;
+        if (ret == AVERROR_EOF)
+          goto done;
         bail_if(ret, "avcodec_receive_packet");
         pkt->stream_index = output->index;
         av_packet_rescale_ts(pkt, input->codec_ctx->time_base, output->codec_ctx->time_base);
@@ -160,12 +162,11 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
       }
     }
   }
+done:
   av_packet_free(&pkt);
   av_write_trailer(output->fmt_ctx);
   avcodec_free_context(&(input->codec_ctx));
   avcodec_free_context(&(output->codec_ctx));
-  av_free(input->stream);
-  av_free(output->stream);
   avformat_close_input(&input->fmt_ctx);
   if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->fmt_ctx->pb);
