@@ -1,0 +1,11 @@
+CXX_STD = CXX11
+PKG_CPPFLAGS = @cflags@
+PKG_LIBS = @libs@
+
+all: clean transcoding
+
+transcoding:
+	$(CC) examples/transcoding.c -o transcoding $(PKG_CPPFLAGS) $(PKG_LIBS)
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS) transcoding

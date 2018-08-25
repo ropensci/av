@@ -1,0 +1,12 @@
+*.o
+*.so
+*.dll
+*.mp4
+*.mpeg
+*.mkv
+*.out
+.Rproj.user
+src/Makevars
+windows
+.Rhistory
+src/transcoding
