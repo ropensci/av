@@ -199,7 +199,16 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
         Rprintf("Sending frame to encoder...\n");
         bail_if(ret, "avcodec_receive_frame");
         picture->pts = picture->best_effort_timestamp;
-        bail_if(avcodec_send_frame(output->codec_ctx, picture), "avcodec_send_frame");
+        
+        /* apply the filtering */
+        bail_if(av_buffersrc_add_frame_flags(filter->source, picture, 0), "av_buffersrc_add_frame_flags");
+        AVFrame * filt_frame = av_frame_alloc();
+        bail_if(av_buffersink_get_frame(filter->sink, filt_frame), "av_buffersink_get_frame");
+        filt_frame->pict_type = AV_PICTURE_TYPE_NONE;
+        
+        /* Feed it to the output encoder */
+        bail_if(avcodec_send_frame(output->codec_ctx, filt_frame), "avcodec_send_frame");
+        av_frame_free(&filt_frame);
         av_frame_free(&picture);
       }
       
