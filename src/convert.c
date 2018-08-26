@@ -168,10 +168,9 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
   video_filter *filter = create_video_filter(input->codec_ctx, output->codec_ctx, "null");
   AVPacket *pkt = av_packet_alloc();
   while(1){
-    Rprintf("Trying to read a packet...\n");
     ret = av_read_frame(input->fmt_ctx, pkt);
     if(ret == AVERROR_EOF){
-      Rprintf("flusing input...\n");
+      Rprintf("Input ended. Flushing decoder...\n");
       bail_if(avcodec_send_packet(input->codec_ctx, NULL), "flushing avcodec_send_packet");
     } else {
       bail_if(ret, "av_read_frame");
@@ -179,39 +178,38 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
         av_packet_unref(pkt);
         continue; //wrong stream
       }
-      Rprintf("Sending the packet...\n");
+      Rprintf("Got packet from input. Sending to decoder...\n");
       bail_if(avcodec_send_packet(input->codec_ctx, pkt), "avcodec_send_packet");
     }
     av_packet_unref(pkt);
     while(1){
-      Rprintf("Receiving frame...\n");
       AVFrame *picture = av_frame_alloc();
       ret = avcodec_receive_frame(input->codec_ctx, picture);
       if (ret == AVERROR(EAGAIN))
         break;
       if(ret == AVERROR_EOF){
-        Rprintf("Flushing output...\n");
+        Rprintf("Decoder ended. Flushing encoder...\n");
         bail_if(avcodec_send_frame(output->codec_ctx, NULL), "flushing avcodec_send_frame");
       } else {
-        Rprintf("Sending frame to encoder...\n");
         bail_if(ret, "avcodec_receive_frame");
         picture->pts = picture->best_effort_timestamp;
         
         /* apply the filtering */
+        Rprintf("Got frame from decoder. Applying filters...\n");
         bail_if(av_buffersrc_add_frame_flags(filter->source, picture, 0), "av_buffersrc_add_frame_flags");
         AVFrame * filt_frame = av_frame_alloc();
         bail_if(av_buffersink_get_frame(filter->sink, filt_frame), "av_buffersink_get_frame");
         filt_frame->pict_type = AV_PICTURE_TYPE_NONE;
+        av_frame_free(&picture);
         
         /* Feed it to the output encoder */
+        Rprintf("Filtering OK. Sending frame to encoder...\n");
         bail_if(avcodec_send_frame(output->codec_ctx, filt_frame), "avcodec_send_frame");
         av_frame_free(&filt_frame);
-        av_frame_free(&picture);
       }
       
       /* re-encode output packet */
       while(1){
-        Rprintf("Trying to read packet from encoder...\n");
         ret = avcodec_receive_packet(output->codec_ctx, pkt);
         if (ret == AVERROR(EAGAIN))
           break;
@@ -220,7 +218,7 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
         bail_if(ret, "avcodec_receive_packet");
         pkt->stream_index = output->index;
         av_packet_rescale_ts(pkt, input->codec_ctx->time_base, output->codec_ctx->time_base);
-        Rprintf("Writing packet to output file...\n");
+        Rprintf("Got package from encoder. Writing to output...\n");
         bail_if(av_interleaved_write_frame(output->fmt_ctx, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
       }
