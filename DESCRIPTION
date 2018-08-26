@@ -4,7 +4,8 @@ Title: Bindings to ffmpeg
 Version: 0.1
 Authors@R: person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroen@berkeley.edu",
     comment = c(ORCID = "0000-0002-4035-0289"))
-Description: Encoding and decode video in R
+Description: FFmpeg provides a vast software suite of libraries for handling video, audio, 
+    and other multimedia files and streams.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

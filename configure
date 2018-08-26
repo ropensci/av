@@ -1,18 +1,18 @@
 #!/bin/bash
-# Anticonf (tm) script by Jeroen Ooms (2017)
+# Anticonf (tm) script by Jeroen Ooms (2018)
 # This script will query 'pkg-config' for the required cflags and ldflags.
 # If pkg-config is unavailable or does not find the library, try setting
 # INCLUDE_DIR and LIB_DIR manually via e.g:
 # R CMD INSTALL --configure-vars='INCLUDE_DIR=/.../include LIB_DIR=/.../lib'
 
 # Library settings
-PKG_CONFIG_NAME="libavformat libavcodec libavformat libavfilter libswresample libavutil libavdevice"
-PKG_DEB_NAME="libavformat-dev"
+PKG_CONFIG_NAME="libavfilter"
+PKG_DEB_NAME="libavfilter-dev"
 PKG_RPM_NAME="ffmpeg-devel (https://rpmfusion.org)"
 PKG_CSW_NAME="ffmpeg_dev"
 PKG_BREW_NAME="ffmpeg"
-PKG_TEST_HEADER="<libavcodec/avcodec.h>"
-PKG_LIBS="-lavcodec -lavformat -lavfilter -lswresample -lavutil -lavdevice"
+PKG_TEST_HEADER="<libavfilter/version.h>"
+PKG_LIBS="-lavfilter"
 
 # Use pkg-config if available
 if [ $(command -v pkg-config) ]; then
@@ -50,7 +50,7 @@ CXXFLAGS=$(${R_HOME}/bin/R CMD config CXXFLAGS)
 CPPFLAGS=$(${R_HOME}/bin/R CMD config CPPFLAGS)
 
 # Test for libzmq
-echo "#include $PKG_TEST_HEADER" | ${CXXCPP} ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ - >/dev/null 2>&1
+echo "#include $PKG_TEST_HEADER" | ${CXXCPP} ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ - >/dev/null
 
 if [ $? -ne 0 ]; then
   echo "------------------------- ANTICONF ERROR ---------------------------"
