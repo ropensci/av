@@ -19,6 +19,12 @@ typedef struct {
   AVCodec *codec;
 } video_stream;
 
+typedef struct {
+  AVFilterContext *source;
+  AVFilterContext *sink;
+  AVFilterGraph *graph;
+} video_filter;
+
 static void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
@@ -27,6 +33,57 @@ static void bail_if(int ret, const char * what){
 static void bail_if_null(void * ptr, const char * what){
   if(!ptr)
     bail_if(-1, what);
+}
+
+static video_filter *create_video_filter(AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char * filter_spec){
+  video_filter * fctx = (video_filter *) malloc(sizeof(video_filter));
+  AVFilterGraph *filter_graph = avfilter_graph_alloc();
+  const AVFilter *buffersrc = avfilter_get_by_name("buffer");
+  const AVFilter *buffersink = avfilter_get_by_name("buffersink");
+  
+  /* define the filter string */
+  char args[512];
+  snprintf(args, sizeof(args),
+           "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+           dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt,
+           dec_ctx->time_base.num, dec_ctx->time_base.den,
+           dec_ctx->sample_aspect_ratio.num,
+           dec_ctx->sample_aspect_ratio.den);
+  
+  AVFilterContext *buffersrc_ctx = NULL;
+  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", 
+                                       args, NULL, filter_graph), "avfilter_graph_create_filter (input)");
+  
+  AVFilterContext *buffersink_ctx = NULL;
+  bail_if(avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
+                               NULL, NULL, filter_graph), "avfilter_graph_create_filter (output)");
+  
+  bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
+                       (uint8_t*)&enc_ctx->pix_fmt, sizeof(enc_ctx->pix_fmt),
+                       AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
+  
+  /* Endpoints for the filter graph. */
+  AVFilterInOut *outputs = avfilter_inout_alloc();
+  AVFilterInOut *inputs = avfilter_inout_alloc();
+  outputs->name = av_strdup("in");
+  outputs->filter_ctx = buffersrc_ctx;
+  outputs->pad_idx = 0;
+  outputs->next = NULL;
+  inputs->name = av_strdup("out");
+  inputs->filter_ctx = buffersink_ctx;
+  inputs->pad_idx = 0;
+  inputs->next = NULL;
+  
+  /* Not sure what this does */
+  bail_if(avfilter_graph_parse_ptr(filter_graph, filter_spec,
+                           &inputs, &outputs, NULL), "avfilter_graph_parse_ptr");
+  bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
+  fctx->source = buffersrc_ctx;
+  fctx->sink = buffersink_ctx;
+  fctx->graph = filter_graph;
+  avfilter_inout_free(&inputs);
+  avfilter_inout_free(&outputs);
+  return fctx;
 }
 
 static video_stream *open_input_file(const char *filename){
@@ -67,7 +124,7 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
   AVStream *out_stream = avformat_new_stream(ofmt_ctx, NULL);
   bail_if_null(out_stream, "avformat_new_stream");
-  AVCodec *codec = avcodec_find_encoder_by_name("libx264rgb");
+  AVCodec *codec = avcodec_find_encoder_by_name("libx264");
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
   bail_if_null(codec_ctx, "avcodec_alloc_context3");
@@ -111,6 +168,7 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
   video_stream *input = open_input_file(CHAR(STRING_ELT(in_file, 0)));
   video_stream *output = open_output_file(
     CHAR(STRING_ELT(out_file, 0)), input->codec_ctx->width, input->codec_ctx->height);
+  video_filter *filter = create_video_filter(input->codec_ctx, output->codec_ctx, "null");
   AVPacket *pkt = av_packet_alloc();
   while(1){
     Rprintf("Trying to read a packet...\n");
