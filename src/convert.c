@@ -4,12 +4,10 @@
 #include <libavfilter/buffersrc.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
-#include <libswscale/swscale.h>
 
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
-#include <stdlib.h>
 
 typedef struct {
   int index;
@@ -36,11 +34,9 @@ static void bail_if_null(void * ptr, const char * what){
 }
 
 static video_filter *create_video_filter(AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char * filter_spec){
-  video_filter * fctx = (video_filter *) malloc(sizeof(video_filter));
+  video_filter * fctx = (video_filter *) av_mallocz(sizeof(video_filter));
   AVFilterGraph *filter_graph = avfilter_graph_alloc();
-  const AVFilter *buffersrc = avfilter_get_by_name("buffer");
-  const AVFilter *buffersink = avfilter_get_by_name("buffersink");
-  
+
   /* define the filter string */
   char args[512];
   snprintf(args, sizeof(args),
@@ -51,11 +47,11 @@ static video_filter *create_video_filter(AVCodecContext *dec_ctx, AVCodecContext
            dec_ctx->sample_aspect_ratio.den);
   
   AVFilterContext *buffersrc_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", 
+  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("buffer"), "in", 
                                        args, NULL, filter_graph), "avfilter_graph_create_filter (input)");
   
   AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
+  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "out",
                                NULL, NULL, filter_graph), "avfilter_graph_create_filter (output)");
   
   bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
@@ -78,11 +74,12 @@ static video_filter *create_video_filter(AVCodecContext *dec_ctx, AVCodecContext
   bail_if(avfilter_graph_parse_ptr(filter_graph, filter_spec,
                            &inputs, &outputs, NULL), "avfilter_graph_parse_ptr");
   bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
+  avfilter_inout_free(&inputs);
+  avfilter_inout_free(&outputs);
+  
   fctx->source = buffersrc_ctx;
   fctx->sink = buffersink_ctx;
   fctx->graph = filter_graph;
-  avfilter_inout_free(&inputs);
-  avfilter_inout_free(&outputs);
   return fctx;
 }
 
@@ -104,7 +101,7 @@ static video_stream *open_input_file(const char *filename){
     bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
 
     //create struct with all objects
-    video_stream *out = (video_stream*) malloc(sizeof(video_stream));
+    video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
     out->fmt_ctx = ifmt_ctx;
     out->stream = stream;
     out->codec_ctx = codec_ctx;
@@ -151,7 +148,7 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   bail_if(avformat_write_header(ofmt_ctx, NULL), "avformat_write_header");
 
   //create struct with all objects
-  video_stream *out = (video_stream*) malloc(sizeof(video_stream));
+  video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
   out->fmt_ctx = ofmt_ctx;
   out->stream = out_stream;
   out->codec_ctx = codec_ctx;
@@ -229,14 +226,19 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
       }
     }
   }
+
 done:
   av_packet_free(&pkt);
   av_write_trailer(output->fmt_ctx);
   avcodec_free_context(&(input->codec_ctx));
   avcodec_free_context(&(output->codec_ctx));
+  avfilter_graph_free(&filter->graph);
   avformat_close_input(&input->fmt_ctx);
   if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->fmt_ctx->pb);
   avformat_free_context(output->fmt_ctx);  
+  av_free(filter);
+  av_free(input);
+  av_free(output);
   return R_NilValue;
 }
