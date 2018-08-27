@@ -236,7 +236,7 @@ done:
   avcodec_free_context(&(output->codec_ctx));
   avfilter_free(filter->sink);
   avfilter_free(filter->source);
-  avfilter_graph_free(&filter->graph);  
+  avfilter_graph_free(&filter->graph);
   avformat_close_input(&input->fmt_ctx);
   if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->fmt_ctx->pb);

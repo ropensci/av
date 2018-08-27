@@ -1,6 +1,7 @@
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/version.h>
