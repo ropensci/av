@@ -7,8 +7,8 @@
 av_log_level(set = NULL)
 }
 \arguments{
-\item{set}{new [log level](https://www.ffmpeg.org/doxygen/4.0/group__lavu__log__constants.html) value}
+\item{set}{new \href{https://www.ffmpeg.org/doxygen/4.0/group__lavu__log__constants.html}{log level} value}
 }
 \description{
-Get or set the [log level](https://www.ffmpeg.org/doxygen/4.0/group__lavu__log__constants.html).
+Get or set the \href{https://www.ffmpeg.org/doxygen/4.0/group__lavu__log__constants.html}{log level}.
 }
