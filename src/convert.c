@@ -133,9 +133,9 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   /* TO DO: parameterize these these settings */
   codec_ctx->height = height;
   codec_ctx->width = width;
-  codec_ctx->sample_aspect_ratio = (AVRational){1, 1};
-  codec_ctx->time_base = (AVRational){1, 1};
-  codec_ctx->framerate = (AVRational){1, 1};
+  //codec_ctx->sample_aspect_ratio = (AVRational){1, 1};
+  codec_ctx->time_base = (AVRational){1, 24};
+  //codec_ctx->framerate = (AVRational){25, 1};
   codec_ctx->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
   if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
     codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -234,7 +234,9 @@ done:
   av_write_trailer(output->fmt_ctx);
   avcodec_free_context(&(input->codec_ctx));
   avcodec_free_context(&(output->codec_ctx));
-  avfilter_graph_free(&filter->graph);
+  avfilter_free(filter->sink);
+  avfilter_free(filter->source);
+  avfilter_graph_free(&filter->graph);  
   avformat_close_input(&input->fmt_ctx);
   if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->fmt_ctx->pb);
