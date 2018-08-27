@@ -6,6 +6,12 @@
 \usage{
 av_convert(input, output)
 }
+\arguments{
+\item{input}{vector with image or video files}
+
+\item{output}{filename of the output file. Container type is inferred from
+the file extension which should typically be `.mkv` or `.mp4`.}
+}
 \description{
 Convert Images into Video
 }

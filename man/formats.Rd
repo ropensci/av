@@ -2,9 +2,12 @@
 % Please edit documentation in R/formats.R
 \name{list_encoders}
 \alias{list_encoders}
+\alias{list_decoders}
 \title{AV Formats}
 \usage{
 list_encoders()
+
+list_decoders()
 }
 \description{
 List supported codecs and container formats.

@@ -4,11 +4,13 @@
 #' 
 #' 
 #' @export
+#' @rdname formats
 list_encoders <- function(){
   list_codecs(TRUE)
 }
 
 #' @export
+#' @rdname formats
 list_decoders <- function(){
   list_codecs(FALSE)
 }
@@ -18,5 +20,8 @@ list_codecs <- function(is_encoder){
   res <- as.list(.Call(R_list_codecs))
   names(res) <- c("type", "encoder", "name", "description")
   df <- data.frame(res, stringsAsFactors = FALSE)
-  df[df$encoder == is_encoder, c("type", "name", "description")]
+  df <- df[df$encoder == is_encoder, c("type", "name", "description")]
+  df <- df[order(df$name),]
+  row.names(df) <- NULL
+  df
 }
