@@ -3,3 +3,4 @@
 ^src/Makevars$
 ^src/transcoding$
 ^LICENSE\.md$
+^.travis.yml$

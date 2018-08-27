@@ -10,6 +10,12 @@ void my_log_callback(void *ptr, int level, const char *fmt, va_list vargs){
   REvprintf(fmt, vargs);
 }
 
+SEXP R_log_level(SEXP new_level){
+  if(Rf_length(new_level))
+    av_log_set_level(Rf_asInteger(new_level));
+  return Rf_ScalarInteger(av_log_get_level());
+}
+
 void R_init_ffmpeg(DllInfo *info) {
 #if LIBAVFORMAT_VERSION_MAJOR < 58 // FFmpeg 4.0
   av_register_all();
