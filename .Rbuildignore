@@ -4,3 +4,4 @@
 ^src/transcoding$
 ^LICENSE\.md$
 ^.travis.yml$
+^appveyor\.yml$
