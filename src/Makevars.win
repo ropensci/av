@@ -1,0 +1,14 @@
+VERSION = 4.0.2
+RWINLIB = ../windows/ffmpeg-$(VERSION)
+PKG_CPPFLAGS = -I$(RWINLIB)/include
+PKG_LIBS = -L$(RWINLIB)/lib$(R_ARCH) -lavfilter -lswscale -lpostproc -lavformat \
+	-lbz2 -lsecur32 -lws2_32 -lavcodec -liconv -lz -lmp3lame -lx264 \
+	-lxvidcore -lole32 -lswresample -lavutil -lm -luser32 -lbcrypt
+
+all: winlibs clean
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS)
+
+winlibs:
+	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R" $(VERSION)
