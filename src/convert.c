@@ -95,11 +95,11 @@ static video_stream *open_input_file(const char *filename){
   /* Try  all input streams */
   for (int i = 0; i < ifmt_ctx->nb_streams; i++) {
     AVStream *stream = ifmt_ctx->streams[i];
+    if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
+      continue;
     AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     bail_if_null(codec, "avcodec_find_decoder");
     AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
-    if (codec_ctx->codec_type != AVMEDIA_TYPE_VIDEO)
-      continue;
     bail_if(avcodec_parameters_to_context(codec_ctx, stream->codecpar), "avcodec_parameters_to_context");
     codec_ctx->framerate = av_guess_frame_rate(ifmt_ctx, stream, NULL);
     bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
