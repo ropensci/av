@@ -37,29 +37,20 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static video_filter *create_video_filter(AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, const char * filter_spec){
+static video_filter *create_video_filter(const char *input_args, enum AVPixelFormat pix_enc, const char * filter_spec){
   video_filter * fctx = (video_filter *) av_mallocz(sizeof(video_filter));
   AVFilterGraph *filter_graph = avfilter_graph_alloc();
-
-  /* define the filter string */
-  char args[512];
-  snprintf(args, sizeof(args),
-           "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-           dec_ctx->width, dec_ctx->height, dec_ctx->pix_fmt,
-           dec_ctx->time_base.num, dec_ctx->time_base.den,
-           dec_ctx->sample_aspect_ratio.num,
-           dec_ctx->sample_aspect_ratio.den);
   
   AVFilterContext *buffersrc_ctx = NULL;
   bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("buffer"), "in", 
-                                       args, NULL, filter_graph), "avfilter_graph_create_filter (input)");
+                                       input_args, NULL, filter_graph), "avfilter_graph_create_filter (input)");
   
   AVFilterContext *buffersink_ctx = NULL;
   bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "out",
                                NULL, NULL, filter_graph), "avfilter_graph_create_filter (output)");
   
   bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
-                       (uint8_t*)&enc_ctx->pix_fmt, sizeof(enc_ctx->pix_fmt),
+                       (uint8_t*)&pix_enc, sizeof(pix_enc),
                        AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
   
   /* Endpoints for the filter graph. */
@@ -123,20 +114,26 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   AVFormatContext *ofmt_ctx = NULL;
   avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
   bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
-  AVStream *out_stream = avformat_new_stream(ofmt_ctx, NULL);
+  AVStream *out_stream = avformat_new_stream(ofmt_ctx, avcodec_find_encoder(AV_CODEC_ID_H264));
   bail_if_null(out_stream, "avformat_new_stream");
   AVCodec *codec = avcodec_find_encoder_by_name("libx264");
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
   bail_if_null(codec_ctx, "avcodec_alloc_context3");
 
+    
   /* TO DO: parameterize these these settings */
   codec_ctx->height = height;
   codec_ctx->width = width;
   //codec_ctx->sample_aspect_ratio = (AVRational){1, 1};
-  codec_ctx->time_base = (AVRational){1, 24};
-  //codec_ctx->framerate = (AVRational){25, 1};
-  codec_ctx->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  codec_ctx->time_base.num = 1;
+  codec_ctx->time_base.den = 1;
+  //codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
+  codec_ctx->gop_size = 10;
+  codec_ctx->max_b_frames = 1;
+  codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+  if (codec->id == AV_CODEC_ID_H264)
+    av_opt_set(codec_ctx->priv_data, "preset", "slow", 0);  
   if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
     codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
@@ -145,11 +142,14 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   /* Start out stream */
   bail_if(avcodec_parameters_from_context(out_stream->codecpar, codec_ctx), "avcodec_parameters_from_context");
   out_stream->time_base = codec_ctx->time_base;
+  //out_stream->avg_frame_rate = codec_ctx->framerate;
 
   if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
     bail_if(avio_open(&ofmt_ctx->pb, filename, AVIO_FLAG_WRITE), "avio_open");
 
+  bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set CRF");
   bail_if(avformat_write_header(ofmt_ctx, NULL), "avformat_write_header");
+  
 
   //create struct with all objects
   video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
@@ -164,12 +164,67 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   return out;
 }
 
+static AVFrame * read_single_frame(const char *filename){
+  AVFormatContext *ifmt_ctx = NULL;
+  bail_if(avformat_open_input(&ifmt_ctx, filename, NULL, NULL), "avformat_open_input");
+  bail_if(avformat_find_stream_info(ifmt_ctx, NULL), "avformat_find_stream_info");
+  
+  /* Try all input streams */
+  for (int i = 0; i < ifmt_ctx->nb_streams; i++) {
+    AVStream *stream = ifmt_ctx->streams[i];
+    if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
+      continue;
+    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    bail_if_null(codec, "avcodec_find_decoder");
+    AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
+    bail_if(avcodec_parameters_to_context(codec_ctx, stream->codecpar), "avcodec_parameters_to_context");
+    codec_ctx->framerate = av_guess_frame_rate(ifmt_ctx, stream, NULL);
+    bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
+    int ret;
+    AVPacket *pkt = av_packet_alloc();
+    AVFrame *picture = av_frame_alloc();
+    do {
+      ret = av_read_frame(ifmt_ctx, pkt);
+      if(ret == AVERROR_EOF){
+        bail_if(avcodec_send_packet(codec_ctx, NULL), "flushing avcodec_send_packet");
+      } else {
+        bail_if(ret, "av_read_frame");
+        if(pkt->stream_index != i){
+          av_packet_unref(pkt);
+          continue; //wrong stream
+        }
+        bail_if(avcodec_send_packet(codec_ctx, pkt), "avcodec_send_packet");
+      }
+      av_packet_unref(pkt);
+      int ret2 = avcodec_receive_frame(codec_ctx, picture);
+      if(ret2 == AVERROR(EAGAIN))
+        continue;
+      bail_if(ret2, "avcodec_receive_frame");
+      av_packet_free(&pkt);
+      avcodec_close(codec_ctx);
+      avcodec_free_context(&codec_ctx);
+      avformat_close_input(&ifmt_ctx);
+      avformat_free_context(ifmt_ctx);
+      return picture;
+    } while(ret == 0);
+  }
+  Rf_error("No suitable stream or frame found");
+}
+
 SEXP R_convert(SEXP in_file, SEXP out_file){
   int ret;
   video_stream *input = open_input_file(CHAR(STRING_ELT(in_file, 0)));
   video_stream *output = open_output_file(
     CHAR(STRING_ELT(out_file, 0)), input->codec_ctx->width, input->codec_ctx->height);
-  video_filter *filter = create_video_filter(input->codec_ctx, output->codec_ctx, "null");
+  
+  /* define the filter string */
+  char args[512];
+  snprintf(args, sizeof(args),
+           "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+           input->codec_ctx->width, 1,1,
+           input->codec_ctx->time_base.num, input->codec_ctx->time_base.den,
+           input->codec_ctx->sample_aspect_ratio.num, input->codec_ctx->sample_aspect_ratio.den);  
+  video_filter *filter = create_video_filter(args, output->codec_ctx->pix_fmt, "null");
   AVPacket *pkt = av_packet_alloc();
   while(1){
     ret = av_read_frame(input->fmt_ctx, pkt);
@@ -232,6 +287,7 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
 done:
   av_packet_free(&pkt);
   av_write_trailer(output->fmt_ctx);
+  avcodec_close(output->codec_ctx);
   avcodec_free_context(&(input->codec_ctx));
   avcodec_free_context(&(output->codec_ctx));
   avfilter_free(filter->sink);
@@ -245,4 +301,64 @@ done:
   av_free(input);
   av_free(output);
   return R_NilValue;
+}
+
+SEXP R_frames_to_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height){
+  AVPacket *pkt = av_packet_alloc();
+  video_stream *output = open_output_file(
+    CHAR(STRING_ELT(out_file, 0)), Rf_asInteger(width), Rf_asInteger(height));
+  output->stream->nb_frames = Rf_length(in_files);
+  int pos = 0;
+  //int speed = output->stream->time_base.den;
+  for(int i = 0; i <= Rf_length(in_files); i++){
+    if(i < Rf_length(in_files)){
+      AVFrame * frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
+      char args[512];
+      snprintf(args, sizeof(args),
+               "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+               frame->width, frame->height, frame->format, 
+               output->codec_ctx->time_base.num, output->codec_ctx->time_base.den,
+               frame->sample_aspect_ratio.num, frame->sample_aspect_ratio.den);
+      video_filter *filter = create_video_filter(args, output->codec_ctx->pix_fmt, "null");
+      bail_if(av_buffersrc_add_frame_flags(filter->source, frame, 0), "av_buffersrc_add_frame_flags");
+      AVFrame * filt_frame = av_frame_alloc();
+      bail_if(av_buffersink_get_frame(filter->sink, filt_frame), "av_buffersink_get_frame");
+      filt_frame->pict_type = AV_PICTURE_TYPE_I;
+      filt_frame->pts = i;
+      //filt_frame->best_effort_timestamp = i * speed;
+      av_frame_free(&frame);
+      avfilter_free(filter->sink);
+      avfilter_free(filter->source);
+      avfilter_graph_free(&filter->graph);
+      bail_if(avcodec_send_frame(output->codec_ctx, filt_frame), "avcodec_send_frame");
+      av_frame_free(&filt_frame);
+    } else {
+      bail_if(avcodec_send_frame(output->codec_ctx, NULL), "flushing avcodec_send_frame");
+    }
+    
+    /* re-encode output packet */
+    while(1){
+      int ret = avcodec_receive_packet(output->codec_ctx, pkt);
+      if (ret == AVERROR(EAGAIN))
+        break;
+      if (ret == AVERROR_EOF)
+        goto done;
+      bail_if(ret, "avcodec_receive_packet");
+      pkt->pos = pos;
+      //pkt->pts = pos * speed;
+      //pkt->dts = pos * speed;
+      //pkt->duration = speed;
+      Rprintf("adding packet %d\n", ++pos);      
+      pkt->stream_index = output->index;
+      av_packet_rescale_ts(pkt, output->codec_ctx->time_base, output->stream->time_base);
+      bail_if(av_interleaved_write_frame(output->fmt_ctx, pkt), "av_interleaved_write_frame");
+      av_packet_unref(pkt);
+    }
+  }
+done:
+  av_packet_free(&pkt);
+  av_write_trailer(output->fmt_ctx);
+  if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
+    avio_closep(&output->fmt_ctx->pb);  
+  return out_file;
 }
