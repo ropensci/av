@@ -8,19 +8,21 @@ create_video(input, output = "video.mp4", width = NULL,
   height = NULL, fps = 1, codec = "libx264")
 }
 \arguments{
-\item{input}{a vector with images such as png files}
+\item{input}{a vector with images such as png files.}
 
 \item{output}{name of the output file. File extension must correspond to a known
-container format such as \code{mp4} \code{mkv} \code{mov} or \code{flv}}
+container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 
-\item{width}{output video width in pixels. Defaults to width of first input image}
+\item{width}{video width in pixels. Defaults to width of first input image.}
 
-\item{height}{output video height in pixels. Defaults to height of first input image}
+\item{height}{video height in pixels. Defaults to height of first input image.}
 
-\item{fps}{output framerate in frames per seconds.}
+\item{fps}{video framerate in frames per seconds.}
 
-\item{codec}{name of the video codec. Must be one of \link{av_encoders}}
+\item{codec}{name of the video codec as listed in \link{av_encoders}. The
+default encodes into h264 which has excellent compression and works out of the box on
+all \href{https://caniuse.com/#search=h264}{modern browsers} and operating systems.}
 }
 \description{
-Converts a set of images into a video.
+Encodes a series of images into a video.
 }

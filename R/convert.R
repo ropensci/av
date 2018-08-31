@@ -1,17 +1,19 @@
 #' Create Video
 #'
-#' Converts a set of images into a video.
+#' Encodes a series of images into a video.
 #'
 #' @export
 #' @useDynLib av R_create_video
 #' @rdname av_convert
-#' @param input a vector with images such as png files
+#' @param input a vector with images such as png files.
 #' @param output name of the output file. File extension must correspond to a known
-#' container format such as `mp4` `mkv` `mov` or `flv`
-#' @param width output video width in pixels. Defaults to width of first input image
-#' @param height output video height in pixels. Defaults to height of first input image
-#' @param fps output framerate in frames per seconds.
-#' @param codec name of the video codec. Must be one of [av_encoders][av_encoders]
+#' container format such as `mp4`, `mkv`, `mov`, or `flv`.
+#' @param width video width in pixels. Defaults to width of first input image.
+#' @param height video height in pixels. Defaults to height of first input image.
+#' @param fps video framerate in frames per seconds.
+#' @param codec name of the video codec as listed in [av_encoders][av_encoders]. The
+#' default encodes into h264 which has excellent compression and works out of the box on
+#' all [modern browsers](https://caniuse.com/#search=h264) and operating systems.
 create_video <- function(input, output = "video.mp4", width = NULL, height = NULL, fps = 1, codec = "libx264"){
   stopifnot(length(input) > 0)
   input <- normalizePath(input, mustWork = TRUE)
