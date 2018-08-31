@@ -1,17 +1,17 @@
 #' AV Formats
-#' 
+#'
 #' List supported codecs and container formats.
-#' 
-#' 
+#'
+#'
 #' @export
 #' @rdname formats
-list_encoders <- function(){
+av_encoders <- function(){
   list_codecs(TRUE)
 }
 
 #' @export
 #' @rdname formats
-list_decoders <- function(){
+av_decoders <- function(){
   list_codecs(FALSE)
 }
 

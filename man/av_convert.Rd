@@ -5,7 +5,7 @@
 \title{Create Video}
 \usage{
 create_video(input, output = "video.mp4", width = NULL,
-  height = NULL, fps = 1)
+  height = NULL, fps = 1, codec = "libx264")
 }
 \arguments{
 \item{input}{a vector with images such as png files}
@@ -18,6 +18,8 @@ container format such as \code{mp4} \code{mkv} \code{mov} or \code{flv}}
 \item{height}{output video height in pixels. Defaults to height of first input image}
 
 \item{fps}{output framerate in frames per seconds.}
+
+\item{codec}{name of the video codec. Must be one of \link{av_encoders}}
 }
 \description{
 Converts a set of images into a video.

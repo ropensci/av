@@ -29,21 +29,23 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static video_stream *open_output_file(const char *filename, int width, int height, int fps){
+static video_stream *open_output_file(const char *filename, int width, int height, int framerate, const char * enc){
+  /* First check if we have the video codec (does not allocate) */
+  AVCodec *codec = avcodec_find_encoder_by_name(enc);
+  bail_if_null(codec, "avcodec_find_encoder_by_name");
+
   /* Init container context (infers format from file extension) */
   AVFormatContext *ofmt_ctx = NULL;
   avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
   bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
 
-  /* Find the codec and init video encoder */
-  AVCodec *codec = avcodec_find_encoder_by_name("libx264");
-  bail_if_null(codec, "avcodec_find_encoder_by_name");
+  /* Init video encoder */
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
   bail_if_null(codec_ctx, "avcodec_alloc_context3");
   codec_ctx->height = height;
   codec_ctx->width = width;
   codec_ctx->time_base.num = 1;
-  codec_ctx->time_base.den = fps;
+  codec_ctx->time_base.den = framerate;
   codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
   codec_ctx->gop_size = 5;
   codec_ctx->max_b_frames = 1;
@@ -199,7 +201,7 @@ static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int
   return output;
 }
 
-SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP fps){
+SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP fps, SEXP enc){
   /* Read first image file to get width/height */
   AVFrame * sample = read_single_frame(CHAR(STRING_ELT(in_files, 0)));
   int w = Rf_length(width) ? Rf_asInteger(width) : sample->width;
@@ -207,7 +209,8 @@ SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP 
   av_frame_free(&sample);
 
   /* Start the output video */
-  video_stream *output = open_output_file(CHAR(STRING_ELT(out_file, 0)), w, h, Rf_asInteger(fps));
+  video_stream *output = open_output_file(CHAR(STRING_ELT(out_file, 0)), w, h,
+                                          Rf_asInteger(fps), CHAR(STRING_ELT(enc, 0)));
   AVPacket *pkt = av_packet_alloc();
   output->video_stream->nb_frames = Rf_length(in_files);
 
