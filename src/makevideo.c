@@ -30,20 +30,16 @@ static void bail_if_null(void * ptr, const char * what){
 }
 
 static video_stream *open_output_file(const char *filename, int width, int height, int fps){
+  /* Init container context (infers format from file extension) */
+  AVFormatContext *ofmt_ctx = NULL;
+  avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
+  bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
+
   /* Find the codec and init video encoder */
   AVCodec *codec = avcodec_find_encoder_by_name("libx264");
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
   bail_if_null(codec_ctx, "avcodec_alloc_context3");
-
-  /* Init container context (infers format from file extension) */
-  AVFormatContext *ofmt_ctx = NULL;
-  avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
-  bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
-  if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-    codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-  /* TO DO: parameterize these these settings */
   codec_ctx->height = height;
   codec_ctx->width = width;
   codec_ctx->time_base.num = 1;
@@ -51,9 +47,13 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
   codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
   codec_ctx->gop_size = 5;
   codec_ctx->max_b_frames = 1;
-  codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+
+  /* Try to use codec preferred pixel format, otherwise default to YUV420 */
+  codec_ctx->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
   if (codec->id == AV_CODEC_ID_H264)
     av_opt_set(codec_ctx->priv_data, "preset", "slow", 0);
+  if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
+    codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
   /* Open the coded with above settings */
   bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
@@ -69,7 +69,7 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
     bail_if(avio_open(&ofmt_ctx->pb, filename, AVIO_FLAG_WRITE), "avio_open");
   bail_if(avformat_write_header(ofmt_ctx, NULL), "avformat_write_header");
 
-  //create struct with all objects
+  /* Store relevant objects */
   video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
   out->fmt_ctx = ofmt_ctx;
   out->video_stream = out_stream;
@@ -81,12 +81,13 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
 }
 
 static void close_output_file(video_stream *output){
-  av_write_trailer(output->fmt_ctx);
+  bail_if(av_write_trailer(output->fmt_ctx), "av_write_trailer");
   if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->fmt_ctx->pb);
   avcodec_close(output->codec_ctx);
   avcodec_free_context(&(output->codec_ctx));
   avformat_free_context(output->fmt_ctx);
+  av_free(output);
 }
 
 static AVFrame * read_single_frame(const char *filename){
