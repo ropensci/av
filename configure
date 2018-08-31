@@ -14,8 +14,9 @@ PKG_BREW_NAME="ffmpeg"
 PKG_TEST_HEADER="<libavfilter/version.h>"
 PKG_LIBS="-lavfilter"
 
-# Use pkg-config if available
-if [ $(command -v pkg-config) ]; then
+# FFMPEG 3 and 4 include libavfilter 6.0
+pkg-config ${PKG_CONFIG_NAME} --atleast-version=6 2>/dev/null
+if [ $? -eq 0 ]; then
   PKGCONFIG_CFLAGS=$(pkg-config --cflags --silence-errors ${PKG_CONFIG_NAME})
   PKGCONFIG_LIBS=$(pkg-config --libs ${PKG_CONFIG_NAME})
 fi
@@ -50,14 +51,19 @@ CXXFLAGS=$(${R_HOME}/bin/R CMD config CXXFLAGS)
 CPPFLAGS=$(${R_HOME}/bin/R CMD config CPPFLAGS)
 
 # Test for libzmq
-echo "#include $PKG_TEST_HEADER" | ${CXXCPP} ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ - >/dev/null
+echo "#include $PKG_TEST_HEADER" | ${CXXCPP} ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ -  >/dev/null 2>&1
 
 if [ $? -ne 0 ]; then
   echo "------------------------- ANTICONF ERROR ---------------------------"
   echo "Configuration failed because $PKG_CONFIG_NAME was not found. Try installing:"
-  echo " * deb: $PKG_DEB_NAME (Debian, Ubuntu, etc)"
+  echo " * deb: $PKG_DEB_NAME (Debian, Ubuntu 18.04 and up)"
   echo " * rpm: $PKG_RPM_NAME (Fedora, CentOS, RHEL)"
   echo " * csw: $PKG_CSW_NAME (Solaris)"
+  echo "For Ubuntu versions Trusty (14.04) and Xenial (16.04) use this PPA:"
+  echo "   sudo add-apt-repository -y ppa:jonathonf/ffmpeg-3"
+  echo "   sudo add-apt-repository -y ppa:jonathonf/ffmpeg-4"
+  echo "   sudo apt-get update"
+  echo "   sudo apt-get install -y $PKG_DEB_NAME"
   echo "If $PKG_CONFIG_NAME is already installed, check that 'pkg-config' is in your"
   echo "PATH and PKG_CONFIG_PATH contains a $PKG_CONFIG_NAME.pc file. If pkg-config"
   echo "is unavailable you can set INCLUDE_DIR and LIB_DIR manually via:"
