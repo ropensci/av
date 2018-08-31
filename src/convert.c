@@ -14,7 +14,6 @@ typedef struct {
   AVFormatContext *fmt_ctx;
   AVCodecContext *codec_ctx;
   AVStream *stream;
-  AVCodec *codec;
 } video_stream;
 
 typedef struct {
@@ -100,7 +99,6 @@ static video_stream *open_input_file(const char *filename){
     out->fmt_ctx = ifmt_ctx;
     out->stream = stream;
     out->codec_ctx = codec_ctx;
-    out->codec = codec;
     out->index = i;
 
     //print info and return
@@ -111,25 +109,24 @@ static video_stream *open_input_file(const char *filename){
 }
 
 static video_stream * open_output_file(const char *filename, int width, int height){
-  AVFormatContext *ofmt_ctx = NULL;
-  avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
-  bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
-  AVStream *out_stream = avformat_new_stream(ofmt_ctx, avcodec_find_encoder(AV_CODEC_ID_H264));
-  bail_if_null(out_stream, "avformat_new_stream");
+  /* Find the codec and init encoder */
   AVCodec *codec = avcodec_find_encoder_by_name("libx264");
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
-  bail_if_null(codec_ctx, "avcodec_alloc_context3");
-
+  bail_if_null(codec_ctx, "avcodec_alloc_context3");  
+  
+  /* Init container context, infer format from filename extension */
+  AVFormatContext *ofmt_ctx = NULL;
+  avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
+  bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
     
   /* TO DO: parameterize these these settings */
   codec_ctx->height = height;
   codec_ctx->width = width;
-  //codec_ctx->sample_aspect_ratio = (AVRational){1, 1};
   codec_ctx->time_base.num = 1;
   codec_ctx->time_base.den = 1;
   //codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
-  codec_ctx->gop_size = 10;
+  codec_ctx->gop_size = 5;
   codec_ctx->max_b_frames = 1;
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
   if (codec->id == AV_CODEC_ID_H264)
@@ -137,26 +134,25 @@ static video_stream * open_output_file(const char *filename, int width, int heig
   if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
     codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
+  /* Open the coded with above settings */
   bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
-
-  /* Start out stream */
+  
+  /* Start a video stream */
+  AVStream *out_stream = avformat_new_stream(ofmt_ctx, codec);
+  bail_if_null(out_stream, "avformat_new_stream");
   bail_if(avcodec_parameters_from_context(out_stream->codecpar, codec_ctx), "avcodec_parameters_from_context");
-  out_stream->time_base = codec_ctx->time_base;
-  //out_stream->avg_frame_rate = codec_ctx->framerate;
-
+  bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set CRF");
+  
+  /* Open output file file */
   if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
     bail_if(avio_open(&ofmt_ctx->pb, filename, AVIO_FLAG_WRITE), "avio_open");
-
-  bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set CRF");
   bail_if(avformat_write_header(ofmt_ctx, NULL), "avformat_write_header");
   
-
   //create struct with all objects
   video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
   out->fmt_ctx = ofmt_ctx;
   out->stream = out_stream;
   out->codec_ctx = codec_ctx;
-  out->codec = codec;
   out->index = 0;
 
   //print info and return
@@ -345,6 +341,7 @@ SEXP R_frames_to_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height){
         goto done;
       bail_if(ret, "avcodec_receive_packet");
       pkt->pos = pos;
+      pkt->duration = 1;
       //pkt->pts = pos * speed;
       //pkt->dts = pos * speed;
       //pkt->duration = speed;
