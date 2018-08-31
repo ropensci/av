@@ -9,6 +9,8 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int width, int height);
+  
 typedef struct {
   int index;
   AVFormatContext *fmt_ctx;
@@ -26,7 +28,7 @@ static void log_debug(const char * str){
   av_log(NULL, AV_LOG_DEBUG, "%s", str);
 }
 
-static void bail_if(int ret, const char * what){
+void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
 }
@@ -311,25 +313,10 @@ SEXP R_frames_to_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height){
   for(int i = 0; i <= Rf_length(in_files); i++){
     if(i < Rf_length(in_files)){
       AVFrame * frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      char args[512];
-      snprintf(args, sizeof(args),
-               "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-               frame->width, frame->height, frame->format, // frame info
-               output->codec_ctx->time_base.num, output->codec_ctx->time_base.den, //fps size
-               frame->sample_aspect_ratio.num, frame->sample_aspect_ratio.den); //aspect ratio
-      video_filter *filter = create_video_filter(args, output->codec_ctx->pix_fmt, "null");
-      bail_if(av_buffersrc_add_frame_flags(filter->source, frame, 0), "av_buffersrc_add_frame_flags");
-      AVFrame * filt_frame = av_frame_alloc();
-      bail_if(av_buffersink_get_frame(filter->sink, filt_frame), "av_buffersink_get_frame");
-      filt_frame->pict_type = AV_PICTURE_TYPE_I;
-      filt_frame->pts = i;
-      //filt_frame->best_effort_timestamp = i * speed;
+      frame = filter_single_frame(frame, output->codec_ctx->pix_fmt, Rf_asInteger(width), Rf_asInteger(height));
+      frame->pts = i;
+      bail_if(avcodec_send_frame(output->codec_ctx, frame), "avcodec_send_frame");
       av_frame_free(&frame);
-      avfilter_free(filter->sink);
-      avfilter_free(filter->source);
-      avfilter_graph_free(&filter->graph);
-      bail_if(avcodec_send_frame(output->codec_ctx, filt_frame), "avcodec_send_frame");
-      av_frame_free(&filt_frame);
     } else {
       bail_if(avcodec_send_frame(output->codec_ctx, NULL), "flushing avcodec_send_frame");
     }
