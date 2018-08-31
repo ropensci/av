@@ -48,6 +48,7 @@ static video_filter *create_video_filter(const char *input_args, enum AVPixelFor
   bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "out",
                                NULL, NULL, filter_graph), "avfilter_graph_create_filter (output)");
   
+  /* Converts output YUV420P I think (copied from examples/transcoding.c) */
   bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
                        (uint8_t*)&pix_enc, sizeof(pix_enc),
                        AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
@@ -217,9 +218,10 @@ SEXP R_convert(SEXP in_file, SEXP out_file){
   char args[512];
   snprintf(args, sizeof(args),
            "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-           input->codec_ctx->width, 1,1,
-           input->codec_ctx->time_base.num, input->codec_ctx->time_base.den,
-           input->codec_ctx->sample_aspect_ratio.num, input->codec_ctx->sample_aspect_ratio.den);  
+           output->codec_ctx->width, output->codec_ctx->height, output->codec_ctx->pix_fmt,
+           output->codec_ctx->time_base.num, output->codec_ctx->time_base.den,
+           output->codec_ctx->sample_aspect_ratio.num,
+           output->codec_ctx->sample_aspect_ratio.den);
   video_filter *filter = create_video_filter(args, output->codec_ctx->pix_fmt, "null");
   AVPacket *pkt = av_packet_alloc();
   while(1){
@@ -312,9 +314,9 @@ SEXP R_frames_to_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height){
       char args[512];
       snprintf(args, sizeof(args),
                "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-               frame->width, frame->height, frame->format, 
-               output->codec_ctx->time_base.num, output->codec_ctx->time_base.den,
-               frame->sample_aspect_ratio.num, frame->sample_aspect_ratio.den);
+               frame->width, frame->height, frame->format, // frame info
+               output->codec_ctx->time_base.num, output->codec_ctx->time_base.den, //fps size
+               frame->sample_aspect_ratio.num, frame->sample_aspect_ratio.den); //aspect ratio
       video_filter *filter = create_video_filter(args, output->codec_ctx->pix_fmt, "null");
       bail_if(av_buffersrc_add_frame_flags(filter->source, frame, 0), "av_buffersrc_add_frame_flags");
       AVFrame * filt_frame = av_frame_alloc();
