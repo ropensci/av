@@ -50,19 +50,20 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
   codec_ctx->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-  if (codec->id == AV_CODEC_ID_H264)
-    av_opt_set(codec_ctx->priv_data, "preset", "slow", 0);
   if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
     codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-  /* Open the coded with above settings */
+  /* Open the codec, and set some x264 preferences */
   bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
+  if (codec->id == AV_CODEC_ID_H264){
+    bail_if(av_opt_set(codec_ctx->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
+    bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
+  }
 
   /* Start a video stream */
   AVStream *out_stream = avformat_new_stream(ofmt_ctx, codec);
   bail_if_null(out_stream, "avformat_new_stream");
   bail_if(avcodec_parameters_from_context(out_stream->codecpar, codec_ctx), "avcodec_parameters_from_context");
-  bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
 
   /* Open output file file */
   if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
