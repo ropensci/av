@@ -167,7 +167,8 @@ static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int
 
 
   /* Add custom filters */
-  AVFilterContext *next_filter = buffersrc_ctx;
+  AVFilterContext *filter_tail = buffersrc_ctx;
+  AVFilterContext *next_filter = NULL;
 
   /* Adding scale filter */
   if(input->width != width || input->height != height){
@@ -176,11 +177,12 @@ static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int
     AVFilterContext *last_filter = NULL;
     bail_if(avfilter_graph_create_filter(&next_filter, avfilter_get_by_name("scale"),
                                          "scale", scale_args, NULL, filter_graph), "avfilter_graph_create_filter");
-    bail_if(avfilter_link(buffersrc_ctx, 0, next_filter, 0), "avfilter_link 1");
+    bail_if(avfilter_link(filter_tail, 0, next_filter, 0), "avfilter_link (scale)");
+    filter_tail = next_filter;
   }
 
   /* Hookup to the output filter */
-  bail_if(avfilter_link(next_filter, 0, buffersink_ctx, 0), "avfilter_link 2");
+  bail_if(avfilter_link(filter_tail, 0, buffersink_ctx, 0), "avfilter_link (sink)");
   bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
 
   /* Insert the frame into the source filter */
