@@ -165,21 +165,22 @@ static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int
                        (uint8_t*)&fmt, sizeof(fmt),
                        AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
 
+
+  /* Add custom filters */
+  AVFilterContext *next_filter = buffersrc_ctx;
+
   /* Adding scale filter */
-  char scale_args[512];
-  snprintf(scale_args, sizeof(scale_args), "%d:%d", width, height);
-  AVFilterContext *scale_ctx = NULL;
-  if(input->width == width && input->height == height){
-    bail_if(avfilter_graph_create_filter(&scale_ctx, avfilter_get_by_name("null"),
-                                         "scale", NULL, NULL, filter_graph), "avfilter_graph_create_filter");
-  } else {
-    bail_if(avfilter_graph_create_filter(&scale_ctx, avfilter_get_by_name("scale"),
+  if(input->width != width || input->height != height){
+    char scale_args[512];
+    snprintf(scale_args, sizeof(scale_args), "%d:%d", width, height);
+    AVFilterContext *last_filter = NULL;
+    bail_if(avfilter_graph_create_filter(&next_filter, avfilter_get_by_name("scale"),
                                          "scale", scale_args, NULL, filter_graph), "avfilter_graph_create_filter");
+    bail_if(avfilter_link(buffersrc_ctx, 0, next_filter, 0), "avfilter_link 1");
   }
 
-  /* Link the filter sequence */
-  bail_if(avfilter_link(buffersrc_ctx, 0, scale_ctx, 0), "avfilter_link 1");
-  bail_if(avfilter_link(scale_ctx, 0, buffersink_ctx, 0), "avfilter_link 2");
+  /* Hookup to the output filter */
+  bail_if(avfilter_link(next_filter, 0, buffersink_ctx, 0), "avfilter_link 2");
   bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
 
   /* Insert the frame into the source filter */
@@ -188,13 +189,11 @@ static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int
   /* Extract output frame from the sink filter */
   AVFrame * output = av_frame_alloc();
   bail_if(av_buffersink_get_frame(buffersink_ctx, output), "av_buffersink_get_frame");
-  av_frame_free(&input);
 
-  /* Return output frame */
-  avfilter_free(buffersrc_ctx);
-  avfilter_free(scale_ctx);
-  avfilter_free(buffersink_ctx);
+  for(int i = 0; i < filter_graph->nb_filters; i++)
+    avfilter_free(filter_graph->filters[i]);
   avfilter_graph_free(&filter_graph);
+  av_frame_free(&input);
 
   /* Return an output frame */
   output->pict_type = AV_PICTURE_TYPE_I;
