@@ -174,7 +174,6 @@ static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int
   if(input->width != width || input->height != height){
     char scale_args[512];
     snprintf(scale_args, sizeof(scale_args), "%d:%d", width, height);
-    AVFilterContext *last_filter = NULL;
     bail_if(avfilter_graph_create_filter(&next_filter, avfilter_get_by_name("scale"),
                                          "scale", scale_args, NULL, filter_graph), "avfilter_graph_create_filter");
     bail_if(avfilter_link(filter_tail, 0, next_filter, 0), "avfilter_link (scale)");
