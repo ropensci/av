@@ -11,7 +11,7 @@
 
 typedef struct {
   AVFormatContext *fmt_ctx;
-  AVCodecContext *codec_ctx;
+  AVCodecContext *video_codec_ctx;
   AVStream *video_stream;
 } video_stream;
 
@@ -76,7 +76,7 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
   video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
   out->fmt_ctx = ofmt_ctx;
   out->video_stream = out_stream;
-  out->codec_ctx = codec_ctx;
+  out->video_codec_ctx = codec_ctx;
 
   //print info and return
   av_dump_format(ofmt_ctx, 0, filename, 1);
@@ -87,8 +87,8 @@ static void close_output_file(video_stream *output){
   bail_if(av_write_trailer(output->fmt_ctx), "av_write_trailer");
   if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->fmt_ctx->pb);
-  avcodec_close(output->codec_ctx);
-  avcodec_free_context(&(output->codec_ctx));
+  avcodec_close(output->video_codec_ctx);
+  avcodec_free_context(&(output->video_codec_ctx));
   avformat_free_context(output->fmt_ctx);
   av_free(output);
 }
@@ -219,17 +219,17 @@ SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP 
   for(int i = 0; i <= Rf_length(in_files); i++){
     if(i < Rf_length(in_files)){
       AVFrame * frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame = filter_single_frame(frame, output->codec_ctx->pix_fmt, Rf_asInteger(width), Rf_asInteger(height));
+      frame = filter_single_frame(frame, output->video_codec_ctx->pix_fmt, Rf_asInteger(width), Rf_asInteger(height));
       frame->pts = i;
-      bail_if(avcodec_send_frame(output->codec_ctx, frame), "avcodec_send_frame");
+      bail_if(avcodec_send_frame(output->video_codec_ctx, frame), "avcodec_send_frame");
       av_frame_free(&frame);
     } else {
-      bail_if(avcodec_send_frame(output->codec_ctx, NULL), "flushing avcodec_send_frame");
+      bail_if(avcodec_send_frame(output->video_codec_ctx, NULL), "flushing avcodec_send_frame");
     }
 
     /* re-encode output packet */
     while(1){
-      int ret = avcodec_receive_packet(output->codec_ctx, pkt);
+      int ret = avcodec_receive_packet(output->video_codec_ctx, pkt);
       if (ret == AVERROR(EAGAIN))
         break;
       if (ret == AVERROR_EOF)
@@ -238,7 +238,7 @@ SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP 
       pkt->pos = pos++;
       pkt->duration = 1;
       pkt->stream_index = output->video_stream->index;
-      av_packet_rescale_ts(pkt, output->codec_ctx->time_base, output->video_stream->time_base);
+      av_packet_rescale_ts(pkt, output->video_codec_ctx->time_base, output->video_stream->time_base);
       bail_if(av_interleaved_write_frame(output->fmt_ctx, pkt), "av_interleaved_write_frame");
       av_packet_unref(pkt);
     }
