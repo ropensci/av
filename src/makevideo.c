@@ -140,7 +140,7 @@ static AVFrame * read_single_frame(const char *filename){
   Rf_error("No suitable stream or frame found");
 }
 
-static AVFrame *filter_single_frame(AVFrame * input, enum AVPixelFormat fmt, int width, int height){
+static AVFrame *reformat_frame(AVFrame * input, enum AVPixelFormat fmt, int width, int height){
 
   /* Create a new filter graph */
   AVFilterGraph *filter_graph = avfilter_graph_alloc();
@@ -219,7 +219,7 @@ SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP 
   for(int i = 0; i <= Rf_length(in_files); i++){
     if(i < Rf_length(in_files)){
       AVFrame * frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame = filter_single_frame(frame, output->video_codec_ctx->pix_fmt, Rf_asInteger(width), Rf_asInteger(height));
+      frame = reformat_frame(frame, output->video_codec_ctx->pix_fmt, Rf_asInteger(width), Rf_asInteger(height));
       frame->pts = i;
       bail_if(avcodec_send_frame(output->video_codec_ctx, frame), "avcodec_send_frame");
       av_frame_free(&frame);
