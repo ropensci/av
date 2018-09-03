@@ -4,8 +4,8 @@
 \alias{create_video}
 \title{Create Video}
 \usage{
-create_video(input, output = "video.mp4", width = NULL,
-  height = NULL, fps = 1, codec = "libx264")
+create_video(input, output = "video.mp4", framerate = 1,
+  filter = "null", codec = "libx264")
 }
 \arguments{
 \item{input}{a vector with images such as png files.}
@@ -13,11 +13,9 @@ create_video(input, output = "video.mp4", width = NULL,
 \item{output}{name of the output file. File extension must correspond to a known
 container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 
-\item{width}{video width in pixels. Defaults to width of first input image.}
+\item{framerate}{video framerate in frames per seconds.}
 
-\item{height}{video height in pixels. Defaults to height of first input image.}
-
-\item{fps}{video framerate in frames per seconds.}
+\item{filter}{a string defining an ffmpeg filter graph}
 
 \item{codec}{name of the video codec as listed in \link{av_encoders}. The
 default encodes into h264 which has excellent compression and works out of the box on

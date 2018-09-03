@@ -8,7 +8,7 @@ test_that("Set log level", {
 test_that("convert images into video formats", {
   q <- 2
   n <- 50
-  fps <- 5
+  framerate <- 5
   width <- 640 * q
   height <- 480 * q
   png_path <- file.path(tempdir(), "frame%03d.png")
@@ -22,14 +22,14 @@ test_that("convert images into video formats", {
   types <- c("mkv", "mp4", "mov") #todo: add flv
   for(ext in types){
     filename <- paste0("test.", ext)
-    av::create_video(png_files, filename, fps = 5)
+    av::create_video(png_files, filename, framerate = framerate)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
-    expect_equal(info$duration, n / fps)
+    expect_equal(info$duration, n / framerate)
     expect_equal(info$video_streams$width, width)
     expect_equal(info$video_streams$height, height)
     expect_equal(info$video_streams$codec, "h264")
-    expect_equal(info$video_streams$framerate, fps)
+    expect_equal(info$video_streams$framerate, framerate)
     unlink(filename)
   }
 })

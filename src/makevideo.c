@@ -15,10 +15,6 @@ typedef struct {
   AVStream *video_stream;
 } video_stream;
 
-static void log_debug(const char * str){
-  av_log(NULL, AV_LOG_DEBUG, "%s", str);
-}
-
 static void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
@@ -201,16 +197,17 @@ static AVFrame *reformat_frame(AVFrame * input, enum AVPixelFormat fmt, int widt
   return output;
 }
 
-SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP fps, SEXP enc){
+SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filter, SEXP enc){
   /* Read first image file to get width/height */
+  const char * filter_spec = CHAR(STRING_ELT(filter, 0));
   AVFrame * sample = read_single_frame(CHAR(STRING_ELT(in_files, 0)));
-  int w = Rf_length(width) ? Rf_asInteger(width) : sample->width;
-  int h = Rf_length(height) ? Rf_asInteger(height) : sample->height;
+  int width = sample->width;
+  int height = sample->height;
   av_frame_free(&sample);
 
   /* Start the output video */
-  video_stream *output = open_output_file(CHAR(STRING_ELT(out_file, 0)), w, h,
-                                          Rf_asInteger(fps), CHAR(STRING_ELT(enc, 0)));
+  video_stream *output = open_output_file(CHAR(STRING_ELT(out_file, 0)), width, height,
+                                          Rf_asInteger(framerate), CHAR(STRING_ELT(enc, 0)));
   AVPacket *pkt = av_packet_alloc();
   output->video_stream->nb_frames = Rf_length(in_files);
 
@@ -219,7 +216,7 @@ SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP width, SEXP height, SEXP 
   for(int i = 0; i <= Rf_length(in_files); i++){
     if(i < Rf_length(in_files)){
       AVFrame * frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame = reformat_frame(frame, output->video_codec_ctx->pix_fmt, Rf_asInteger(width), Rf_asInteger(height));
+      frame = reformat_frame(frame, output->video_codec_ctx->pix_fmt, width, height);
       frame->pts = i;
       bail_if(avcodec_send_frame(output->video_codec_ctx, frame), "avcodec_send_frame");
       av_frame_free(&frame);
