@@ -197,7 +197,7 @@ static AVFrame *reformat_frame(AVFrame * input, enum AVPixelFormat fmt, int widt
   return output;
 }
 
-SEXP R_create_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filter, SEXP enc){
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filter, SEXP enc){
   /* Read first image file to get width/height */
   const char * filter_spec = CHAR(STRING_ELT(filter, 0));
   AVFrame * sample = read_single_frame(CHAR(STRING_ELT(in_files, 0)));

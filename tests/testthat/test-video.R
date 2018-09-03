@@ -22,7 +22,7 @@ test_that("convert images into video formats", {
   types <- c("mkv", "mp4", "mov") #todo: add flv
   for(ext in types){
     filename <- paste0("test.", ext)
-    av::create_video(png_files, filename, framerate = framerate)
+    av::av_encode_video(png_files, filename, framerate = framerate)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
     expect_equal(info$duration, n / framerate)
