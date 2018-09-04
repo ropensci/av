@@ -258,7 +258,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
       }
     }
   }
-  Rf_warning("Failed to complete input, video may be incomplete");
+  Rf_warning("Did not reach EOF, video may be incomplete");
 done:
   close_video_filter(filter);
   close_output_file(outfile);
