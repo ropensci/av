@@ -57,7 +57,7 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
   bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
   if (codec->id == AV_CODEC_ID_H264){
     bail_if(av_opt_set(codec_ctx->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
-    bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
+    //bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
   }
 
   /* Start a video stream */
@@ -258,7 +258,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
       }
     }
   }
-  Rf_warning("Failed to complete input, video may be damaged");
+  Rf_warning("Failed to complete input, video may be incomplete");
 done:
   close_video_filter(filter);
   close_output_file(outfile);
