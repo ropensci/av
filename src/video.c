@@ -204,7 +204,6 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
 
   /* Start the output video */
-  int ret = 0;
   AVFrame * frame = NULL;
   video_filter *filter = NULL;
   video_stream *outfile = NULL;
@@ -215,17 +214,19 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
     if(i < Rf_length(in_files)) {
       frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
       frame->pts = i;
+      if(filter == NULL)
+        filter = open_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
+      bail_if(av_buffersrc_add_frame(filter->input, frame), "av_buffersrc_add_frame");
+      av_frame_free(&frame);
     } else {
-      frame = NULL; //flush
+      bail_if_null(filter, "Faild to read any input frames");
+      bail_if(av_buffersrc_add_frame(filter->input, frame), "flushing filter");
     }
-    if(filter == NULL)
-      filter = open_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
-    bail_if(av_buffersrc_add_frame(filter->input, frame), "av_buffersrc_add_frame");
 
     /* Loop over frames returned by filter */
     while(1){
       AVFrame * outframe = av_frame_alloc();
-      ret = av_buffersink_get_frame(filter->output, outframe);
+      int ret = av_buffersink_get_frame(filter->output, outframe);
       if(ret == AVERROR(EAGAIN))
         break;
       if(ret == AVERROR_EOF){
@@ -257,7 +258,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
       }
     }
   }
-  Rf_warning("Failed to complete input");
+  Rf_warning("Failed to complete input, video may be damaged");
 done:
   close_video_filter(filter);
   close_output_file(outfile);
