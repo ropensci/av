@@ -15,6 +15,12 @@ typedef struct {
   AVStream *video_stream;
 } video_stream;
 
+typedef struct {
+  AVFilterContext *input;
+  AVFilterContext *output;
+  AVFilterGraph *filter_graph;
+} video_filter;
+
 static void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
@@ -133,68 +139,7 @@ static AVFrame * read_single_frame(const char *filename){
   Rf_error("No suitable stream or frame found");
 }
 
-static AVFrame *reformat_frame(AVFrame * input, enum AVPixelFormat fmt, int width, int height){
-
-  /* Create a new filter graph */
-  AVFilterGraph *filter_graph = avfilter_graph_alloc();
-
-  /* Initiate source filter */
-  char input_args[512];
-  snprintf(input_args, sizeof(input_args),
-           "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-           input->width, input->height, input->format, 1, 1,
-           input->sample_aspect_ratio.num, input->sample_aspect_ratio.den);
-  AVFilterContext *buffersrc_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("buffer"), "in",
-                                       input_args, NULL, filter_graph), "avfilter_graph_create_filter (input_args)");
-
-  /* Initiate sink filter */
-  AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "out",
-                               NULL, NULL, filter_graph), "avfilter_graph_create_filter (output)");
-
-  /* I think this convert output YUV420P (copied from ffmpeg examples/transcoding.c) */
-  bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
-                       (uint8_t*)&fmt, sizeof(fmt),
-                       AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
-
-
-  /* Add custom filters */
-  AVFilterContext *filter_tail = buffersrc_ctx;
-  AVFilterContext *next_filter = NULL;
-
-  /* Adding scale filter */
-  if(input->width != width || input->height != height){
-    char scale_args[512];
-    snprintf(scale_args, sizeof(scale_args), "%d:%d", width, height);
-    bail_if(avfilter_graph_create_filter(&next_filter, avfilter_get_by_name("scale"),
-                                         "scale", scale_args, NULL, filter_graph), "avfilter_graph_create_filter");
-    bail_if(avfilter_link(filter_tail, 0, next_filter, 0), "avfilter_link (scale)");
-    filter_tail = next_filter;
-  }
-
-  /* Hookup to the output filter */
-  bail_if(avfilter_link(filter_tail, 0, buffersink_ctx, 0), "avfilter_link (sink)");
-  bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
-
-  /* Insert the frame into the source filter */
-  bail_if(av_buffersrc_add_frame_flags(buffersrc_ctx, input, 0), "av_buffersrc_add_frame_flags");
-
-  /* Extract output frame from the sink filter */
-  AVFrame * output = av_frame_alloc();
-  bail_if(av_buffersink_get_frame(buffersink_ctx, output), "av_buffersink_get_frame");
-
-  for(int i = 0; i < filter_graph->nb_filters; i++)
-    avfilter_free(filter_graph->filters[i]);
-  avfilter_graph_free(&filter_graph);
-  av_frame_free(&input);
-
-  /* Return an output frame */
-  output->pict_type = AV_PICTURE_TYPE_I;
-  return output;
-}
-
-static AVFrame *filter_frame(AVFrame * input, enum AVPixelFormat fmt, const char *filter_spec){
+static video_filter *open_filter(AVFrame * input, enum AVPixelFormat fmt, const char *filter_spec){
 
   /* Create a new filter graph */
   AVFilterGraph *filter_graph = avfilter_graph_alloc();
@@ -239,69 +184,83 @@ static AVFrame *filter_frame(AVFrame * input, enum AVPixelFormat fmt, const char
   avfilter_inout_free(&inputs);
   avfilter_inout_free(&outputs);
 
-  /* Insert the frame into the source filter */
-  bail_if(av_buffersrc_add_frame_flags(buffersrc_ctx, input, 0), "av_buffersrc_add_frame_flags");
-
-  /* Extract output frame from the sink filter */
-  AVFrame * output = av_frame_alloc();
-  bail_if(av_buffersink_get_frame(buffersink_ctx, output), "av_buffersink_get_frame");
-
-  for(int i = 0; i < filter_graph->nb_filters; i++)
-    avfilter_free(filter_graph->filters[i]);
-  avfilter_graph_free(&filter_graph);
-  av_frame_free(&input);
-
-  /* Return an output frame */
-  output->pict_type = AV_PICTURE_TYPE_I;
-  return output;
+  video_filter *out = (video_filter*) av_mallocz(sizeof(video_filter));
+  out->input = buffersrc_ctx;
+  out->output = buffersink_ctx;
+  out->filter_graph = filter_graph;
+  return out;
 }
 
-SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filter, SEXP enc){
+static void close_video_filter(video_filter *filter){
+  for(int i = 0; i < filter->filter_graph->nb_filters; i++)
+    avfilter_free(filter->filter_graph->filters[i]);
+  avfilter_graph_free(&filter->filter_graph);
+  av_free(filter);
+}
+
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc){
   AVCodec *codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
 
-  /* Read first image file to get width/height */
-  const char * filter_spec = CHAR(STRING_ELT(filter, 0));
-
   /* Start the output video */
-  video_stream *output = NULL;
+  int ret = 0;
+  AVFrame * frame = NULL;
+  video_filter *filter = NULL;
+  video_stream *outfile = NULL;
   AVPacket *pkt = av_packet_alloc();
 
   /* Loop over input image files files */
-  int pos = 0;
   for(int i = 0; i <= Rf_length(in_files); i++){
-    if(i < Rf_length(in_files)){
-      AVFrame * frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame = filter_frame(frame, pix_fmt, filter_spec);
+    if(i < Rf_length(in_files)) {
+      frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
       frame->pts = i;
-      if(output == NULL)
-        output = open_output_file(CHAR(STRING_ELT(out_file, 0)), frame->width, frame->height,
-                         Rf_asInteger(framerate), codec, Rf_length(in_files));
-      bail_if(avcodec_send_frame(output->video_codec_ctx, frame), "avcodec_send_frame");
-      av_frame_free(&frame);
     } else {
-      bail_if(avcodec_send_frame(output->video_codec_ctx, NULL), "flushing avcodec_send_frame");
+      frame = NULL; //flush
     }
+    if(filter == NULL)
+      filter = open_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
+    bail_if(av_buffersrc_add_frame(filter->input, frame), "av_buffersrc_add_frame");
 
-    /* re-encode output packet */
+    /* Loop over frames returned by filter */
     while(1){
-      int ret = avcodec_receive_packet(output->video_codec_ctx, pkt);
-      if (ret == AVERROR(EAGAIN))
+      AVFrame * outframe = av_frame_alloc();
+      ret = av_buffersink_get_frame(filter->output, outframe);
+      if(ret == AVERROR(EAGAIN))
         break;
-      if (ret == AVERROR_EOF)
-        goto done;
-      bail_if(ret, "avcodec_receive_packet");
-      pkt->pos = pos++;
-      pkt->duration = 1;
-      pkt->stream_index = output->video_stream->index;
-      av_packet_rescale_ts(pkt, output->video_codec_ctx->time_base, output->video_stream->time_base);
-      bail_if(av_interleaved_write_frame(output->fmt_ctx, pkt), "av_interleaved_write_frame");
-      av_packet_unref(pkt);
+      if(ret == AVERROR_EOF){
+        bail_if_null(outfile, "filter did not return any frames");
+        bail_if(avcodec_send_frame(outfile->video_codec_ctx, NULL), "avcodec_send_frame");
+      } else {
+        bail_if(ret, "av_buffersink_get_frame");
+        outframe->pict_type = AV_PICTURE_TYPE_I;
+        if(outfile == NULL)
+          outfile = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
+                                    Rf_asInteger(framerate), codec, Rf_length(in_files));
+        bail_if(avcodec_send_frame(outfile->video_codec_ctx, outframe), "avcodec_send_frame");
+        av_frame_free(&outframe);
+      }
+
+      /* re-encode output packet */
+      while(1){
+        int ret = avcodec_receive_packet(outfile->video_codec_ctx, pkt);
+        if (ret == AVERROR(EAGAIN))
+          break;
+        if (ret == AVERROR_EOF)
+          goto done;
+        bail_if(ret, "avcodec_receive_packet");
+        pkt->duration = 1;
+        pkt->stream_index = outfile->video_stream->index;
+        av_packet_rescale_ts(pkt, outfile->video_codec_ctx->time_base, outfile->video_stream->time_base);
+        bail_if(av_interleaved_write_frame(outfile->fmt_ctx, pkt), "av_interleaved_write_frame");
+        av_packet_unref(pkt);
+      }
     }
   }
+  Rf_warning("Failed to complete input");
 done:
-  close_output_file(output);
+  close_video_filter(filter);
+  close_output_file(outfile);
   av_packet_free(&pkt);
   return out_file;
 }
