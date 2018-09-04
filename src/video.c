@@ -9,6 +9,9 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+/* precision 1 would not allow for eg: filter="setpts=0.5*PTS" */
+#define precision 1000
+
 typedef struct {
   AVFormatContext *fmt_ctx;
   AVCodecContext *video_codec_ctx;
@@ -43,7 +46,7 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
   codec_ctx->height = height;
   codec_ctx->width = width;
   codec_ctx->time_base.num = 1;
-  codec_ctx->time_base.den = framerate;
+  codec_ctx->time_base.den = framerate * precision;
   codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
   codec_ctx->gop_size = 5;
   codec_ctx->max_b_frames = 1;
@@ -213,7 +216,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   for(int i = 0; i <= Rf_length(in_files); i++){
     if(i < Rf_length(in_files)) {
       frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame->pts = i;
+      frame->pts = i * precision;
       if(filter == NULL)
         filter = open_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
       bail_if(av_buffersrc_add_frame(filter->input, frame), "av_buffersrc_add_frame");
@@ -253,7 +256,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
           goto done;
         }
         bail_if(ret, "avcodec_receive_packet");
-        pkt->duration = 1;
+        pkt->duration = precision;
         pkt->stream_index = outfile->video_stream->index;
         av_packet_rescale_ts(pkt, outfile->video_codec_ctx->time_base, outfile->video_stream->time_base);
         bail_if(av_interleaved_write_frame(outfile->fmt_ctx, pkt), "av_interleaved_write_frame");
