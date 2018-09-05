@@ -8,7 +8,7 @@
 #include <Rinternals.h>
 
 /* precision 1 would not allow for eg: filter="setpts=0.5*PTS" */
-#define precision 1000
+#define precision 100
 
 typedef struct {
   AVFormatContext *fmt_ctx;
