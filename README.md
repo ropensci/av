@@ -23,6 +23,9 @@ devtools::install_github("thomasp85/gganimate")
 Example using gganimate:
 
 ```r
+# Get latest gganimate
+# devtools::install_github("thomasp85/gganimate")
+library(gganimate)
 
 # Define the "renderer" for gganimate
 av_renderer <- function(filter = "null", filename = 'output.mp4'){
@@ -33,7 +36,6 @@ av_renderer <- function(filter = "null", filename = 'output.mp4'){
 }
 
 # Create the gganimate plot
-library(gganimate)
 p <- ggplot(airquality, aes(Day, Temp)) + 
   geom_line(size = 2, colour = 'steelblue') + 
   transition_states(Month, 4, 1) + 
@@ -41,6 +43,6 @@ p <- ggplot(airquality, aes(Day, Temp)) +
 
 # Render and show the video
 q <- 2
-df <- animate(p, renderer = av_renderer(), width = 640*q, height = 480*q, res = 72*q, fps = 25)
+df <- animate(p, renderer = av_renderer(), width = 720*q, height = 480*q, res = 72*q, fps = 25)
 utils::browseURL('output.mp4')
 ```
