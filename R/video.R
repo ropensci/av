@@ -24,6 +24,8 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 1, filter =
   framerate <- as.integer(framerate)
   filter <- as.character(filter)
   codec <- as.character(codec)
-  progress <- as.logical(progress)
-  .Call(R_encode_video, input, output, framerate, filter, codec, progress)
+  if(is.logical(progress))
+    progress <- ifelse(isTRUE(progress), 32, 16)
+  av_log_level(progress)
+  .Call(R_encode_video, input, output, framerate, filter, codec)
 }

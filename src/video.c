@@ -199,7 +199,7 @@ static void close_video_filter(video_filter *filter){
   av_free(filter);
 }
 
-SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc, SEXP progress){
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc){
   AVCodec *codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
@@ -249,8 +249,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         if (ret == AVERROR(EAGAIN))
           break;
         if (ret == AVERROR_EOF){
-          if(Rf_asLogical(progress))
-            Rprintf(" done!\n");
+          av_log(NULL, AV_LOG_INFO, " done!\n");
           goto done;
         }
         bail_if(ret, "avcodec_receive_packet");
@@ -261,8 +260,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         av_packet_unref(pkt);
       }
     }
-    if(Rf_asLogical(progress))
-      Rprintf("\rFrame %d (%d%%)", i+1, (i+1) * 100 / Rf_length(in_files));
+    av_log(NULL, AV_LOG_INFO, "\rFrame %d (%d%%)", i+1, (i+1) * 100 / Rf_length(in_files));
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
