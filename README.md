@@ -15,7 +15,7 @@ You can install the development version from [GitHub](https://github.com/jeroen/
 devtools::install_github("jeroen/av")
 
 # For the demo
-devtools::install_github("thomasp85/tweenr")
+devtools::install_github("thomasp85/gganimate")
 ```
 
 ## Hello World
