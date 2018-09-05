@@ -8,9 +8,39 @@
 
 ## Installation
 
-You can install the development version from [GitHub](https://github.com/) with:
+You can install the development version from [GitHub](https://github.com/jeroen/av) with:
 
 ```r
-# install.packages("devtools")
+# Install from GH
 devtools::install_github("jeroen/av")
+
+# For the demo
+devtools::install_github("thomasp85/tweenr")
+```
+
+## Hello World
+
+Example using gganimate:
+
+```r
+
+# Define the "renderer" for gganimate
+av_renderer <- function(filter = "null", filename = 'output.mp4'){
+  function(frames, fps){
+    unlink(filename)
+    av::av_encode_video(frames, filename, framerate = fps, filter = filter)
+  }
+}
+
+# Create the gganimate plot
+library(gganimate)
+p <- ggplot(airquality, aes(Day, Temp)) + 
+  geom_line(size = 2, colour = 'steelblue') + 
+  transition_states(Month, 4, 1) + 
+  shadow_mark(size = 1, colour = 'grey')
+
+# Render and show the video
+q <- 2
+df <- animate(p, renderer = av_renderer(), width = 640*q, height = 480*q, res = 72*q, fps = 25)
+utils::browseURL('output.mp4')
 ```
