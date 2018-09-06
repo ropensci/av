@@ -27,7 +27,7 @@ test_that("convert images into video formats", {
     av::av_encode_video(png_files, filename, framerate = framerate)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
-    expect_equal(info$duration, n / framerate)
+    expect_equal(info$duration, (n-1) / framerate)
     expect_equal(info$video_streams$width, width)
     expect_equal(info$video_streams$height, height)
     expect_equal(info$video_streams$codec, "h264")
@@ -43,6 +43,18 @@ test_that("fractional framerates work", {
   unlink('test.mp4')
 
   expect_equal(info$video_streams$framerate, framerate)
-  expect_equal(info$duration, length(png_files) / framerate)
+  expect_equal(info$duration, (length(png_files)-1) / framerate)
 
+})
+
+test_that("speed up/down filters", {
+  for (x in c(0.1, 0.5, 2, 10)){
+    framerate <- 25
+    filter <- sprintf("setpts=%s*PTS", as.character(x))
+    av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, filter = filter)
+    info <- av_video_info('speed.mp4')
+    unlink('speed.mp4')
+    expect_equal(info$video_streams$framerate, (framerate / x))
+    expect_equal(info$duration, (length(png_files)-1) / (framerate / x))
+  }
 })
