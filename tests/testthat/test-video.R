@@ -5,6 +5,8 @@ test_that("Set log level", {
   expect_equal(av_log_level(), 16)
 })
 
+png_files <- NULL
+
 test_that("convert images into video formats", {
   q <- 2
   n <- 50
@@ -18,7 +20,7 @@ test_that("convert images into video formats", {
     hist(rnorm(100, mean = i), main = paste("histogram with mean", i))
   }
   dev.off()
-  png_files <- sprintf(png_path, 1:n)
+  png_files <<- sprintf(png_path, 1:n)
   types <- c("mkv", "mp4", "mov") #todo: add flv
   for(ext in types){
     filename <- paste0("test.", ext)
@@ -32,4 +34,15 @@ test_that("convert images into video formats", {
     expect_equal(info$video_streams$framerate, framerate)
     unlink(filename)
   }
+})
+
+test_that("fractional framerates work", {
+  framerate <- 1/5
+  av::av_encode_video(png_files, 'test.mp4', framerate = framerate)
+  info <- av_video_info('test.mp4')
+  unlink('test.mp4')
+
+  expect_equal(info$video_streams$framerate, framerate)
+  expect_equal(info$duration, length(png_files) / framerate)
+
 })
