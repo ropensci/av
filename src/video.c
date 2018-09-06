@@ -221,7 +221,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
       av_frame_free(&frame);
     } else {
       bail_if_null(filter, "Faild to read any input frames");
-      bail_if(av_buffersrc_add_frame(filter->input, frame), "flushing filter");
+      bail_if(av_buffersrc_add_frame(filter->input, NULL), "flushing filter");
     }
 
     /* Loop over frames returned by filter */
