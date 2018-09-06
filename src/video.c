@@ -7,8 +7,7 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
-/* precision 1 would not allow for eg: filter="setpts=0.5*PTS" */
-#define precision 100
+#define TIME_BASE 1000
 
 typedef struct {
   AVFormatContext *fmt_ctx;
@@ -32,7 +31,7 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static video_stream *open_output_file(const char *filename, int width, int height, double framerate, AVCodec *codec, int len){
+static video_stream *open_output_file(const char *filename, int width, int height, AVCodec *codec, int len){
   /* Init container context (infers format from file extension) */
   AVFormatContext *ofmt_ctx = NULL;
   avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
@@ -44,7 +43,7 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
   codec_ctx->height = height;
   codec_ctx->width = width;
   codec_ctx->time_base.num = 1;
-  codec_ctx->time_base.den = round(framerate * precision);
+  codec_ctx->time_base.den = TIME_BASE;
   codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
   codec_ctx->gop_size = 5;
   codec_ctx->max_b_frames = 1;
@@ -200,6 +199,7 @@ static void close_video_filter(video_filter *filter){
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc){
+  double duration = TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
@@ -214,7 +214,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   for(int i = 0; i <= Rf_length(in_files); i++){
     if(i < Rf_length(in_files)) {
       frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame->pts = i * precision;
+      frame->pts = i * duration;
       if(filter == NULL)
         filter = open_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
       bail_if(av_buffersrc_add_frame(filter->input, frame), "av_buffersrc_add_frame");
@@ -238,7 +238,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         outframe->pict_type = AV_PICTURE_TYPE_I;
         if(outfile == NULL)
           outfile = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
-                                    Rf_asReal(framerate), codec, Rf_length(in_files));
+                                    codec, Rf_length(in_files));
         bail_if(avcodec_send_frame(outfile->video_codec_ctx, outframe), "avcodec_send_frame");
         av_frame_free(&outframe);
       }
@@ -253,7 +253,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
           goto done;
         }
         bail_if(ret, "avcodec_receive_packet");
-        pkt->duration = precision;
+        pkt->duration = duration;
         pkt->stream_index = outfile->video_stream->index;
         av_packet_rescale_ts(pkt, outfile->video_codec_ctx->time_base, outfile->video_stream->time_base);
         bail_if(av_interleaved_write_frame(outfile->fmt_ctx, pkt), "av_interleaved_write_frame");
