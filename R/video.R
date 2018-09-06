@@ -21,7 +21,7 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 1, filter =
   output <- normalizePath(output, mustWork = FALSE)
   stopifnot(file.exists(dirname(output)))
   stopifnot(length(framerate) == 1)
-  framerate <- as.integer(framerate)
+  framerate <- as.numeric(framerate)
   filter <- as.character(filter)
   codec <- as.character(codec)
   if(is.logical(progress))

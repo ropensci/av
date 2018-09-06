@@ -32,7 +32,7 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static video_stream *open_output_file(const char *filename, int width, int height, int framerate, AVCodec *codec, int len){
+static video_stream *open_output_file(const char *filename, int width, int height, double framerate, AVCodec *codec, int len){
   /* Init container context (infers format from file extension) */
   AVFormatContext *ofmt_ctx = NULL;
   avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
@@ -44,7 +44,7 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
   codec_ctx->height = height;
   codec_ctx->width = width;
   codec_ctx->time_base.num = 1;
-  codec_ctx->time_base.den = framerate * precision;
+  codec_ctx->time_base.den = round(framerate * precision);
   codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
   codec_ctx->gop_size = 5;
   codec_ctx->max_b_frames = 1;
@@ -238,7 +238,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         outframe->pict_type = AV_PICTURE_TYPE_I;
         if(outfile == NULL)
           outfile = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
-                                    Rf_asInteger(framerate), codec, Rf_length(in_files));
+                                    Rf_asReal(framerate), codec, Rf_length(in_files));
         bail_if(avcodec_send_frame(outfile->video_codec_ctx, outframe), "avcodec_send_frame");
         av_frame_free(&outframe);
       }
