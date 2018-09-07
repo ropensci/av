@@ -13,8 +13,9 @@
 #' @param codec name of the video codec as listed in [av_encoders][av_encoders]. The
 #' default encodes into h264 which has excellent compression and works out of the box on
 #' all [modern browsers](https://caniuse.com/#search=h264) and operating systems.
-#' @param progress show a progress bar counting processed input images
-av_encode_video <- function(input, output = "video.mp4", framerate = 1, filter = "null", codec = "libx264", progress = TRUE){
+#' @param verbose emit some output and a progress meter counting processed images. Must
+#' be `TRUE` or `FALSE` or an integer with a valid [log_level](av_log_level).
+av_encode_video <- function(input, output = "video.mp4", framerate = 1, filter = "null", codec = "libx264", verbose = TRUE){
   stopifnot(length(input) > 0)
   input <- normalizePath(input, mustWork = TRUE)
   stopifnot(length(output) == 1)
@@ -24,8 +25,8 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 1, filter =
   framerate <- as.numeric(framerate)
   filter <- as.character(filter)
   codec <- as.character(codec)
-  if(is.logical(progress))
-    progress <- ifelse(isTRUE(progress), 32, 16)
-  av_log_level(progress)
+  if(is.logical(verbose))
+    verbose <- ifelse(isTRUE(verbose), 32, 16)
+  av_log_level(verbose)
   .Call(R_encode_video, input, output, framerate, filter, codec)
 }

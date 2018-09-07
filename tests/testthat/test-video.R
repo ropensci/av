@@ -24,7 +24,7 @@ test_that("convert images into video formats", {
   types <- c("mkv", "mp4", "mov") #todo: add flv
   for(ext in types){
     filename <- paste0("test.", ext)
-    av::av_encode_video(png_files, filename, framerate = framerate)
+    av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
     expect_equal(info$duration, (n-1) / framerate)
@@ -38,7 +38,7 @@ test_that("convert images into video formats", {
 
 test_that("fractional framerates work", {
   framerate <- 1/5
-  av::av_encode_video(png_files, 'test.mp4', framerate = framerate)
+  av::av_encode_video(png_files, 'test.mp4', framerate = framerate, verbose = FALSE)
   info <- av_video_info('test.mp4')
   unlink('test.mp4')
 
@@ -51,7 +51,7 @@ test_that("speed up/down filters", {
   for (x in c(0.1, 0.5, 2, 10)){
     framerate <- 25
     filter <- sprintf("setpts=%s*PTS", as.character(x))
-    av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, filter = filter)
+    av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, filter = filter, verbose = FALSE)
     info <- av_video_info('speed.mp4')
     unlink('speed.mp4')
     expect_equal(info$video_streams$framerate, (framerate / x))
