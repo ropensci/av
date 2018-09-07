@@ -249,18 +249,19 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         if (ret == AVERROR(EAGAIN))
           break;
         if (ret == AVERROR_EOF){
-          av_log(NULL, AV_LOG_INFO, " done!\n");
+          av_log(NULL, AV_LOG_INFO, " - video stream completed!\n");
           goto done;
         }
         bail_if(ret, "avcodec_receive_packet");
         //pkt->duration = duration; <-- may have changed by the filter!
         pkt->stream_index = outfile->video_stream->index;
+        av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
+               i, (double) pkt->pts / TIME_BASE, i * 100 / Rf_length(in_files));
         av_packet_rescale_ts(pkt, outfile->video_codec_ctx->time_base, outfile->video_stream->time_base);
         bail_if(av_interleaved_write_frame(outfile->fmt_ctx, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
       }
     }
-    av_log(NULL, AV_LOG_INFO, "\rFrame %d (%d%%)", i+1, (i+1) * 100 / Rf_length(in_files));
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
