@@ -5,7 +5,7 @@
 \title{Create Video}
 \usage{
 av_encode_video(input, output = "video.mp4", framerate = 1,
-  filter = "null", codec = "libx264", verbose = TRUE)
+  filter = "null", codec = NULL, verbose = TRUE)
 }
 \arguments{
 \item{input}{a vector with images such as png files.}
@@ -17,8 +17,8 @@ container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 
 \item{filter}{a string defining an ffmpeg filter graph}
 
-\item{codec}{name of the video codec as listed in \link{av_encoders}. The
-default encodes into h264 which has excellent compression and works out of the box on
+\item{codec}{name of the video codec as listed in \link{av_encoders}. Most
+formats default to h264 which has excellent compression and works out of the box on
 all \href{https://caniuse.com/#search=h264}{modern browsers} and operating systems.}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must

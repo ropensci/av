@@ -200,7 +200,9 @@ static void close_video_filter(video_filter *filter){
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc){
   double duration = TIME_BASE / Rf_asReal(framerate);
-  AVCodec *codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
+  AVCodec *codec = Rf_length(enc) ?
+    avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0))):
+    avcodec_find_encoder(av_guess_format(NULL, CHAR(STRING_ELT(out_file, 0)), NULL)->video_codec);
   bail_if_null(codec, "avcodec_find_encoder_by_name");
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
 
