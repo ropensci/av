@@ -8,7 +8,8 @@
 
 /* In theory this should be thread safe and R is not */
 void my_log_callback(void *ptr, int level, const char *fmt, va_list vargs){
-  REvprintf(fmt, vargs);
+  if(level <= av_log_get_level())
+    REvprintf(fmt, vargs);
 }
 
 SEXP R_log_level(SEXP new_level){
@@ -17,7 +18,7 @@ SEXP R_log_level(SEXP new_level){
   return Rf_ScalarInteger(av_log_get_level());
 }
 
-void R_init_ffmpeg(DllInfo *info) {
+void R_init_av(DllInfo *info) {
 #if LIBAVFORMAT_VERSION_MAJOR < 58 // FFmpeg 4.0
   av_register_all();
   avcodec_register_all();
