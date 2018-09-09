@@ -8,7 +8,7 @@ test_that("Set log level", {
 png_files <- NULL
 
 test_that("convert images into video formats", {
-  q <- 2
+  q <- 1
   n <- 50
   framerate <- 5
   width <- 640 * q
@@ -21,19 +21,29 @@ test_that("convert images into video formats", {
   }
   dev.off()
   png_files <<- sprintf(png_path, 1:n)
-  types <- c("mkv", "mp4", "mov") #todo: add flv
-  for(ext in types){
+  video_types <- c("mkv", "mp4", "mov") #todo: add flv
+  for(ext in video_types){
     filename <- paste0("test.", ext)
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
+    unlink(filename)
     expect_equal(info$duration, (n-1) / framerate)
     expect_equal(info$video_streams$width, width)
     expect_equal(info$video_streams$height, height)
     expect_equal(info$video_streams$codec, "h264")
     expect_equal(info$video_streams$framerate, framerate)
-    unlink(filename)
   }
+
+  # Gif is not really a video but image only
+  av::av_encode_video(png_files, 'test.gif', framerate = framerate, verbose = FALSE)
+  expect_true(file.exists('test.gif'))
+  info <- av_video_info('test.gif')
+  unlink('test.gif')
+  expect_equal(info$video_streams$width, width)
+  expect_equal(info$video_streams$height, height)
+  expect_equal(info$video_streams$codec, "gif")
+  expect_equal(info$video_streams$framerate, framerate)
 })
 
 test_that("fractional framerates work", {
