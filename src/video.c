@@ -7,13 +7,13 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
-#define TIME_BASE 1000
+#define VIDEO_TIME_BASE 1000
 
 typedef struct {
   AVFormatContext *container;
   AVCodecContext *video_encoder;
   AVStream *video_stream;
-} video_stream;
+} output_container;
 
 typedef struct {
   AVFilterContext *input;
@@ -31,58 +31,58 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static video_stream *open_output_file(const char *filename, int width, int height, AVCodec *codec, int len){
+static output_container *open_output_file(const char *filename, int width, int height, AVCodec *codec, int len){
   /* Init container context (infers format from file extension) */
-  AVFormatContext *ofmt_ctx = NULL;
-  avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, filename);
-  bail_if_null(ofmt_ctx, "avformat_alloc_output_context2");
+  AVFormatContext *container = NULL;
+  avformat_alloc_output_context2(&container, NULL, NULL, filename);
+  bail_if_null(container, "avformat_alloc_output_context2");
 
   /* Init video encoder */
-  AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
-  bail_if_null(codec_ctx, "avcodec_alloc_context3");
-  codec_ctx->height = height;
-  codec_ctx->width = width;
-  codec_ctx->time_base.num = 1;
-  codec_ctx->time_base.den = TIME_BASE;
-  codec_ctx->framerate = av_inv_q(codec_ctx->time_base);
-  codec_ctx->gop_size = 5;
-  codec_ctx->max_b_frames = 1;
+  AVCodecContext *video_encoder = avcodec_alloc_context3(codec);
+  bail_if_null(video_encoder, "avcodec_alloc_context3");
+  video_encoder->height = height;
+  video_encoder->width = width;
+  video_encoder->time_base.num = 1;
+  video_encoder->time_base.den = VIDEO_TIME_BASE;
+  video_encoder->framerate = av_inv_q(video_encoder->time_base);
+  video_encoder->gop_size = 5;
+  video_encoder->max_b_frames = 1;
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
-  codec_ctx->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-  if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-    codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+  video_encoder->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  if (container->oformat->flags & AVFMT_GLOBALHEADER)
+    video_encoder->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
   /* Open the codec, and set some x264 preferences */
-  bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
+  bail_if(avcodec_open2(video_encoder, codec, NULL), "avcodec_open2");
   if (codec->id == AV_CODEC_ID_H264){
-    bail_if(av_opt_set(codec_ctx->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
-    //bail_if(av_opt_set(codec_ctx->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
+    bail_if(av_opt_set(video_encoder->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
+    //bail_if(av_opt_set(video_encoder->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
   }
 
   /* Start a video stream */
-  AVStream *out_stream = avformat_new_stream(ofmt_ctx, codec);
-  bail_if_null(out_stream, "avformat_new_stream");
-  bail_if(avcodec_parameters_from_context(out_stream->codecpar, codec_ctx), "avcodec_parameters_from_context");
-  out_stream->nb_frames = len;
+  AVStream *video_stream = avformat_new_stream(container, codec);
+  bail_if_null(video_stream, "avformat_new_stream");
+  bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
+  video_stream->nb_frames = len;
 
   /* Open output file file */
-  if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
-    bail_if(avio_open(&ofmt_ctx->pb, filename, AVIO_FLAG_WRITE), "avio_open");
-  bail_if(avformat_write_header(ofmt_ctx, NULL), "avformat_write_header");
+  if (!(container->oformat->flags & AVFMT_NOFILE))
+    bail_if(avio_open(&container->pb, filename, AVIO_FLAG_WRITE), "avio_open");
+  bail_if(avformat_write_header(container, NULL), "avformat_write_header");
 
   /* Store relevant objects */
-  video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
-  out->container = ofmt_ctx;
-  out->video_stream = out_stream;
-  out->video_encoder = codec_ctx;
+  output_container *out = (output_container*) av_mallocz(sizeof(output_container));
+  out->container = container;
+  out->video_stream = video_stream;
+  out->video_encoder = video_encoder;
 
   //print info and return
-  av_dump_format(ofmt_ctx, 0, filename, 1);
+  av_dump_format(container, 0, filename, 1);
   return out;
 }
 
-static void close_output_file(video_stream *output){
+static void close_output_file(output_container *output){
   bail_if(av_write_trailer(output->container), "av_write_trailer");
   if (!(output->container->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->container->pb);
@@ -199,7 +199,7 @@ static void close_video_filter(video_filter *filter){
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc){
-  double duration = TIME_BASE / Rf_asReal(framerate);
+  double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = NULL;
   if(Rf_length(enc)) {
     codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
@@ -214,7 +214,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   /* Start the output video */
   AVFrame * frame = NULL;
   video_filter *filter = NULL;
-  video_stream *outfile = NULL;
+  output_container *output = NULL;
   AVPacket *pkt = av_packet_alloc();
 
   /* Loop over input image files files */
@@ -238,21 +238,21 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
       if(ret == AVERROR(EAGAIN))
         break;
       if(ret == AVERROR_EOF){
-        bail_if_null(outfile, "filter did not return any frames");
-        bail_if(avcodec_send_frame(outfile->video_encoder, NULL), "avcodec_send_frame");
+        bail_if_null(output, "filter did not return any frames");
+        bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame");
       } else {
         bail_if(ret, "av_buffersink_get_frame");
         outframe->pict_type = AV_PICTURE_TYPE_I;
-        if(outfile == NULL)
-          outfile = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
+        if(output == NULL)
+          output = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
                                     codec, Rf_length(in_files));
-        bail_if(avcodec_send_frame(outfile->video_encoder, outframe), "avcodec_send_frame");
+        bail_if(avcodec_send_frame(output->video_encoder, outframe), "avcodec_send_frame");
         av_frame_free(&outframe);
       }
 
       /* re-encode output packet */
       while(1){
-        int ret = avcodec_receive_packet(outfile->video_encoder, pkt);
+        int ret = avcodec_receive_packet(output->video_encoder, pkt);
         if (ret == AVERROR(EAGAIN))
           break;
         if (ret == AVERROR_EOF){
@@ -261,11 +261,11 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         }
         bail_if(ret, "avcodec_receive_packet");
         //pkt->duration = duration; <-- may have changed by the filter!
-        pkt->stream_index = outfile->video_stream->index;
+        pkt->stream_index = output->video_stream->index;
         av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
-               i, (double) pkt->pts / TIME_BASE, i * 100 / Rf_length(in_files));
-        av_packet_rescale_ts(pkt, outfile->video_encoder->time_base, outfile->video_stream->time_base);
-        bail_if(av_interleaved_write_frame(outfile->container, pkt), "av_interleaved_write_frame");
+               i, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / Rf_length(in_files));
+        av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
+        bail_if(av_interleaved_write_frame(output->container, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
       }
     }
@@ -273,7 +273,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
   close_video_filter(filter);
-  close_output_file(outfile);
+  close_output_file(output);
   av_packet_free(&pkt);
   return out_file;
 }
