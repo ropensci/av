@@ -1,7 +1,6 @@
 context("List Formats")
 
 test_that("Listing formats", {
-  skip("Temporary disabled")
   encoders <- av_encoders()
   decoders <- av_decoders()
   expect_is(encoders, 'data.frame')
