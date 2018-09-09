@@ -9,9 +9,9 @@
 #' The [gifski](https://cran.r-project.org/package=gifski) package is better suited
 #' for generating animated gif files.
 #'
-#' Most video formats default to the `libx264` video codec which has excellent
-#' compression and works out of the box on all [modern browsers](https://caniuse.com/#search=h264)
-#' and operating systems.
+#' It is recommended to use let the encoder choose the codec. Most video formats default
+#' to the `libx264` video codec which has excellent compression and works out of the box
+#' on all [modern browsers](https://caniuse.com/#search=h264) and operating systems.
 #'
 #' @export
 #' @aliases av
@@ -24,7 +24,9 @@
 #' container format such as `mp4`, `mkv`, `mov`, or `flv`.
 #' @param filter a string defining an ffmpeg filter graph. This is the same parameter
 #' as the `-vf` argument in the `ffmpeg` command line utility.
-#' @param framerate video framerate in frames per seconds.
+#' @param framerate video framerate in frames per seconds. This is the input fps, the
+#' output fps may be different if you specify a filter that modifies speed or interpolates
+#' frames.
 #' @param codec name of the video codec as listed in [av_encoders][av_encoders]. The
 #' default is `libx264` for most formats, which usually the best choice.
 #' @param verbose emit some output and a progress meter counting processed images. Must

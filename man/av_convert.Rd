@@ -15,7 +15,9 @@ the same width and height.}
 \item{output}{name of the output file. File extension must correspond to a known
 container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 
-\item{framerate}{video framerate in frames per seconds.}
+\item{framerate}{video framerate in frames per seconds. This is the input fps, the
+output fps may be different if you specify a filter that modifies speed or interpolates
+frames.}
 
 \item{filter}{a string defining an ffmpeg filter graph. This is the same parameter
 as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
@@ -37,9 +39,9 @@ the compression~quality for gif is quite bad.
 The \href{https://cran.r-project.org/package=gifski}{gifski} package is better suited
 for generating animated gif files.
 
-Most video formats default to the \code{libx264} video codec which has excellent
-compression and works out of the box on all \href{https://caniuse.com/#search=h264}{modern browsers}
-and operating systems.
+It is recommended to use let the encoder choose the codec. Most video formats default
+to the \code{libx264} video codec which has excellent compression and works out of the box
+on all \href{https://caniuse.com/#search=h264}{modern browsers} and operating systems.
 }
 \seealso{
 Other av: \code{\link{av_encoders}},
