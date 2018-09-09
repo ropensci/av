@@ -29,10 +29,10 @@ test_that("convert images into video formats", {
     info <- av_video_info(filename)
     unlink(filename)
     expect_equal(info$duration, (n-1) / framerate)
-    expect_equal(info$video_streams$width, width)
-    expect_equal(info$video_streams$height, height)
-    expect_equal(info$video_streams$codec, "h264")
-    expect_equal(info$video_streams$framerate, framerate)
+    expect_equal(info$video$width, width)
+    expect_equal(info$video$height, height)
+    expect_equal(info$video$codec, "h264")
+    expect_equal(info$video$framerate, framerate)
   }
 
   # Gif is not really a video but image only
@@ -40,10 +40,10 @@ test_that("convert images into video formats", {
   expect_true(file.exists('test.gif'))
   info <- av_video_info('test.gif')
   unlink('test.gif')
-  expect_equal(info$video_streams$width, width)
-  expect_equal(info$video_streams$height, height)
-  expect_equal(info$video_streams$codec, "gif")
-  expect_equal(info$video_streams$framerate, framerate)
+  expect_equal(info$video$width, width)
+  expect_equal(info$video$height, height)
+  expect_equal(info$video$codec, "gif")
+  expect_equal(info$video$framerate, framerate)
 })
 
 test_that("fractional framerates work", {
@@ -52,7 +52,7 @@ test_that("fractional framerates work", {
   info <- av_video_info('test.mp4')
   unlink('test.mp4')
 
-  expect_equal(info$video_streams$framerate, framerate)
+  expect_equal(info$video$framerate, framerate)
   expect_equal(info$duration, (length(png_files)-1) / framerate)
 
 })
@@ -64,7 +64,7 @@ test_that("speed up/down filters", {
     av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, filter = filter, verbose = FALSE)
     info <- av_video_info('speed.mp4')
     unlink('speed.mp4')
-    expect_equal(info$video_streams$framerate, (framerate / x))
+    expect_equal(info$video$framerate, (framerate / x))
     expect_equal(info$duration, (length(png_files)-1) / (framerate / x))
   }
 })

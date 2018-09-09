@@ -12,3 +12,8 @@ av_video_info(file)
 \description{
 Get video info
 }
+\seealso{
+Other av: \code{\link{av_encode_video}},
+  \code{\link{av_encoders}}
+}
+\concept{av}

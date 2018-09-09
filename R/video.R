@@ -1,21 +1,36 @@
-#' Create Video
+#' Video Encoding
 #'
-#' Encodes a series of images into a video.
+#' Encodes a set of images into a video, using custom container format, codec, fps, and
+#' [video filters](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters).
+#'
+#' The container format is determined from the file extension of the output file, for
+#' example `mp4`, `mkv`, `mov`, or `flv`. Most systems also support `gif` output, but
+#' the compression~quality for gif is quite bad.
+#' The [gifski](https://cran.r-project.org/package=gifski) package is better suited
+#' for generating animated gif files.
+#'
+#' Most video formats default to the `libx264` video codec which has excellent
+#' compression and works out of the box on all [modern browsers](https://caniuse.com/#search=h264)
+#' and operating systems.
 #'
 #' @export
+#' @aliases av
+#' @family av
 #' @useDynLib av R_encode_video
 #' @rdname av_convert
-#' @param input a vector with images such as png files.
+#' @param input a vector with images such as png files. All input files should have
+#' the same width and height.
 #' @param output name of the output file. File extension must correspond to a known
 #' container format such as `mp4`, `mkv`, `mov`, or `flv`.
-#' @param filter a string defining an ffmpeg filter graph
+#' @param filter a string defining an ffmpeg filter graph. This is the same parameter
+#' as the `-vf` argument in the `ffmpeg` command line utility.
 #' @param framerate video framerate in frames per seconds.
-#' @param codec name of the video codec as listed in [av_encoders][av_encoders]. Most
-#' formats default to h264 which has excellent compression and works out of the box on
-#' all [modern browsers](https://caniuse.com/#search=h264) and operating systems.
+#' @param codec name of the video codec as listed in [av_encoders][av_encoders]. The
+#' default is `libx264` for most formats, which usually the best choice.
 #' @param verbose emit some output and a progress meter counting processed images. Must
 #' be `TRUE` or `FALSE` or an integer with a valid [log_level](av_log_level).
-av_encode_video <- function(input, output = "video.mp4", framerate = 1, filter = "null", codec = NULL, verbose = TRUE){
+av_encode_video <- function(input, output = "video.mp4", framerate = 24, filter = "null",
+                            codec = NULL, verbose = TRUE){
   stopifnot(length(input) > 0)
   input <- normalizePath(input, mustWork = TRUE)
   stopifnot(length(output) == 1)

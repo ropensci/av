@@ -5,6 +5,7 @@
 #'
 #' @export
 #' @rdname formats
+#' @family av
 av_encoders <- function(){
   list_codecs(TRUE)
 }

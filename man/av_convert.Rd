@@ -2,28 +2,47 @@
 % Please edit documentation in R/video.R
 \name{av_encode_video}
 \alias{av_encode_video}
-\title{Create Video}
+\alias{av}
+\title{Video Encoding}
 \usage{
-av_encode_video(input, output = "video.mp4", framerate = 1,
+av_encode_video(input, output = "video.mp4", framerate = 24,
   filter = "null", codec = NULL, verbose = TRUE)
 }
 \arguments{
-\item{input}{a vector with images such as png files.}
+\item{input}{a vector with images such as png files. All input files should have
+the same width and height.}
 
 \item{output}{name of the output file. File extension must correspond to a known
 container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 
 \item{framerate}{video framerate in frames per seconds.}
 
-\item{filter}{a string defining an ffmpeg filter graph}
+\item{filter}{a string defining an ffmpeg filter graph. This is the same parameter
+as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 
-\item{codec}{name of the video codec as listed in \link{av_encoders}. Most
-formats default to h264 which has excellent compression and works out of the box on
-all \href{https://caniuse.com/#search=h264}{modern browsers} and operating systems.}
+\item{codec}{name of the video codec as listed in \link{av_encoders}. The
+default is \code{libx264} for most formats, which usually the best choice.}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
 be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
 }
 \description{
-Encodes a series of images into a video.
+Encodes a set of images into a video, using custom container format, codec, fps, and
+\href{https://ffmpeg.org/ffmpeg-filters.html#Video-Filters}{video filters}.
 }
+\details{
+The container format is determined from the file extension of the output file, for
+example \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}. Most systems also support \code{gif} output, but
+the compression~quality for gif is quite bad.
+The \href{https://cran.r-project.org/package=gifski}{gifski} package is better suited
+for generating animated gif files.
+
+Most video formats default to the \code{libx264} video codec which has excellent
+compression and works out of the box on all \href{https://caniuse.com/#search=h264}{modern browsers}
+and operating systems.
+}
+\seealso{
+Other av: \code{\link{av_encoders}},
+  \code{\link{av_video_info}}
+}
+\concept{av}

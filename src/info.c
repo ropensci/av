@@ -42,7 +42,7 @@ SEXP R_video_info(SEXP file){
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 2));
   SEXP outnames = PROTECT(Rf_allocVector(STRSXP, 2));
   SET_STRING_ELT(outnames, 0, Rf_mkChar("duration"));
-  SET_STRING_ELT(outnames, 1, Rf_mkChar("video_streams"));
+  SET_STRING_ELT(outnames, 1, Rf_mkChar("video"));
   SET_VECTOR_ELT(out, 0, duration);
   SET_VECTOR_ELT(out, 1, stream_list);
   Rf_setAttrib(out, R_NamesSymbol, outnames);
