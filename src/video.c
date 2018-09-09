@@ -10,15 +10,15 @@
 #define TIME_BASE 1000
 
 typedef struct {
-  AVFormatContext *fmt_ctx;
-  AVCodecContext *video_codec_ctx;
+  AVFormatContext *container;
+  AVCodecContext *video_encoder;
   AVStream *video_stream;
 } video_stream;
 
 typedef struct {
   AVFilterContext *input;
   AVFilterContext *output;
-  AVFilterGraph *filter_graph;
+  AVFilterGraph *graph;
 } video_filter;
 
 static void bail_if(int ret, const char * what){
@@ -73,9 +73,9 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
 
   /* Store relevant objects */
   video_stream *out = (video_stream*) av_mallocz(sizeof(video_stream));
-  out->fmt_ctx = ofmt_ctx;
+  out->container = ofmt_ctx;
   out->video_stream = out_stream;
-  out->video_codec_ctx = codec_ctx;
+  out->video_encoder = codec_ctx;
 
   //print info and return
   av_dump_format(ofmt_ctx, 0, filename, 1);
@@ -83,12 +83,12 @@ static video_stream *open_output_file(const char *filename, int width, int heigh
 }
 
 static void close_output_file(video_stream *output){
-  bail_if(av_write_trailer(output->fmt_ctx), "av_write_trailer");
-  if (!(output->fmt_ctx->oformat->flags & AVFMT_NOFILE))
-    avio_closep(&output->fmt_ctx->pb);
-  avcodec_close(output->video_codec_ctx);
-  avcodec_free_context(&(output->video_codec_ctx));
-  avformat_free_context(output->fmt_ctx);
+  bail_if(av_write_trailer(output->container), "av_write_trailer");
+  if (!(output->container->oformat->flags & AVFMT_NOFILE))
+    avio_closep(&output->container->pb);
+  avcodec_close(output->video_encoder);
+  avcodec_free_context(&(output->video_encoder));
+  avformat_free_context(output->container);
   av_free(output);
 }
 
@@ -187,14 +187,14 @@ static video_filter *open_filter(AVFrame * input, enum AVPixelFormat fmt, const 
   video_filter *out = (video_filter*) av_mallocz(sizeof(video_filter));
   out->input = buffersrc_ctx;
   out->output = buffersink_ctx;
-  out->filter_graph = filter_graph;
+  out->graph = filter_graph;
   return out;
 }
 
 static void close_video_filter(video_filter *filter){
-  for(int i = 0; i < filter->filter_graph->nb_filters; i++)
-    avfilter_free(filter->filter_graph->filters[i]);
-  avfilter_graph_free(&filter->filter_graph);
+  for(int i = 0; i < filter->graph->nb_filters; i++)
+    avfilter_free(filter->graph->filters[i]);
+  avfilter_graph_free(&filter->graph);
   av_free(filter);
 }
 
@@ -239,20 +239,20 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         break;
       if(ret == AVERROR_EOF){
         bail_if_null(outfile, "filter did not return any frames");
-        bail_if(avcodec_send_frame(outfile->video_codec_ctx, NULL), "avcodec_send_frame");
+        bail_if(avcodec_send_frame(outfile->video_encoder, NULL), "avcodec_send_frame");
       } else {
         bail_if(ret, "av_buffersink_get_frame");
         outframe->pict_type = AV_PICTURE_TYPE_I;
         if(outfile == NULL)
           outfile = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
                                     codec, Rf_length(in_files));
-        bail_if(avcodec_send_frame(outfile->video_codec_ctx, outframe), "avcodec_send_frame");
+        bail_if(avcodec_send_frame(outfile->video_encoder, outframe), "avcodec_send_frame");
         av_frame_free(&outframe);
       }
 
       /* re-encode output packet */
       while(1){
-        int ret = avcodec_receive_packet(outfile->video_codec_ctx, pkt);
+        int ret = avcodec_receive_packet(outfile->video_encoder, pkt);
         if (ret == AVERROR(EAGAIN))
           break;
         if (ret == AVERROR_EOF){
@@ -264,8 +264,8 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         pkt->stream_index = outfile->video_stream->index;
         av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
                i, (double) pkt->pts / TIME_BASE, i * 100 / Rf_length(in_files));
-        av_packet_rescale_ts(pkt, outfile->video_codec_ctx->time_base, outfile->video_stream->time_base);
-        bail_if(av_interleaved_write_frame(outfile->fmt_ctx, pkt), "av_interleaved_write_frame");
+        av_packet_rescale_ts(pkt, outfile->video_encoder->time_base, outfile->video_stream->time_base);
+        bail_if(av_interleaved_write_frame(outfile->container, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
       }
     }
