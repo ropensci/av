@@ -147,7 +147,7 @@ static video_filter *open_filter(AVFrame * input, enum AVPixelFormat fmt, const 
   char input_args[512];
   snprintf(input_args, sizeof(input_args),
            "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-           input->width, input->height, input->format, 1, 1,
+           input->width, input->height, input->format, 1, VIDEO_TIME_BASE,
            input->sample_aspect_ratio.num, input->sample_aspect_ratio.den);
   AVFilterContext *buffersrc_ctx = NULL;
   bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("buffer"), "in",
@@ -266,6 +266,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
         bail_if(av_interleaved_write_frame(output->container, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
+        R_CheckUserInterrupt();
       }
     }
   }
