@@ -31,7 +31,7 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static output_container *open_output_file(const char *filename, int width, int height, AVCodec *codec, int len){
+static output_container *open_output_file(const char *filename, int width, int height, AVCodec *codec){
   /* Init container context (infers format from file extension) */
   AVFormatContext *container = NULL;
   avformat_alloc_output_context2(&container, NULL, NULL, filename);
@@ -64,7 +64,6 @@ static output_container *open_output_file(const char *filename, int width, int h
   AVStream *video_stream = avformat_new_stream(container, codec);
   bail_if_null(video_stream, "avformat_new_stream");
   bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
-  video_stream->nb_frames = len;
 
   /* Open output file file */
   if (!(container->oformat->flags & AVFMT_NOFILE))
@@ -244,8 +243,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(ret, "av_buffersink_get_frame");
         outframe->pict_type = AV_PICTURE_TYPE_I;
         if(output == NULL)
-          output = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height,
-                                    codec, Rf_length(in_files));
+          output = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height, codec);
         bail_if(avcodec_send_frame(output->video_encoder, outframe), "avcodec_send_frame");
         av_frame_free(&outframe);
       }
@@ -262,8 +260,8 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(ret, "avcodec_receive_packet");
         //pkt->duration = duration; <-- may have changed by the filter!
         pkt->stream_index = output->video_stream->index;
-        av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
-               i, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / Rf_length(in_files));
+        av_log(NULL, AV_LOG_INFO, "\rAdding frame %lld at timestamp %.2fsec (%d%%)",
+               output->video_stream->nb_frames, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / Rf_length(in_files));
         av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
         bail_if(av_interleaved_write_frame(output->container, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
