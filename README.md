@@ -47,10 +47,10 @@ df <- animate(p, renderer = av_renderer(), width = 720*q, height = 480*q, res = 
 utils::browseURL('output.mp4')
 ```
 
-You can add custom [ffmpeg video filters](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters). For example try negating the colors:
+You can add a custom [ffmpeg video filter chain](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters). For example this will negate the colors, and applies an orange fade-in effect to the first 15 frames.
 
 ```r
-myrenderer <- av_renderer(filter = 'negate=1')
+myrenderer <- av_renderer(filter = 'negate=1, fade=in:0:15:color=orange')
 df <- animate(p, renderer = myrenderer, width = 720*q, height = 480*q, res = 72*q, fps = 25)
 av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')

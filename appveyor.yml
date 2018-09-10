@@ -15,6 +15,13 @@ cache:
 
 # Adapt as necessary starting from here
 
+environment:
+  matrix:
+    - R_VERSION: release
+      R_CHECK_ARGS: '--no-manual --run-donttest'
+    - R_VERSION: devel
+      R_CHECK_ARGS: '--no-manual --run-donttest'
+
 build_script:
   - travis-tool.sh install_deps
 

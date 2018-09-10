@@ -17,7 +17,7 @@
 #' @aliases av
 #' @family av
 #' @useDynLib av R_encode_video
-#' @rdname av_convert
+#' @rdname av_encode_video
 #' @param input a vector with images such as png files. All input files should have
 #' the same width and height.
 #' @param output name of the output file. File extension must correspond to a known

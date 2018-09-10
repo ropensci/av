@@ -15,4 +15,6 @@ Roxygen: list(markdown = TRUE)
 SystemRequirements: FFmpeg >= 3.1: libavfilter-dev (deb), ffmpeg-devel(rpm) 
 Suggests: 
     testthat,
-    ps
+    ps,
+    ggplot2,
+    gapminder
