@@ -217,7 +217,8 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   AVPacket *pkt = av_packet_alloc();
 
   /* Loop over input image files files */
-  for(int i = 0; i <= Rf_length(in_files); i++){
+  int len = Rf_length(in_files);
+  for(int i = 0; i <= len; i++){
     if(i < Rf_length(in_files)) {
       frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
       frame->pts = i * duration;
@@ -261,7 +262,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         //pkt->duration = duration; <-- may have changed by the filter!
         pkt->stream_index = output->video_stream->index;
         av_log(NULL, AV_LOG_INFO, "\rAdding frame %lld at timestamp %.2fsec (%d%%)",
-               output->video_stream->nb_frames, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / Rf_length(in_files));
+               output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
         av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
         bail_if(av_interleaved_write_frame(output->container, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);

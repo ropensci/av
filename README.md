@@ -52,15 +52,16 @@ You can add custom [ffmpeg video filters](https://ffmpeg.org/ffmpeg-filters.html
 ```r
 myrenderer <- av_renderer(filter = 'negate=1')
 df <- animate(p, renderer = myrenderer, width = 720*q, height = 480*q, res = 72*q, fps = 25)
+av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')
 ```
 
 Filters can also affect the final fps of the video. For example this filter will double fps because it halves presentation the timestamp (pts) of each frame. So the output fps is actually 20!
 
 ```r
-myrenderer <- av_renderer(filter = "setpts=0.5*PTS"")
+myrenderer <- av_renderer(filter = "setpts=0.5*PTS")
 df <- animate(p, renderer = myrenderer, width = 480, height = 480, fps = 10)
-av_video_info('output.mp4')
+av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')
 ```
 
