@@ -261,8 +261,8 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(ret, "avcodec_receive_packet");
         //pkt->duration = duration; <-- may have changed by the filter!
         pkt->stream_index = output->video_stream->index;
-        av_log(NULL, AV_LOG_INFO, "\rAdding frame %lld at timestamp %.2fsec (%d%%)",
-               output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
+        av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
+               (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
         av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
         bail_if(av_interleaved_write_frame(output->container, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
