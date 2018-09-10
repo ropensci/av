@@ -35,7 +35,7 @@ av_save_video <- function(expr, output = 'output.mp4', width = 720, height = 480
   filename <- file.path(imgdir, "tmpimg_%05d.png")
   grDevices::png(filename, width = width, height = height, ...)
   graphics::par(ask = FALSE)
-  tryCatch(eval(expr), finally = dev.off())
+  tryCatch(eval(expr), finally = grDevices::dev.off())
   images <- list.files(imgdir, pattern = 'tmpimg_\\d{5}.png', full.names = TRUE)
   av_encode_video(images, output = output, framerate = framerate, filter = filter, verbose = verbose)
 }
