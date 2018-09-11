@@ -1,10 +1,9 @@
 library(testthat)
 library(av)
 
-reporter <- if (ps::ps_is_supported()) {
-  ps::CleanupReporter(testthat::SummaryReporter)$new(proc_cleanup =  FALSE,  proc_fail = FALSE)
+if (ps::ps_is_supported()) {
+  reporter <- ps::CleanupReporter(testthat::CheckReporter)$new(proc_cleanup =  FALSE,  proc_fail = FALSE)
+  test_check("av", reporter = reporter)
 } else {
-  "summary"
+  test_check("av")
 }
-
-test_check("av", reporter = reporter)
