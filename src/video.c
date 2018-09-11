@@ -10,7 +10,7 @@
 #define VIDEO_TIME_BASE 1000
 
 typedef struct {
-  AVFormatContext *container;
+  AVFormatContext *muxer;
   AVCodecContext *video_encoder;
   AVStream *video_stream;
 } output_container;
@@ -33,9 +33,9 @@ static void bail_if_null(void * ptr, const char * what){
 
 static output_container *open_output_file(const char *filename, int width, int height, AVCodec *codec){
   /* Init container context (infers format from file extension) */
-  AVFormatContext *container = NULL;
-  avformat_alloc_output_context2(&container, NULL, NULL, filename);
-  bail_if_null(container, "avformat_alloc_output_context2");
+  AVFormatContext *muxer = NULL;
+  avformat_alloc_output_context2(&muxer, NULL, NULL, filename);
+  bail_if_null(muxer, "avformat_alloc_output_context2");
 
   /* Init video encoder */
   AVCodecContext *video_encoder = avcodec_alloc_context3(codec);
@@ -50,7 +50,7 @@ static output_container *open_output_file(const char *filename, int width, int h
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
   video_encoder->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-  if (container->oformat->flags & AVFMT_GLOBALHEADER)
+  if (muxer->oformat->flags & AVFMT_GLOBALHEADER)
     video_encoder->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
   /* Open the codec, and set some x264 preferences */
@@ -61,33 +61,33 @@ static output_container *open_output_file(const char *filename, int width, int h
   }
 
   /* Start a video stream */
-  AVStream *video_stream = avformat_new_stream(container, codec);
+  AVStream *video_stream = avformat_new_stream(muxer, codec);
   bail_if_null(video_stream, "avformat_new_stream");
   bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
 
   /* Open output file file */
-  if (!(container->oformat->flags & AVFMT_NOFILE))
-    bail_if(avio_open(&container->pb, filename, AVIO_FLAG_WRITE), "avio_open");
-  bail_if(avformat_write_header(container, NULL), "avformat_write_header");
+  if (!(muxer->oformat->flags & AVFMT_NOFILE))
+    bail_if(avio_open(&muxer->pb, filename, AVIO_FLAG_WRITE), "avio_open");
+  bail_if(avformat_write_header(muxer, NULL), "avformat_write_header");
 
   /* Store relevant objects */
   output_container *out = (output_container*) av_mallocz(sizeof(output_container));
-  out->container = container;
+  out->muxer = muxer;
   out->video_stream = video_stream;
   out->video_encoder = video_encoder;
 
   //print info and return
-  av_dump_format(container, 0, filename, 1);
+  av_dump_format(muxer, 0, filename, 1);
   return out;
 }
 
 static void close_output_file(output_container *output){
-  bail_if(av_write_trailer(output->container), "av_write_trailer");
-  if (!(output->container->oformat->flags & AVFMT_NOFILE))
-    avio_closep(&output->container->pb);
+  bail_if(av_write_trailer(output->muxer), "av_write_trailer");
+  if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
+    avio_closep(&output->muxer->pb);
   avcodec_close(output->video_encoder);
   avcodec_free_context(&(output->video_encoder));
-  avformat_free_context(output->container);
+  avformat_free_context(output->muxer);
   av_free(output);
 }
 
@@ -264,7 +264,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
                (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
         av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
-        bail_if(av_interleaved_write_frame(output->container, pkt), "av_interleaved_write_frame");
+        bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
         R_CheckUserInterrupt();
       }
