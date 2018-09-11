@@ -5,6 +5,7 @@
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/version.h>
+#include <libavfilter/avfilter.h>
 
 /* In theory this should be thread safe and R is not */
 void my_log_callback(void *ptr, int level, const char *fmt, va_list vargs){
@@ -22,6 +23,7 @@ void R_init_av(DllInfo *info) {
 #if LIBAVFORMAT_VERSION_MAJOR < 58 // FFmpeg 4.0
   av_register_all();
   avcodec_register_all();
+  avfilter_register_all();
 #endif
   avformat_network_init();
   av_log_set_callback(my_log_callback);
