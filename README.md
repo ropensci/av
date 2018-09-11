@@ -18,9 +18,9 @@ devtools::install_github("jeroen/av")
 devtools::install_github("thomasp85/gganimate")
 ```
 
-## Hello World
+## Using gganimate
 
-Example using gganimate:
+You can easily use the `av_encode_video()` function in gganimate:
 
 ```r
 # Get latest gganimate
@@ -47,22 +47,47 @@ df <- animate(p, renderer = av_renderer(), width = 720*q, height = 480*q, res = 
 utils::browseURL('output.mp4')
 ```
 
+## Video Filters
+
 You can add a custom [ffmpeg video filter chain](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters). For example this will negate the colors, and applies an orange fade-in effect to the first 15 frames.
 
 ```r
+# Continue on the example above
 myrenderer <- av_renderer(filter = 'negate=1, fade=in:0:15:color=orange')
 df <- animate(p, renderer = myrenderer, width = 720*q, height = 480*q, res = 72*q, fps = 25)
 av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')
 ```
 
-Filters can also affect the final fps of the video. For example this filter will double fps because it halves presentation the timestamp (pts) of each frame. So the output fps is actually 20!
+Filters can also affect the final fps of the video. For example this filter will double fps because it halves presentation the timestamp (pts) of each frame. Hence the output framerate is actually 20!
 
 ```r
 myrenderer <- av_renderer(filter = "setpts=0.5*PTS")
-df <- animate(p, renderer = myrenderer, width = 480, height = 480, fps = 10)
+df <- animate(p, renderer = myrenderer, fps = 10)
 av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')
 ```
 
+## Capture Graphics
 
+Beside gganimate, we can use `av_capture_graphics()` to automatically record R graphics and turn them into a video. This example makes 12 plots and adds an interpolation filter to smoothen the transitions between the frames.
+
+```r
+library(gapminder)
+library(ggplot2)
+makeplot <- function(){
+  datalist <- split(gapminder, gapminder$year)
+  lapply(datalist, function(data){
+    p <- ggplot(data, aes(gdpPercap, lifeExp, size = pop, color = continent)) +
+      scale_size("population", limits = range(gapminder$pop)) + geom_point() + ylim(20, 90) +
+      scale_x_log10(limits = range(gapminder$gdpPercap)) + ggtitle(data$year) + theme_classic()
+    print(p)
+  })
+}
+
+# Play 1 plot per sec, and use an interpolation filter to convert into 10 fps
+video_file <- file.path(tempdir(), 'output.mp4')
+av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, filter = 'framerate=fps=10')
+av::av_video_info(video_file)
+utils::browseURL(video_file)
+```
