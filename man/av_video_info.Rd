@@ -13,7 +13,7 @@ av_video_info(file)
 Get video info
 }
 \seealso{
-Other av: \code{\link{av_encode_video}},
-  \code{\link{av_encoders}}
+Other av: \code{\link{av_capture_graphics}},
+  \code{\link{av_encode_video}}, \code{\link{av_encoders}}
 }
 \concept{av}

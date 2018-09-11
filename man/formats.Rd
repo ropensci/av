@@ -34,7 +34,8 @@ demuxing and decoding commonly used file formats and codecs. However for encodin
 and muxing, ffmpeg must have been configured with the proper external libraries.
 }
 \seealso{
-Other av: \code{\link{av_encode_video}},
+Other av: \code{\link{av_capture_graphics}},
+  \code{\link{av_encode_video}},
   \code{\link{av_video_info}}
 }
 \concept{av}

@@ -53,3 +53,8 @@ av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, filter = 'fram
 av::av_video_info(video_file)
 utils::browseURL(video_file)}
 }
+\seealso{
+Other av: \code{\link{av_encode_video}},
+  \code{\link{av_encoders}}, \code{\link{av_video_info}}
+}
+\concept{av}
