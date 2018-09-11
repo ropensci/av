@@ -16,6 +16,7 @@
 #' @export
 #' @aliases av
 #' @family av
+#' @name encoding
 #' @useDynLib av R_encode_video
 #' @rdname av_encode_video
 #' @param input a vector with images such as png files. All input files should have

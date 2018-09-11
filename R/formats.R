@@ -8,13 +8,15 @@
 #' audio/video/subtitle streams, along with timestamps, metadata, etc, into a proper
 #' file format, such as mp4 or mkv.
 #'
-#' Conversely, demuxers are needed to read a file format into the seperate audio/video
-#' streams, for subsequent decoding. Most operating systems include native support for
-#' demuxing and decoding commonly used file formats and codecs. However for encoding
-#' and muxing, ffmpeg must have been configured with the proper external libraries.
+#' Conversely, demuxers are needed to read a file format into the seperate data streams
+#' for subsequent decoding into raw audio/video frames. Most operating systems natively
+#' support demuxing and decoding common formats and codecs, needed to play those videos.
+#' However for encoding and muxing such videos, ffmpeg must have been configured with
+#' specific external libraries for a given codec or format.
 #'
 #' @export
 #' @rdname formats
+#' @name formats
 #' @family av
 av_encoders <- function(){
   list_codecs(TRUE)

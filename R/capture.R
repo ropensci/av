@@ -3,7 +3,7 @@
 #' Runs the expression and captures all plots into a video.
 #'
 #' @export
-#' @rdname av_save_video
+#' @name capturing
 #' @family av
 #' @inheritParams av_encode_video
 #' @param expr an R expression that generates the graphics to capture

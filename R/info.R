@@ -1,8 +1,9 @@
 #' Video Info
 #'
-#' Get video info
+#' Get video info such as width, height, format, duration and framerate.
 #'
 #' @export
+#' @name info
 #' @param file path to an existing file
 #' @useDynLib av R_video_info
 #' @family av
