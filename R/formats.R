@@ -26,3 +26,15 @@ list_codecs <- function(is_encoder){
   row.names(df) <- NULL
   df
 }
+
+#' @rdname formats
+#' @export
+#' @useDynLib av R_list_filters
+av_filters <- function(){
+  res <-as.list(.Call(R_list_filters))
+  names(res) <- c("name", "description")
+  df <- data.frame(res, stringsAsFactors = FALSE)
+  df <- df[order(df$name),]
+  row.names(df) <- NULL
+  df
+}

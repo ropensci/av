@@ -3,11 +3,14 @@
 \name{av_encoders}
 \alias{av_encoders}
 \alias{av_decoders}
+\alias{av_filters}
 \title{AV Formats}
 \usage{
 av_encoders()
 
 av_decoders()
+
+av_filters()
 }
 \description{
 List supported codecs and container formats.
