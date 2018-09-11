@@ -23,9 +23,10 @@
 #'   })
 #' }
 #'
-#' # Play 1 plot per sec
+#' # Play 1 plot per sec, and use an interpolation filter to convert into 10 fps
 #' video_file <- file.path(tempdir(), 'output.mp4')
-#' av_save_video(makeplot(), video_file, 1280, 720, res = 144, verbose = FALSE)
+#' av_save_video(makeplot(), video_file, 1280, 720, res = 144, filter = 'framerate=fps=10')
+#' av::av_video_info(video_file)
 #' utils::browseURL(video_file)}
 av_save_video <- function(expr, output = 'output.mp4', width = 720, height = 480, framerate = 1,
                        filter = "null", verbose = TRUE, ...){
