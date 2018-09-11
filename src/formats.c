@@ -14,7 +14,7 @@ static SEXP safe_string(const char *x){
 
 #if LIBAVFORMAT_VERSION_MAJOR < 58 // FFmpeg 4.0
 #define iterate_over_codec(x) (x = av_codec_next(x))
-#define iterate_over_filter(x) (x = av_filter_next(x))
+#define iterate_over_filter(x) (x = avfilter_next(x))
 #else
 #define iterate_over_codec(x) (x = av_codec_iterate(&iter))
 #define iterate_over_filter(x) (x = av_filter_iterate(&iter))
