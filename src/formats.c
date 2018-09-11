@@ -15,9 +15,13 @@ static SEXP safe_string(const char *x){
 #if LIBAVFORMAT_VERSION_MAJOR < 58 // FFmpeg 4.0
 #define iterate_over_codec(x) (x = av_codec_next(x))
 #define iterate_over_filter(x) (x = avfilter_next(x))
+#define iterate_over_muxer(x) (x = av_oformat_next(x))
+#define iterate_over_demuxer(x) (x = av_iformat_next(x))
 #else
 #define iterate_over_codec(x) (x = av_codec_iterate(&iter))
 #define iterate_over_filter(x) (x = av_filter_iterate(&iter))
+#define iterate_over_muxer(x) (x = av_muxer_iterate(&iter))
+#define iterate_over_demuxer(x) (x = av_demuxer_iterate(&iter))
 #endif
 
 SEXP R_list_codecs(){
@@ -65,5 +69,63 @@ SEXP R_list_filters(){
   }
   SEXP out = Rf_list2(name, desc);
   UNPROTECT(2);
+  return out;
+}
+
+SEXP R_list_muxers(){
+  const AVOutputFormat *muxer = NULL;
+  void * iter = NULL;
+  int count = 0;
+  while(iterate_over_muxer(muxer))
+    count++;
+  SEXP name = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP desc = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP mime = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP extensions = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP audio = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP video = PROTECT(Rf_allocVector(STRSXP, count));
+
+  // Re-iterate from scratch
+  iter = NULL;
+  int i = 0;
+  while(iterate_over_muxer(muxer)) {
+    SET_STRING_ELT(name, i, safe_string(muxer->name));
+    SET_STRING_ELT(desc, i, safe_string(muxer->long_name));
+    SET_STRING_ELT(mime, i, safe_string(muxer->mime_type));
+    SET_STRING_ELT(extensions, i, safe_string(muxer->extensions));
+    AVCodec *audio_codec = avcodec_find_encoder(muxer->audio_codec);
+    AVCodec *video_codec = avcodec_find_encoder(muxer->video_codec);
+    SET_STRING_ELT(audio, i, safe_string(audio_codec ? audio_codec->name : NULL));
+    SET_STRING_ELT(video, i, safe_string(video_codec ? video_codec->name : NULL));
+    i++;
+  }
+  SEXP out = Rf_list6(name, mime, extensions, audio, video, desc);
+  UNPROTECT(6);
+  return out;
+}
+
+SEXP R_list_demuxers(){
+  const AVInputFormat *muxer = NULL;
+  void * iter = NULL;
+  int count = 0;
+  while(iterate_over_demuxer(muxer))
+    count++;
+  SEXP name = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP desc = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP mime = PROTECT(Rf_allocVector(STRSXP, count));
+  SEXP extensions = PROTECT(Rf_allocVector(STRSXP, count));
+
+  // Re-iterate from scratch
+  iter = NULL;
+  int i = 0;
+  while(iterate_over_demuxer(muxer)) {
+    SET_STRING_ELT(name, i, safe_string(muxer->name));
+    SET_STRING_ELT(desc, i, safe_string(muxer->long_name));
+    SET_STRING_ELT(mime, i, safe_string(muxer->mime_type));
+    SET_STRING_ELT(extensions, i, safe_string(muxer->extensions));
+    i++;
+  }
+  SEXP out = Rf_list4(name, mime, extensions, desc);
+  UNPROTECT(4);
   return out;
 }

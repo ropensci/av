@@ -4,6 +4,8 @@
 \alias{av_encoders}
 \alias{av_decoders}
 \alias{av_filters}
+\alias{av_muxers}
+\alias{av_demuxers}
 \title{AV Formats}
 \usage{
 av_encoders()
@@ -11,6 +13,10 @@ av_encoders()
 av_decoders()
 
 av_filters()
+
+av_muxers()
+
+av_demuxers()
 }
 \description{
 List supported codecs and container formats.

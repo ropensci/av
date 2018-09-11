@@ -38,3 +38,28 @@ av_filters <- function(){
   row.names(df) <- NULL
   df
 }
+
+#' @rdname formats
+#' @export
+#' @useDynLib av R_list_muxers
+av_muxers <- function(){
+  res <-as.list(.Call(R_list_muxers))
+  names(res) <- c("name", "mime", "extensions", "audio", "video", "description")
+  df <- data.frame(res, stringsAsFactors = FALSE)
+  df <- df[order(df$name),]
+  row.names(df) <- NULL
+  df
+}
+
+#' @rdname formats
+#' @export
+#' @useDynLib av R_list_demuxers
+av_demuxers <- function(){
+  res <-as.list(.Call(R_list_demuxers))
+  names(res) <- c("name", "mime", "extensions", "description")
+  df <- data.frame(res, stringsAsFactors = FALSE)
+  df <- df[order(df$name),]
+  row.names(df) <- NULL
+  df
+}
+
