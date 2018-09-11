@@ -1,7 +1,17 @@
 #' AV Formats
 #'
-#' List supported codecs and container formats.
+#' List supported filters, codecs and container formats.
 #'
+#' Encoders and decoders convert between raw video/audio frames and compressed stream
+#' data for storage or transfer. However such a compressed data stream by itself does
+#' not constitute a valid video format yet. Muxers are needed to interleave one or more
+#' audio/video/subtitle streams, along with timestamps, metadata, etc, into a proper
+#' file format, such as mp4 or mkv.
+#'
+#' Conversely, demuxers are needed to read a file format into the seperate audio/video
+#' streams, for subsequent decoding. Most operating systems include native support for
+#' demuxing and decoding commonly used file formats and codecs. However for encoding
+#' and muxing, ffmpeg must have been configured with the proper external libraries.
 #'
 #' @export
 #' @rdname formats
