@@ -5,7 +5,7 @@
 #' @export
 #' @name capturing
 #' @family av
-#' @inheritParams av_encode_video
+#' @inheritParams encoding
 #' @param expr an R expression that generates the graphics to capture
 #' @param width width in pixels of the graphics device
 #' @param height height in pixels of the graphics device

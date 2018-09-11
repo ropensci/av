@@ -12,9 +12,22 @@ av_capture_graphics(expr, output = "output.mp4", width = 720,
 \arguments{
 \item{expr}{an R expression that generates the graphics to capture}
 
+\item{output}{name of the output file. File extension must correspond to a known
+container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
+
 \item{width}{width in pixels of the graphics device}
 
 \item{height}{height in pixels of the graphics device}
+
+\item{framerate}{video framerate in frames per seconds. This is the input fps, the
+output fps may be different if you specify a filter that modifies speed or interpolates
+frames.}
+
+\item{filter}{a string defining an ffmpeg filter graph. This is the same parameter
+as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
+
+\item{verbose}{emit some output and a progress meter counting processed images. Must
+be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
 
 \item{...}{extra graphics parameters passed to \code{\link[=png]{png()}}}
 }
