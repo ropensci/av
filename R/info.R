@@ -8,6 +8,7 @@
 #' @useDynLib av R_video_info
 #' @family av
 av_video_info <- function(file){
+  file <- normalizePath(file, mustWork = TRUE)
   out <- .Call(R_video_info, file)
   if(length(out$video))
     out$video <- data.frame(out$video, stringsAsFactors = FALSE)
