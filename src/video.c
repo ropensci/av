@@ -10,16 +10,27 @@
 #define VIDEO_TIME_BASE 1000
 
 typedef struct {
-  AVFormatContext *muxer;
-  AVCodecContext *video_encoder;
-  AVStream *video_stream;
-} output_container;
+  int completed;
+  AVFormatContext *demuxer;
+  AVCodecContext *decoder;
+  AVStream *stream;
+} input_container;
 
 typedef struct {
   AVFilterContext *input;
   AVFilterContext *output;
   AVFilterGraph *graph;
-} video_filter;
+} filter_container;
+
+typedef struct {
+  AVFormatContext *muxer;
+  AVCodecContext *video_encoder;
+  AVStream *video_stream;
+  filter_container *video_filter;
+  AVCodecContext *audio_encoder;
+  AVStream *audio_stream;
+  filter_container *audio_filter;
+} output_container;
 
 static void bail_if(int ret, const char * what){
   if(ret < 0)
@@ -31,7 +42,184 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static output_container *open_output_file(const char *filename, int width, int height, AVCodec *codec){
+static void close_input_file(input_container *input){
+  if(input == NULL)
+    return;
+  avcodec_close(input->decoder);
+  avcodec_free_context(&(input->decoder));
+  avformat_free_context(input->demuxer);
+  av_free(input);
+}
+
+static input_container *open_audio_input(const char *filename){
+  AVFormatContext *demuxer = NULL;
+  bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
+  bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
+
+  /* Try all input streams */
+  for (int i = 0; i < demuxer->nb_streams; i++) {
+    AVStream *stream = demuxer->streams[i];
+    if(stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
+      continue;
+    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    bail_if_null(codec, "avcodec_find_decoder");
+    AVCodecContext *decoder = avcodec_alloc_context3(codec);
+    bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
+    bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
+
+    /* Is this needed ?*/
+    if (!decoder->channel_layout)
+      decoder->channel_layout = av_get_default_channel_layout(decoder->channels);
+
+    /* Store relevant objects */
+    input_container *out = (input_container*) av_mallocz(sizeof(input_container));
+    out->demuxer = demuxer;
+    out->stream = demuxer->streams[i];
+    out->decoder = decoder;
+    return out;
+  }
+  avformat_free_context(demuxer);
+  Rf_error("No suitable audio stream found in %s", filename);
+}
+
+static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecContext *encoder, const char *filter_spec){
+
+  /* Create a new filter graph */
+  AVFilterGraph *filter_graph = avfilter_graph_alloc();
+
+  char input_args[512];
+  snprintf(input_args, sizeof(input_args),
+           "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
+           decoder->time_base.num, decoder->time_base.den, decoder->sample_rate,
+           av_get_sample_fmt_name(decoder->sample_fmt),
+           decoder->channel_layout);
+
+  AVFilterContext *buffersrc_ctx = NULL;
+  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("abuffer"), "audiosrc",
+                                       input_args, NULL, filter_graph), "avfilter_graph_create_filter (audio/src)");
+
+  /* Initiate sink filter */
+  AVFilterContext *buffersink_ctx = NULL;
+  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("abuffersink"), "audiosink",
+                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (audio/sink)");
+
+  /* Set output properties (copied from ffmpeg examples/transcoding.c) */
+  bail_if(av_opt_set_bin(buffersink_ctx, "sample_fmts",
+                         (uint8_t*)&encoder->sample_fmt, sizeof(encoder->sample_fmt),
+                         AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (sample_fmts)");
+  bail_if(av_opt_set_bin(buffersink_ctx, "channel_layouts",
+                         (uint8_t*)&encoder->channel_layout, sizeof(encoder->channel_layout),
+                         AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (channel_layouts)");
+  bail_if(av_opt_set_bin(buffersink_ctx, "sample_rates",
+                         (uint8_t*)&encoder->sample_rate, sizeof(encoder->sample_rate),
+                         AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (sample_rates)");
+
+  /* Endpoints for the filter graph. */
+  AVFilterInOut *outputs = avfilter_inout_alloc();
+  AVFilterInOut *inputs = avfilter_inout_alloc();
+  outputs->name = av_strdup("in");
+  outputs->filter_ctx = buffersrc_ctx;
+  outputs->pad_idx = 0;
+  outputs->next = NULL;
+  inputs->name = av_strdup("out");
+  inputs->filter_ctx = buffersink_ctx;
+  inputs->pad_idx = 0;
+  inputs->next = NULL;
+
+  /* Parse and init the custom user filter */
+  bail_if(avfilter_graph_parse_ptr(filter_graph, filter_spec,
+                                   &inputs, &outputs, NULL), "avfilter_graph_parse_ptr");
+  bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
+  av_buffersink_set_frame_size(buffersink_ctx, encoder->frame_size);
+  avfilter_inout_free(&inputs);
+  avfilter_inout_free(&outputs);
+  filter_container *out = (filter_container*) av_mallocz(sizeof(filter_container));
+  out->input = buffersrc_ctx;
+  out->output = buffersink_ctx;
+  out->graph = filter_graph;
+  return out;
+}
+
+static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat fmt, const char *filter_spec){
+
+  /* Create a new filter graph */
+  AVFilterGraph *filter_graph = avfilter_graph_alloc();
+
+  /* Initiate source filter */
+  char input_args[512];
+  snprintf(input_args, sizeof(input_args),
+           "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+           input->width, input->height, input->format, 1, VIDEO_TIME_BASE,
+           input->sample_aspect_ratio.num, input->sample_aspect_ratio.den);
+  AVFilterContext *buffersrc_ctx = NULL;
+  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("buffer"), "videosrc",
+                                       input_args, NULL, filter_graph), "avfilter_graph_create_filter (video/src)");
+
+  /* Initiate sink filter */
+  AVFilterContext *buffersink_ctx = NULL;
+  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "videosink",
+                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (video/sink)");
+
+  /* I think this convert output YUV420P (copied from ffmpeg examples/transcoding.c) */
+  bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
+                         (uint8_t*)&fmt, sizeof(fmt),
+                         AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
+
+
+  /* Endpoints for the filter graph. */
+  AVFilterInOut *outputs = avfilter_inout_alloc();
+  AVFilterInOut *inputs = avfilter_inout_alloc();
+  outputs->name = av_strdup("in");
+  outputs->filter_ctx = buffersrc_ctx;
+  outputs->pad_idx = 0;
+  outputs->next = NULL;
+  inputs->name = av_strdup("out");
+  inputs->filter_ctx = buffersink_ctx;
+  inputs->pad_idx = 0;
+  inputs->next = NULL;
+
+  /* Parse and init the custom user filter */
+  bail_if(avfilter_graph_parse_ptr(filter_graph, filter_spec,
+                                   &inputs, &outputs, NULL), "avfilter_graph_parse_ptr");
+  bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
+  avfilter_inout_free(&inputs);
+  avfilter_inout_free(&outputs);
+
+  filter_container *out = (filter_container*) av_mallocz(sizeof(filter_container));
+  out->input = buffersrc_ctx;
+  out->output = buffersink_ctx;
+  out->graph = filter_graph;
+  return out;
+}
+
+static void add_audio_output(output_container *container, AVCodecContext *audio_decoder){
+  AVCodec *output_codec = avcodec_find_encoder(container->muxer->oformat->audio_codec);
+  bail_if_null(output_codec, "Failed to find default audio codec");
+  AVCodecContext *audio_encoder = avcodec_alloc_context3(output_codec);
+  bail_if_null(audio_encoder, "avcodec_alloc_context3 (audio)");
+  audio_encoder->channels = audio_decoder->channels;
+  audio_encoder->channel_layout = av_get_default_channel_layout(audio_decoder->channels);
+  audio_encoder->sample_rate = audio_decoder->sample_rate;
+  audio_encoder->sample_fmt = output_codec->sample_fmts[0];
+  audio_encoder->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+
+  /* Add the audio_stream to the muxer */
+  AVStream *audio_stream = avformat_new_stream(container->muxer, output_codec);
+  audio_stream->time_base.den = audio_decoder->sample_rate;
+  audio_stream->time_base.num = 1;
+  bail_if(avcodec_open2(audio_encoder, output_codec, NULL), "avcodec_open2 (audio)");
+  bail_if(avcodec_parameters_from_context(audio_stream->codecpar, audio_encoder), "avcodec_parameters_from_context (audio)");
+  container->audio_filter = open_audio_filter(audio_decoder, audio_encoder, "anull");
+  container->audio_encoder = audio_encoder;
+  container->audio_stream = audio_stream;
+}
+
+static output_container *alloc_output_container(){
+  return (output_container*) av_mallocz(sizeof(output_container));
+}
+
+static void open_output_file(const char *filename, int width, int height, AVCodec *codec,
+                                          input_container *audio_input, output_container *output){
   /* Init container context (infers format from file extension) */
   AVFormatContext *muxer = NULL;
   avformat_alloc_output_context2(&muxer, NULL, NULL, filename);
@@ -65,28 +253,45 @@ static output_container *open_output_file(const char *filename, int width, int h
   bail_if_null(video_stream, "avformat_new_stream");
   bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
 
+  /* Store relevant objects */
+  output->muxer = muxer;
+  output->video_stream = video_stream;
+  output->video_encoder = video_encoder;
+
+  /* Add audio stream if needed */
+  if(audio_input != NULL)
+    add_audio_output(output, audio_input->decoder);
+
   /* Open output file file */
   if (!(muxer->oformat->flags & AVFMT_NOFILE))
     bail_if(avio_open(&muxer->pb, filename, AVIO_FLAG_WRITE), "avio_open");
   bail_if(avformat_write_header(muxer, NULL), "avformat_write_header");
 
-  /* Store relevant objects */
-  output_container *out = (output_container*) av_mallocz(sizeof(output_container));
-  out->muxer = muxer;
-  out->video_stream = video_stream;
-  out->video_encoder = video_encoder;
-
   //print info and return
   av_dump_format(muxer, 0, filename, 1);
-  return out;
+}
+
+static void close_filter_container(filter_container *filter){
+  for(int i = 0; i < filter->graph->nb_filters; i++)
+    avfilter_free(filter->graph->filters[i]);
+  avfilter_graph_free(&filter->graph);
+  av_free(filter);
 }
 
 static void close_output_file(output_container *output){
   bail_if(av_write_trailer(output->muxer), "av_write_trailer");
   if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output->muxer->pb);
-  avcodec_close(output->video_encoder);
-  avcodec_free_context(&(output->video_encoder));
+  if(output->video_encoder != NULL){
+    close_filter_container(output->video_filter);
+    avcodec_close(output->video_encoder);
+    avcodec_free_context(&(output->video_encoder));
+  }
+  if(output->audio_encoder != NULL){
+    close_filter_container(output->audio_filter);
+    avcodec_close(output->audio_encoder);
+    avcodec_free_context(&(output->audio_encoder));
+  }
   avformat_free_context(output->muxer);
   av_free(output);
 }
@@ -138,66 +343,68 @@ static AVFrame * read_single_frame(const char *filename){
   Rf_error("No suitable stream or frame found");
 }
 
-static video_filter *open_filter(AVFrame * input, enum AVPixelFormat fmt, const char *filter_spec){
-
-  /* Create a new filter graph */
-  AVFilterGraph *filter_graph = avfilter_graph_alloc();
-
-  /* Initiate source filter */
-  char input_args[512];
-  snprintf(input_args, sizeof(input_args),
-           "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-           input->width, input->height, input->format, 1, VIDEO_TIME_BASE,
-           input->sample_aspect_ratio.num, input->sample_aspect_ratio.den);
-  AVFilterContext *buffersrc_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("buffer"), "in",
-                                       input_args, NULL, filter_graph), "avfilter_graph_create_filter (input_args)");
-
-  /* Initiate sink filter */
-  AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "out",
-                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (output)");
-
-  /* I think this convert output YUV420P (copied from ffmpeg examples/transcoding.c) */
-  bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
-                         (uint8_t*)&fmt, sizeof(fmt),
-                         AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
-
-
-  /* Endpoints for the filter graph. */
-  AVFilterInOut *outputs = avfilter_inout_alloc();
-  AVFilterInOut *inputs = avfilter_inout_alloc();
-  outputs->name = av_strdup("in");
-  outputs->filter_ctx = buffersrc_ctx;
-  outputs->pad_idx = 0;
-  outputs->next = NULL;
-  inputs->name = av_strdup("out");
-  inputs->filter_ctx = buffersink_ctx;
-  inputs->pad_idx = 0;
-  inputs->next = NULL;
-
-  /* Parse and init the custom user filter */
-  bail_if(avfilter_graph_parse_ptr(filter_graph, filter_spec,
-                                   &inputs, &outputs, NULL), "avfilter_graph_parse_ptr");
-  bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
-  avfilter_inout_free(&inputs);
-  avfilter_inout_free(&outputs);
-
-  video_filter *out = (video_filter*) av_mallocz(sizeof(video_filter));
-  out->input = buffersrc_ctx;
-  out->output = buffersink_ctx;
-  out->graph = filter_graph;
-  return out;
+void sync_audio_stream(input_container * input, output_container * output, int force_flush){
+  if(input == NULL || input->completed)
+    return;
+  AVPacket *pkt = av_packet_alloc();
+  while(force_flush || av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
+                      output->video_stream->cur_dts, output->video_stream->time_base) < 0) {
+    int ret = av_read_frame(input->demuxer, pkt);
+    if(ret == AVERROR_EOF || force_flush){
+      bail_if(avcodec_send_packet(input->decoder, NULL), "avcodec_send_packet (flush)");
+    } else {
+      bail_if(ret, "av_read_frame");
+      if(pkt->stream_index != input->stream->index)
+        continue;
+      av_packet_rescale_ts(pkt, input->stream->time_base, input->decoder->time_base);
+      bail_if(avcodec_send_packet(input->decoder, pkt), "avcodec_send_packet (audio)");
+      av_packet_unref(pkt);
+    }
+    while(1){
+      AVFrame *sample = av_frame_alloc();
+      ret = avcodec_receive_frame(input->decoder, sample);
+      if(ret == AVERROR(EAGAIN))
+        break;
+      if(ret == AVERROR_EOF){
+        bail_if(av_buffersrc_add_frame(output->audio_filter->input, NULL), "flushing filter");
+      } else {
+        bail_if(ret, "avcodec_receive_frame");
+        bail_if(av_buffersrc_add_frame(output->audio_filter->input, sample), "av_buffersrc_add_frame");
+        av_frame_free(&sample);
+      }
+      while(1){
+        AVFrame * outframe = av_frame_alloc();
+        ret = av_buffersink_get_frame(output->audio_filter->output, outframe);
+        if(ret == AVERROR(EAGAIN))
+          break;
+        if(ret == AVERROR_EOF){
+          bail_if(avcodec_send_frame(output->audio_encoder, NULL), "avcodec_send_frame (audio flush)");
+        } else {
+          bail_if(ret, "avcodec_receive_frame (audio)");
+          bail_if(avcodec_send_frame(output->audio_encoder, outframe), "avcodec_send_frame (audio)");
+          av_frame_free(&outframe);
+        }
+        while(1){
+          AVPacket *outpkt = av_packet_alloc();
+          ret = avcodec_receive_packet(output->audio_encoder, outpkt);
+          if (ret == AVERROR(EAGAIN))
+            break;
+          if (ret == AVERROR_EOF){
+            av_log(NULL, AV_LOG_INFO, " audio stream complete!\n");
+            input->completed = 1;
+            return;
+          }
+          outpkt->stream_index = output->audio_stream->index;
+          av_packet_rescale_ts(outpkt, output->audio_encoder->time_base, output->audio_stream->time_base);
+          bail_if(av_interleaved_write_frame(output->muxer, outpkt), "av_interleaved_write_frame");
+          av_packet_unref(outpkt);
+        }
+      }
+    }
+  }
 }
 
-static void close_video_filter(video_filter *filter){
-  for(int i = 0; i < filter->graph->nb_filters; i++)
-    avfilter_free(filter->graph->filters[i]);
-  avfilter_graph_free(&filter->graph);
-  av_free(filter);
-}
-
-SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc){
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc, SEXP audio){
   double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = NULL;
   if(Rf_length(enc)) {
@@ -212,9 +419,9 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
 
   /* Start the output video */
   AVFrame * frame = NULL;
-  video_filter *filter = NULL;
-  output_container *output = NULL;
+  output_container *output = alloc_output_container();
   AVPacket *pkt = av_packet_alloc();
+  input_container * audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
 
   /* Loop over input image files files */
   int len = Rf_length(in_files);
@@ -222,29 +429,29 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
     if(i < Rf_length(in_files)) {
       frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
       frame->pts = i * duration;
-      if(filter == NULL)
-        filter = open_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
-      bail_if(av_buffersrc_add_frame(filter->input, frame), "av_buffersrc_add_frame");
+      if(output->video_filter == NULL)
+        output->video_filter = open_video_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
+      bail_if(av_buffersrc_add_frame(output->video_filter->input, frame), "av_buffersrc_add_frame");
       av_frame_free(&frame);
     } else {
-      bail_if_null(filter, "Faild to read any input frames");
-      bail_if(av_buffersrc_add_frame(filter->input, NULL), "flushing filter");
+      bail_if_null(output->video_filter, "Faild to read any input frames");
+      bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
     }
 
     /* Loop over frames returned by filter */
     while(1){
       AVFrame * outframe = av_frame_alloc();
-      int ret = av_buffersink_get_frame(filter->output, outframe);
+      int ret = av_buffersink_get_frame(output->video_filter->output, outframe);
       if(ret == AVERROR(EAGAIN))
         break;
       if(ret == AVERROR_EOF){
         bail_if_null(output, "filter did not return any frames");
-        bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame");
+        bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame (flush video)");
       } else {
         bail_if(ret, "av_buffersink_get_frame");
         outframe->pict_type = AV_PICTURE_TYPE_I;
-        if(output == NULL)
-          output = open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height, codec);
+        if(output->muxer == NULL)
+          open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height, codec, audio_input, output);
         bail_if(avcodec_send_frame(output->video_encoder, outframe), "avcodec_send_frame");
         av_frame_free(&outframe);
       }
@@ -267,12 +474,14 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
         R_CheckUserInterrupt();
+        sync_audio_stream(audio_input, output, 0);
       }
     }
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
-  close_video_filter(filter);
+  sync_audio_stream(audio_input, output, 1);
+  close_input_file(audio_input);
   close_output_file(output);
   av_packet_free(&pkt);
   return out_file;

@@ -9,6 +9,9 @@
 #' @family av
 av_video_info <- function(file){
   out <- .Call(R_video_info, file)
-  out$video <- data.frame(out$video, stringsAsFactors = FALSE)
+  if(length(out$video))
+    out$video <- data.frame(out$video, stringsAsFactors = FALSE)
+  if(length(out$audio))
+    out$audio <- data.frame(out$audio, stringsAsFactors = FALSE)
   out
 }
