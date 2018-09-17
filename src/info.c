@@ -9,6 +9,12 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+static SEXP safe_string(const char *x){
+  if(x == NULL)
+    return NA_STRING;
+  return Rf_mkString(x);
+}
+
 static void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
@@ -29,7 +35,7 @@ static SEXP get_video_info(AVFormatContext *ifmt_ctx){
     if(!codec)
       Rf_error("Failed to find codec");
     AVRational framerate = av_guess_frame_rate(ifmt_ctx, stream, NULL);
-    SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, 5));
+    SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));
     SET_VECTOR_ELT(streamdata, 0, Rf_ScalarReal(stream->codecpar->width));
     SET_VECTOR_ELT(streamdata, 1, Rf_ScalarReal(stream->codecpar->height));
     SET_VECTOR_ELT(streamdata, 2, Rf_mkString(codec->name));
@@ -44,12 +50,13 @@ static SEXP get_video_info(AVFormatContext *ifmt_ctx){
 }
 
 static SEXP get_audio_info(AVFormatContext *ifmt_ctx){
-  SEXP names = PROTECT(Rf_allocVector(STRSXP, 5));
+  SEXP names = PROTECT(Rf_allocVector(STRSXP, 6));
   SET_STRING_ELT(names, 0, Rf_mkChar("channels"));
   SET_STRING_ELT(names, 1, Rf_mkChar("sample_rate"));
   SET_STRING_ELT(names, 2, Rf_mkChar("codec"));
   SET_STRING_ELT(names, 3, Rf_mkChar("frames"));
   SET_STRING_ELT(names, 4, Rf_mkChar("bitrate"));
+  SET_STRING_ELT(names, 5, Rf_mkChar("layout"));
   for (int i = 0; i < ifmt_ctx->nb_streams; i++) {
     AVStream *stream = ifmt_ctx->streams[i];
     if(stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
@@ -57,12 +64,16 @@ static SEXP get_audio_info(AVFormatContext *ifmt_ctx){
     AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if(!codec)
       Rf_error("Failed to find codec");
-    SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, 5));
+    SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));
     SET_VECTOR_ELT(streamdata, 0, Rf_ScalarReal(stream->codecpar->channels));
     SET_VECTOR_ELT(streamdata, 1, Rf_ScalarReal(stream->codecpar->sample_rate));
     SET_VECTOR_ELT(streamdata, 2, Rf_mkString(codec->name));
     SET_VECTOR_ELT(streamdata, 3, Rf_ScalarReal(stream->nb_frames ? stream->nb_frames : NA_REAL));
     SET_VECTOR_ELT(streamdata, 4, Rf_ScalarReal(stream->codecpar->bit_rate));
+
+    char layout[1024] = "";
+    av_get_channel_layout_string(layout, 1024, stream->codecpar->channels, stream->codecpar->channel_layout);
+    SET_VECTOR_ELT(streamdata, 5, safe_string(layout));
     Rf_setAttrib(streamdata, R_NamesSymbol, names);
     UNPROTECT(2);
     return streamdata;
