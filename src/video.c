@@ -346,6 +346,7 @@ void sync_audio_stream(input_container * input, output_container * output, int f
   if(input == NULL || input->completed)
     return;
   AVPacket *pkt = av_packet_alloc();
+  AVFrame *frame = av_frame_alloc();
   while(force_flush || av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
                       output->video_stream->cur_dts, output->video_stream->time_base) < 0) {
     int ret = av_read_frame(input->demuxer, pkt);
@@ -360,47 +361,47 @@ void sync_audio_stream(input_container * input, output_container * output, int f
       av_packet_unref(pkt);
     }
     while(1){
-      AVFrame *sample = av_frame_alloc();
-      ret = avcodec_receive_frame(input->decoder, sample);
+      ret = avcodec_receive_frame(input->decoder, frame);
       if(ret == AVERROR(EAGAIN))
         break;
       if(ret == AVERROR_EOF){
         bail_if(av_buffersrc_add_frame(output->audio_filter->input, NULL), "flushing filter");
       } else {
         bail_if(ret, "avcodec_receive_frame");
-        bail_if(av_buffersrc_add_frame(output->audio_filter->input, sample), "av_buffersrc_add_frame");
-        av_frame_free(&sample);
+        bail_if(av_buffersrc_add_frame(output->audio_filter->input, frame), "av_buffersrc_add_frame");
+        av_frame_unref(frame);
       }
       while(1){
-        AVFrame * outframe = av_frame_alloc();
-        ret = av_buffersink_get_frame(output->audio_filter->output, outframe);
+        ret = av_buffersink_get_frame(output->audio_filter->output, frame);
         if(ret == AVERROR(EAGAIN))
           break;
         if(ret == AVERROR_EOF){
           bail_if(avcodec_send_frame(output->audio_encoder, NULL), "avcodec_send_frame (audio flush)");
         } else {
           bail_if(ret, "avcodec_receive_frame (audio)");
-          bail_if(avcodec_send_frame(output->audio_encoder, outframe), "avcodec_send_frame (audio)");
-          av_frame_free(&outframe);
+          bail_if(avcodec_send_frame(output->audio_encoder, frame), "avcodec_send_frame (audio)");
+          av_frame_unref(frame);
         }
         while(1){
-          AVPacket *outpkt = av_packet_alloc();
-          ret = avcodec_receive_packet(output->audio_encoder, outpkt);
+          ret = avcodec_receive_packet(output->audio_encoder, pkt);
           if (ret == AVERROR(EAGAIN))
             break;
           if (ret == AVERROR_EOF){
             av_log(NULL, AV_LOG_INFO, " audio stream complete!\n");
             input->completed = 1;
-            return;
+            goto cleanup;
           }
-          outpkt->stream_index = output->audio_stream->index;
-          av_packet_rescale_ts(outpkt, output->audio_encoder->time_base, output->audio_stream->time_base);
-          bail_if(av_interleaved_write_frame(output->muxer, outpkt), "av_interleaved_write_frame");
-          av_packet_unref(outpkt);
+          pkt->stream_index = output->audio_stream->index;
+          av_packet_rescale_ts(pkt, output->audio_encoder->time_base, output->audio_stream->time_base);
+          bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
+          av_packet_unref(pkt);
         }
       }
     }
   }
+cleanup:
+  av_packet_free(&pkt);
+  av_frame_free(&frame);
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc, SEXP audio){
@@ -417,21 +418,22 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
 
   /* Start the output video */
-  AVFrame * frame = NULL;
-  output_container *output = alloc_output_container();
+  AVFrame * image = NULL;
+  AVFrame * frame = av_frame_alloc();
   AVPacket *pkt = av_packet_alloc();
+  output_container *output = alloc_output_container();
   input_container * audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
 
   /* Loop over input image files files */
   int len = Rf_length(in_files);
   for(int i = 0; i <= len; i++){
     if(i < Rf_length(in_files)) {
-      frame = read_single_frame(CHAR(STRING_ELT(in_files, i)));
-      frame->pts = i * duration;
+      image = read_single_frame(CHAR(STRING_ELT(in_files, i)));
+      image->pts = i * duration;
       if(output->video_filter == NULL)
-        output->video_filter = open_video_filter(frame, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
-      bail_if(av_buffersrc_add_frame(output->video_filter->input, frame), "av_buffersrc_add_frame");
-      av_frame_free(&frame);
+        output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
+      bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
+      av_frame_free(&image);
     } else {
       bail_if_null(output->video_filter, "Faild to read any input frames");
       bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
@@ -439,8 +441,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
 
     /* Loop over frames returned by filter */
     while(1){
-      AVFrame * outframe = av_frame_alloc();
-      int ret = av_buffersink_get_frame(output->video_filter->output, outframe);
+      int ret = av_buffersink_get_frame(output->video_filter->output, frame);
       if(ret == AVERROR(EAGAIN))
         break;
       if(ret == AVERROR_EOF){
@@ -448,11 +449,11 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame (flush video)");
       } else {
         bail_if(ret, "av_buffersink_get_frame");
-        outframe->pict_type = AV_PICTURE_TYPE_I;
+        frame->pict_type = AV_PICTURE_TYPE_I;
         if(output->muxer == NULL)
-          open_output_file(CHAR(STRING_ELT(out_file, 0)), outframe->width, outframe->height, codec, audio_input, output);
-        bail_if(avcodec_send_frame(output->video_encoder, outframe), "avcodec_send_frame");
-        av_frame_free(&outframe);
+          open_output_file(CHAR(STRING_ELT(out_file, 0)), frame->width, frame->height, codec, audio_input, output);
+        bail_if(avcodec_send_frame(output->video_encoder, frame), "avcodec_send_frame");
+        av_frame_unref(frame);
       }
 
       /* re-encode output packet */
@@ -465,7 +466,6 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
           goto done;
         }
         bail_if(ret, "avcodec_receive_packet");
-        //pkt->duration = duration; <-- may have changed by the filter!
         pkt->stream_index = output->video_stream->index;
         av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
                (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
@@ -483,5 +483,6 @@ done:
   close_input_file(audio_input);
   close_output_file(output);
   av_packet_free(&pkt);
+  av_frame_free(&frame);
   return out_file;
 }
