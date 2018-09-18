@@ -234,7 +234,6 @@ static void open_output_file(const char *filename, int width, int height, AVCode
   video_encoder->time_base.den = VIDEO_TIME_BASE;
   video_encoder->framerate = av_inv_q(video_encoder->time_base);
   video_encoder->gop_size = 5;
-  video_encoder->max_b_frames = 1;
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
   video_encoder->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
