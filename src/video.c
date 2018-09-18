@@ -361,15 +361,13 @@ void sync_audio_stream(input_container * input, output_container * output, int f
               int ret = av_read_frame(input->demuxer, pkt);
               if(ret == AVERROR_EOF || force_flush){
                 bail_if(avcodec_send_packet(input->decoder, NULL), "avcodec_send_packet (flush)");
-                break;
               } else {
                 bail_if(ret, "av_read_frame");
-                if(pkt->stream_index != input->stream->index)
-                  continue;
-                av_packet_rescale_ts(pkt, input->stream->time_base, input->decoder->time_base);
-                bail_if(avcodec_send_packet(input->decoder, pkt), "avcodec_send_packet (audio)");
-                av_packet_unref(pkt);
-                break;
+                if(pkt->stream_index == input->stream->index){
+                  av_packet_rescale_ts(pkt, input->stream->time_base, input->decoder->time_base);
+                  bail_if(avcodec_send_packet(input->decoder, pkt), "avcodec_send_packet (audio)");
+                  av_packet_unref(pkt);
+                }
               }
             } else if(ret == AVERROR_EOF || force_flush){
               bail_if(av_buffersrc_add_frame(output->audio_filter->input, NULL), "flushing filter");
@@ -381,7 +379,7 @@ void sync_audio_stream(input_container * input, output_container * output, int f
               break;
             }
           }
-        } else if(ret == AVERROR_EOF || force_flush){
+        } else if(ret == AVERROR_EOF){
           bail_if(avcodec_send_frame(output->audio_encoder, NULL), "avcodec_send_frame (audio flush)");
           break;
         } else {
