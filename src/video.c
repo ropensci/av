@@ -278,9 +278,6 @@ static void close_filter_container(filter_container *filter){
 }
 
 static void close_output_file(output_container *output){
-  bail_if(av_write_trailer(output->muxer), "av_write_trailer");
-  if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
-    avio_closep(&output->muxer->pb);
   if(output->video_encoder != NULL){
     close_filter_container(output->video_filter);
     avcodec_close(output->video_encoder);
@@ -291,7 +288,12 @@ static void close_output_file(output_container *output){
     avcodec_close(output->audio_encoder);
     avcodec_free_context(&(output->audio_encoder));
   }
-  avformat_free_context(output->muxer);
+  if(output->muxer != NULL){
+    bail_if(av_write_trailer(output->muxer), "av_write_trailer");
+    if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
+      avio_closep(&output->muxer->pb);
+    avformat_free_context(output->muxer);
+  }
   av_free(output);
 }
 
