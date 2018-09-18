@@ -30,7 +30,7 @@
 #' av::av_video_info(video_file)
 #' utils::browseURL(video_file)}
 av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height = 480, framerate = 1,
-                       filter = "null", verbose = TRUE, ...){
+                       filter = "null", audio = NULL, verbose = TRUE, ...){
   imgdir <- tempfile('tmppng')
   dir.create(imgdir)
   on.exit(unlink(imgdir, recursive = TRUE))
@@ -39,5 +39,5 @@ av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height
   graphics::par(ask = FALSE)
   tryCatch(eval(expr), finally = grDevices::dev.off())
   images <- list.files(imgdir, pattern = 'tmpimg_\\d{5}.png', full.names = TRUE)
-  av_encode_video(images, output = output, framerate = framerate, filter = filter, verbose = verbose)
+  av_encode_video(images, output = output, framerate = framerate, filter = filter, audio = audio, verbose = verbose)
 }

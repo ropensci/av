@@ -6,8 +6,8 @@
 \title{Record Video from Graphics Device}
 \usage{
 av_capture_graphics(expr, output = "output.mp4", width = 720,
-  height = 480, framerate = 1, filter = "null", verbose = TRUE,
-  ...)
+  height = 480, framerate = 1, filter = "null", audio = NULL,
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{expr}{an R expression that generates the graphics to capture}
@@ -25,6 +25,8 @@ frames.}
 
 \item{filter}{a string defining an ffmpeg filter graph. This is the same parameter
 as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
+
+\item{audio}{optional file with sounds to add to the video}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
 be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
