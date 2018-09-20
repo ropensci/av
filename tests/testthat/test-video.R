@@ -53,7 +53,6 @@ test_that("audio sampling works", {
 
     expect_equal(info$audio$channels, 2)
     expect_equal(info$audio$sample_rate, 44100)
-    expect_equal(substring(info$audio$codec, 1, 3), switch(ext, mkv='ac3', flv='mp3', 'aac'))
 
     # Audio stream may slightly alter the duration, 1 sec margin
     expect_gte(info$duration, (n-1) / framerate)
