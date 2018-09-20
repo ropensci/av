@@ -5,6 +5,7 @@
 #include <libavformat/avformat.h>
 #include <libavformat/version.h>
 #include <libavfilter/avfilter.h>
+#include <libavutil/pixdesc.h>
 
 static SEXP safe_string(const char *x){
   if(x == NULL)
@@ -34,6 +35,7 @@ SEXP R_list_codecs(){
   SEXP name = PROTECT(Rf_allocVector(STRSXP, count));
   SEXP desc = PROTECT(Rf_allocVector(STRSXP, count));
   SEXP enc = PROTECT(Rf_allocVector(LGLSXP, count));
+  SEXP fmt = PROTECT(Rf_allocVector(STRSXP, count));
 
   // Re-iterate from scratch
   iter = NULL;
@@ -43,10 +45,15 @@ SEXP R_list_codecs(){
     SET_STRING_ELT(name, i, safe_string(codec->name));
     SET_STRING_ELT(desc, i, safe_string(codec->long_name));
     LOGICAL(enc)[i] = av_codec_is_encoder(codec);
+    if(codec->type == AVMEDIA_TYPE_AUDIO && codec->sample_fmts){
+      SET_STRING_ELT(fmt, i, safe_string(av_get_sample_fmt_name(codec->sample_fmts[0])));
+    } else if(codec->type == AVMEDIA_TYPE_VIDEO && codec->pix_fmts){
+      SET_STRING_ELT(fmt, i, safe_string(av_get_pix_fmt_name(codec->pix_fmts[0])));
+    }
     i++;
   }
-  SEXP out = Rf_list4(type, enc, name, desc);
-  UNPROTECT(4);
+  SEXP out = Rf_list5(type, enc, name, desc, fmt);
+  UNPROTECT(5);
   return out;
 }
 
