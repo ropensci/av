@@ -47,6 +47,7 @@ static void close_input_file(input_container *input){
     return;
   avcodec_close(input->decoder);
   avcodec_free_context(&(input->decoder));
+  avformat_close_input(&input->demuxer);
   avformat_free_context(input->demuxer);
   av_free(input);
 }
