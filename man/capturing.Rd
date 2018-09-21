@@ -6,7 +6,7 @@
 \title{Record Video from Graphics Device}
 \usage{
 av_capture_graphics(expr, output = "output.mp4", width = 720,
-  height = 480, framerate = 1, filter = "null", audio = NULL,
+  height = 480, framerate = 1, vfilter = "null", audio = NULL,
   verbose = TRUE, ...)
 }
 \arguments{
@@ -23,7 +23,7 @@ container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 output fps may be different if you specify a filter that modifies speed or interpolates
 frames.}
 
-\item{filter}{a string defining an ffmpeg filter graph. This is the same parameter
+\item{vfilter}{a string defining an ffmpeg filter graph. This is the same parameter
 as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 
 \item{audio}{optional file with sounds to add to the video}
@@ -52,7 +52,7 @@ makeplot <- function(){
 
 # Play 1 plot per sec, and use an interpolation filter to convert into 10 fps
 video_file <- file.path(tempdir(), 'output.mp4')
-av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, filter = 'framerate=fps=10')
+av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
 av::av_video_info(video_file)
 utils::browseURL(video_file)}
 }

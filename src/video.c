@@ -427,7 +427,7 @@ static void fin_output(SEXP ptr){
   close_output_file(x);
 }
 
-SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc, SEXP audio, SEXP ptr){
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, SEXP enc, SEXP audio, SEXP ptr){
   double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = NULL;
   if(Rf_length(enc)) {
@@ -457,7 +457,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
       image = read_single_frame(CHAR(STRING_ELT(in_files, i)), output);
       image->pts = i * duration;
       if(output->video_filter == NULL)
-        output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
+        output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(vfilter, 0)));
       bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
       av_frame_free(&image);
     } else {

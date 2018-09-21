@@ -23,7 +23,7 @@
 #' the same width and height.
 #' @param output name of the output file. File extension must correspond to a known
 #' container format such as `mp4`, `mkv`, `mov`, or `flv`.
-#' @param filter a string defining an ffmpeg filter graph. This is the same parameter
+#' @param vfilter a string defining an ffmpeg filter graph. This is the same parameter
 #' as the `-vf` argument in the `ffmpeg` command line utility.
 #' @param framerate video framerate in frames per seconds. This is the input fps, the
 #' output fps may be different if you specify a filter that modifies speed or interpolates
@@ -33,7 +33,7 @@
 #' @param audio optional file with sounds to add to the video
 #' @param verbose emit some output and a progress meter counting processed images. Must
 #' be `TRUE` or `FALSE` or an integer with a valid [log_level](av_log_level).
-av_encode_video <- function(input, output = "video.mp4", framerate = 24, filter = "null",
+av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter = "null",
                             codec = NULL, audio = NULL, verbose = TRUE){
   stopifnot(length(input) > 0)
   input <- normalizePath(input, mustWork = TRUE)
@@ -42,7 +42,7 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, filter 
   stopifnot(file.exists(dirname(output)))
   stopifnot(length(framerate) == 1)
   framerate <- as.numeric(framerate)
-  filter <- as.character(filter)
+  vfilter <- as.character(vfilter)
   codec <- as.character(codec)
   if(length(audio))
     audio <- normalizePath(audio, mustWork = TRUE)
@@ -53,5 +53,5 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, filter 
   av_log_level(verbose)
   ptr <- new_ptr()
   on.exit(run_cleanup(ptr))
-  .Call(R_encode_video, input, output, framerate, filter, codec, audio, ptr)
+  .Call(R_encode_video, input, output, framerate, vfilter, codec, audio, ptr)
 }

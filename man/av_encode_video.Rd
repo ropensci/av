@@ -7,7 +7,7 @@
 \title{Video Encoding}
 \usage{
 av_encode_video(input, output = "video.mp4", framerate = 24,
-  filter = "null", codec = NULL, audio = NULL, verbose = TRUE)
+  vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
 }
 \arguments{
 \item{input}{a vector with images such as png files. All input files should have
@@ -20,7 +20,7 @@ container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
 output fps may be different if you specify a filter that modifies speed or interpolates
 frames.}
 
-\item{filter}{a string defining an ffmpeg filter graph. This is the same parameter
+\item{vfilter}{a string defining an ffmpeg filter graph. This is the same parameter
 as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 
 \item{codec}{name of the video codec as listed in \link{av_encoders}. The

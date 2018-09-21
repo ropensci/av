@@ -75,7 +75,7 @@ test_that("speed up/down filters", {
   for (x in c(0.1, 0.5, 2, 10)){
     framerate <- 25
     filter <- sprintf("setpts=%s*PTS", as.character(x))
-    av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, filter = filter, verbose = FALSE)
+    av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, vfilter = filter, verbose = FALSE)
     info <- av_video_info('speed.mp4')
     unlink('speed.mp4')
     expect_equal(info$video$framerate, (framerate / x))
@@ -91,7 +91,7 @@ test_that("test error handling", {
   expect_false(file.exists("video.mp4"))
   expect_error(av_encode_video(tmp, verbose = -8), "input")
   expect_false(file.exists("video.mp4"))
-  expect_error(av_encode_video(png_files, filter = "doesnontexist", verbose = -8), "filter")
+  expect_error(av_encode_video(png_files, vfilter = "doesnontexist", verbose = -8), "filter")
   expect_false(file.exists("video.mp4"))
 
   # Test time limit
