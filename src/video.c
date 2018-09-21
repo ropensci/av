@@ -454,14 +454,13 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
   /* Loop over input image files files */
   int len = Rf_length(in_files);
   for(int i = 0; i <= len; i++){
-    if(i < Rf_length(in_files)) {
-      image = read_single_frame(CHAR(STRING_ELT(in_files, i)), output);
-      image->pts = i * duration;
-      if(output->video_filter == NULL)
-        output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(vfilter, 0)));
-      bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
-      av_frame_free(&image);
-    } else {
+    image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(i, len-1))), output);
+    image->pts = i * duration;
+    if(output->video_filter == NULL)
+      output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(vfilter, 0)));
+    bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
+    av_frame_free(&image);
+    if(i == len){
       bail_if_null(output->video_filter, "Faild to read any input frames");
       bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
     }

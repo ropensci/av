@@ -34,7 +34,7 @@ test_that("convert images into video formats", {
 
     # Gif doesn't have video metadata (duration)
     if(ext != 'gif')
-      expect_equal(info$duration, (n-1) / framerate)
+      expect_equal(info$duration, n / framerate)
   }
 })
 
@@ -55,8 +55,8 @@ test_that("audio sampling works", {
     expect_equal(info$audio$sample_rate, 44100)
 
     # Audio stream may slightly alter the duration, 1 sec margin
-    expect_gte(info$duration, (n-1) / framerate)
-    expect_lt(info$duration - 1, (n-1) / framerate)
+    expect_gte(info$duration, n / framerate)
+    expect_lt(info$duration - 1, n / framerate)
   }
 })
 
@@ -67,7 +67,7 @@ test_that("fractional framerates work", {
   unlink('test.mp4')
 
   expect_equal(info$video$framerate, framerate)
-  expect_equal(info$duration, (length(png_files)-1) / framerate)
+  expect_equal(info$duration, length(png_files) / framerate)
 
 })
 
@@ -79,7 +79,7 @@ test_that("speed up/down filters", {
     info <- av_video_info('speed.mp4')
     unlink('speed.mp4')
     expect_equal(info$video$framerate, (framerate / x))
-    expect_equal(info$duration, (length(png_files)-1) / (framerate / x))
+    expect_equal(info$duration, length(png_files) / (framerate / x))
   }
 })
 
