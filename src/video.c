@@ -36,6 +36,11 @@ typedef struct {
   AVCodecContext *audio_encoder;
 } output_container;
 
+static void warn_if(int ret, const char * what){
+  if(ret < 0)
+    Rf_warningcall_immediate(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
+}
+
 static void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
@@ -99,9 +104,11 @@ static void close_output_file(output_container *output){
     avcodec_free_context(&(output->audio_encoder));
   }
   if(output->muxer != NULL){
-    bail_if(av_write_trailer(output->muxer), "av_write_trailer");
-    if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
-      avio_closep(&output->muxer->pb);
+    if(output->muxer->pb){
+      warn_if(av_write_trailer(output->muxer), "av_write_trailer");
+      if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
+        avio_closep(&output->muxer->pb);
+    }
     avformat_free_context(output->muxer);
   }
   av_free(output);
