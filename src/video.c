@@ -326,8 +326,6 @@ static void open_output_file(const char *filename, int width, int height, AVCode
   av_dump_format(muxer, 0, filename, 1);
 }
 
-
-
 static AVFrame * read_single_frame(const char *filename, output_container *output){
   AVFormatContext *demuxer = NULL;
   bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
@@ -375,14 +373,15 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
   Rf_error("Input data does not contain suitable video stream");
 }
 
-void sync_audio_stream(output_container * output, int force_flush){
+void sync_audio_stream(output_container * output, int64_t pts){
+  int force_flush = pts == -1;
   input_container * input = output->audio_input;
   if(input == NULL || input->completed)
     return;
   AVPacket *pkt = av_packet_alloc();
   AVFrame *frame = av_frame_alloc();
   while(force_flush || av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
-                      output->video_stream->cur_dts, output->video_stream->time_base) < 0) {
+                      pts, output->video_stream->time_base) < 0) {
 
     int ret = avcodec_receive_packet(output->audio_encoder, pkt);
     if (ret == AVERROR(EAGAIN)){
@@ -503,16 +502,16 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
         av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
                (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
         av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
+        sync_audio_stream(output, pkt->pts);
         bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
         R_CheckUserInterrupt();
-        sync_audio_stream(output, 0);
       }
     }
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
-  sync_audio_stream(output, 1);
+  sync_audio_stream(output, -1);
   av_packet_free(&pkt);
   av_frame_free(&frame);
   return out_file;
