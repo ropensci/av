@@ -54,10 +54,6 @@ static input_container * new_input_container(AVFormatContext *demuxer, AVCodecCo
   return out;
 }
 
-static output_container *new_output_container(){
-  return (output_container*) av_mallocz(sizeof(output_container));
-}
-
 static void close_input(input_container **x){
   input_container *input = *x;
   if(input == NULL)
@@ -68,6 +64,25 @@ static void close_input(input_container **x){
   avformat_free_context(input->demuxer);
   av_free(input);
   *x = NULL;
+}
+
+static filter_container * new_filter_container(AVFilterContext *input, AVFilterContext *output, AVFilterGraph *graph){
+  filter_container *out = (filter_container*) av_mallocz(sizeof(filter_container));
+  out->input = input;
+  out->output = output;
+  out->graph = graph;
+  return out;
+}
+
+static void close_filter_container(filter_container *filter){
+  for(int i = 0; i < filter->graph->nb_filters; i++)
+    avfilter_free(filter->graph->filters[i]);
+  avfilter_graph_free(&filter->graph);
+  av_free(filter);
+}
+
+static output_container *new_output_container(){
+  return (output_container*) av_mallocz(sizeof(output_container));
 }
 
 static input_container *open_audio_input(const char *filename){
@@ -144,11 +159,7 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
   av_buffersink_set_frame_size(buffersink_ctx, encoder->frame_size);
   avfilter_inout_free(&inputs);
   avfilter_inout_free(&outputs);
-  filter_container *out = (filter_container*) av_mallocz(sizeof(filter_container));
-  out->input = buffersrc_ctx;
-  out->output = buffersink_ctx;
-  out->graph = filter_graph;
-  return out;
+  return new_filter_container(buffersrc_ctx, buffersink_ctx, filter_graph);
 }
 
 static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat fmt, const char *filter_spec){
@@ -195,12 +206,7 @@ static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat f
   bail_if(avfilter_graph_config(filter_graph, NULL), "avfilter_graph_config");
   avfilter_inout_free(&inputs);
   avfilter_inout_free(&outputs);
-
-  filter_container *out = (filter_container*) av_mallocz(sizeof(filter_container));
-  out->input = buffersrc_ctx;
-  out->output = buffersink_ctx;
-  out->graph = filter_graph;
-  return out;
+  return new_filter_container(buffersrc_ctx, buffersink_ctx, filter_graph);
 }
 
 static void add_audio_output(output_container *container, AVCodecContext *audio_decoder){
@@ -275,13 +281,6 @@ static void open_output_file(const char *filename, int width, int height, AVCode
 
   //print info and return
   av_dump_format(muxer, 0, filename, 1);
-}
-
-static void close_filter_container(filter_container *filter){
-  for(int i = 0; i < filter->graph->nb_filters; i++)
-    avfilter_free(filter->graph->filters[i]);
-  avfilter_graph_free(&filter->graph);
-  av_free(filter);
 }
 
 static void close_output_file(output_container *output){
