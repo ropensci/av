@@ -27,6 +27,7 @@ typedef struct {
 typedef struct {
   AVFormatContext *muxer;
   input_container *audio_input;
+  input_container *video_input;
   AVStream *video_stream;
   AVStream *audio_stream;
   filter_container *video_filter;
@@ -45,7 +46,19 @@ static void bail_if_null(void * ptr, const char * what){
     bail_if(-1, what);
 }
 
-static void close_input_file(input_container *input){
+static input_container * new_input_container(AVFormatContext *demuxer, AVCodecContext *decoder, AVStream *stream){
+  input_container *out = (input_container*) av_mallocz(sizeof(input_container));
+  out->demuxer = demuxer;
+  out->stream = stream;
+  out->decoder = decoder;
+  return out;
+}
+
+static output_container *new_output_container(){
+  return (output_container*) av_mallocz(sizeof(output_container));
+}
+
+static void close_input(input_container *input){
   if(input == NULL)
     return;
   avcodec_close(input->decoder);
@@ -70,17 +83,9 @@ static input_container *open_audio_input(const char *filename){
     AVCodecContext *decoder = avcodec_alloc_context3(codec);
     bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
     bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
-
-    /* Is this needed ?*/
-    if (!decoder->channel_layout)
+    if (!decoder->channel_layout) /* Is this needed ?*/
       decoder->channel_layout = av_get_default_channel_layout(decoder->channels);
-
-    /* Store relevant objects */
-    input_container *out = (input_container*) av_mallocz(sizeof(input_container));
-    out->demuxer = demuxer;
-    out->stream = demuxer->streams[i];
-    out->decoder = decoder;
-    return out;
+    return new_input_container(demuxer, decoder, demuxer->streams[i]);
   }
   avformat_free_context(demuxer);
   Rf_error("No suitable audio stream found in %s", filename);
@@ -218,10 +223,6 @@ static void add_audio_output(output_container *container, AVCodecContext *audio_
   container->audio_stream = audio_stream;
 }
 
-static output_container *alloc_output_container(){
-  return (output_container*) av_mallocz(sizeof(output_container));
-}
-
 static void open_output_file(const char *filename, int width, int height, AVCodec *codec,
                                           output_container *output){
   /* Init container context (infers format from file extension) */
@@ -282,13 +283,16 @@ static void close_filter_container(filter_container *filter){
 }
 
 static void close_output_file(output_container *output){
+  if(output->audio_input != NULL){
+    close_input(output->audio_input);
+  }
+  if(output->video_input != NULL){
+    close_input(output->video_input);
+  }
   if(output->video_encoder != NULL){
     close_filter_container(output->video_filter);
     avcodec_close(output->video_encoder);
     avcodec_free_context(&(output->video_encoder));
-  }
-  if(output->audio_input != NULL){
-    close_input_file(output->audio_input);
   }
   if(output->audio_encoder != NULL){
     close_filter_container(output->audio_filter);
@@ -304,7 +308,7 @@ static void close_output_file(output_container *output){
   av_free(output);
 }
 
-static AVFrame * read_single_frame(const char *filename){
+static AVFrame * read_single_frame(const char *filename, output_container *output){
   AVFormatContext *ifmt_ctx = NULL;
   bail_if(avformat_open_input(&ifmt_ctx, filename, NULL, NULL), "avformat_open_input");
   bail_if(avformat_find_stream_info(ifmt_ctx, NULL), "avformat_find_stream_info");
@@ -317,6 +321,9 @@ static AVFrame * read_single_frame(const char *filename){
     AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     bail_if_null(codec, "avcodec_find_decoder");
     AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
+
+    /* This cleans input on.exit */
+    output->video_input = new_input_container(ifmt_ctx, codec_ctx, stream);
     bail_if(avcodec_parameters_to_context(codec_ctx, stream->codecpar), "avcodec_parameters_to_context");
     codec_ctx->framerate = av_guess_frame_rate(ifmt_ctx, stream, NULL);
     bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
@@ -341,14 +348,12 @@ static AVFrame * read_single_frame(const char *filename){
         continue;
       bail_if(ret2, "avcodec_receive_frame");
       av_packet_free(&pkt);
-      avcodec_close(codec_ctx);
-      avcodec_free_context(&codec_ctx);
-      avformat_close_input(&ifmt_ctx);
-      avformat_free_context(ifmt_ctx);
+      close_input(output->video_input);
+      output->video_input = NULL;
       return picture;
     } while(ret == 0);
   }
-  Rf_error("No suitable stream or frame found");
+  Rf_error("Input data does not contain suitable video stream");
 }
 
 void sync_audio_stream(output_container * output, int force_flush){
@@ -439,7 +444,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   AVFrame * image = NULL;
   AVFrame * frame = av_frame_alloc();
   AVPacket *pkt = av_packet_alloc();
-  output_container *output = alloc_output_container();
+  output_container *output = new_output_container();
   output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
 
   /* Setup cleanups */
@@ -449,7 +454,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   int len = Rf_length(in_files);
   for(int i = 0; i <= len; i++){
     if(i < Rf_length(in_files)) {
-      image = read_single_frame(CHAR(STRING_ELT(in_files, i)));
+      image = read_single_frame(CHAR(STRING_ELT(in_files, i)), output);
       image->pts = i * duration;
       if(output->video_filter == NULL)
         output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(filterstr, 0)));
