@@ -20,13 +20,13 @@ devtools::install_github("thomasp85/gganimate")
 
 ## Demo Video
 
-Generate a demo video with some random plots and demo music
+Generate a demo video with some random plots and free [demo music](https://freemusicarchive.org/music/Synapsis/~/Wonderland):
 
 ```r
 av::av_demo()
 ```
 
-Hopefully we can come up with some more interesting demo video.
+Hopefully we can come up some more interesting demo videos.
 
 ## Using gganimate
 
