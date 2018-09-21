@@ -18,9 +18,19 @@ devtools::install_github("ropensci/av")
 devtools::install_github("thomasp85/gganimate")
 ```
 
+## Demo Video
+
+Generate a demo video with some random plots and demo music
+
+```r
+av::av_demo()
+```
+
+Hopefully we can come up with some more interesting demo video.
+
 ## Using gganimate
 
-You can easily use the `av_encode_video()` function in gganimate:
+You can use `av_encode_video()` as the renderer in gganimate:
 
 ```r
 # Get latest gganimate
@@ -87,7 +97,7 @@ makeplot <- function(){
 
 # Play 1 plot per sec, and use an interpolation filter to convert into 10 fps
 video_file <- file.path(tempdir(), 'output.mp4')
-av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
+av::av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
 av::av_video_info(video_file)
 utils::browseURL(video_file)
 ```
