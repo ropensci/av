@@ -26,7 +26,7 @@ Generate a demo video with some random plots and free [demo music](https://freem
 av::av_demo()
 ```
 
-Hopefully we can come up some more interesting demo videos.
+This demo is totally lame, please open a PR with something better (in base R!).
 
 ## Using gganimate
 
