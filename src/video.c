@@ -322,41 +322,41 @@ static void open_output_file(const char *filename, int width, int height, AVCode
 
 
 static AVFrame * read_single_frame(const char *filename, output_container *output){
-  AVFormatContext *ifmt_ctx = NULL;
-  bail_if(avformat_open_input(&ifmt_ctx, filename, NULL, NULL), "avformat_open_input");
-  bail_if(avformat_find_stream_info(ifmt_ctx, NULL), "avformat_find_stream_info");
+  AVFormatContext *demuxer = NULL;
+  bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
+  bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
 
   /* Try all input streams */
-  for (int i = 0; i < ifmt_ctx->nb_streams; i++) {
-    AVStream *stream = ifmt_ctx->streams[i];
+  for (int i = 0; i < demuxer->nb_streams; i++) {
+    AVStream *stream = demuxer->streams[i];
     if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
       continue;
     AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     bail_if_null(codec, "avcodec_find_decoder");
-    AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
+    AVCodecContext *decoder = avcodec_alloc_context3(codec);
 
     /* This cleans input on.exit */
-    output->video_input = new_input_container(ifmt_ctx, codec_ctx, stream);
-    bail_if(avcodec_parameters_to_context(codec_ctx, stream->codecpar), "avcodec_parameters_to_context");
-    codec_ctx->framerate = av_guess_frame_rate(ifmt_ctx, stream, NULL);
-    bail_if(avcodec_open2(codec_ctx, codec, NULL), "avcodec_open2");
+    output->video_input = new_input_container(demuxer, decoder, stream);
+    bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
+    decoder->framerate = av_guess_frame_rate(demuxer, stream, NULL);
+    bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2");
     int ret;
     AVPacket *pkt = av_packet_alloc();
     AVFrame *picture = av_frame_alloc();
     do {
-      ret = av_read_frame(ifmt_ctx, pkt);
+      ret = av_read_frame(demuxer, pkt);
       if(ret == AVERROR_EOF){
-        bail_if(avcodec_send_packet(codec_ctx, NULL), "flushing avcodec_send_packet");
+        bail_if(avcodec_send_packet(decoder, NULL), "flushing avcodec_send_packet");
       } else {
         bail_if(ret, "av_read_frame");
         if(pkt->stream_index != i){
           av_packet_unref(pkt);
           continue; //wrong stream
         }
-        bail_if(avcodec_send_packet(codec_ctx, pkt), "avcodec_send_packet");
+        bail_if(avcodec_send_packet(decoder, pkt), "avcodec_send_packet");
       }
       av_packet_unref(pkt);
-      int ret2 = avcodec_receive_frame(codec_ctx, picture);
+      int ret2 = avcodec_receive_frame(decoder, picture);
       if(ret2 == AVERROR(EAGAIN))
         continue;
       bail_if(ret2, "avcodec_receive_frame");
