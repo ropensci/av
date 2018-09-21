@@ -58,7 +58,8 @@ static output_container *new_output_container(){
   return (output_container*) av_mallocz(sizeof(output_container));
 }
 
-static void close_input(input_container *input){
+static void close_input(input_container **x){
+  input_container *input = *x;
   if(input == NULL)
     return;
   avcodec_close(input->decoder);
@@ -66,6 +67,7 @@ static void close_input(input_container *input){
   avformat_close_input(&input->demuxer);
   avformat_free_context(input->demuxer);
   av_free(input);
+  *x = NULL;
 }
 
 static input_container *open_audio_input(const char *filename){
@@ -284,10 +286,10 @@ static void close_filter_container(filter_container *filter){
 
 static void close_output_file(output_container *output){
   if(output->audio_input != NULL){
-    close_input(output->audio_input);
+    close_input(&output->audio_input);
   }
   if(output->video_input != NULL){
-    close_input(output->video_input);
+    close_input(&output->video_input);
   }
   if(output->video_encoder != NULL){
     close_filter_container(output->video_filter);
@@ -348,8 +350,7 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
         continue;
       bail_if(ret2, "avcodec_receive_frame");
       av_packet_free(&pkt);
-      close_input(output->video_input);
-      output->video_input = NULL;
+      close_input(&output->video_input);
       return picture;
     } while(ret == 0);
   }
