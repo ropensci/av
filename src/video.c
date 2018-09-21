@@ -7,6 +7,8 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+void run_on_exit(SEXP ptr, R_CFinalizer_t fun, void *data);
+
 #define VIDEO_TIME_BASE 1000
 
 typedef struct {
@@ -24,12 +26,13 @@ typedef struct {
 
 typedef struct {
   AVFormatContext *muxer;
-  AVCodecContext *video_encoder;
+  input_container *audio_input;
   AVStream *video_stream;
-  filter_container *video_filter;
-  AVCodecContext *audio_encoder;
   AVStream *audio_stream;
+  filter_container *video_filter;
   filter_container *audio_filter;
+  AVCodecContext *video_encoder;
+  AVCodecContext *audio_encoder;
 } output_container;
 
 static void bail_if(int ret, const char * what){
@@ -220,7 +223,7 @@ static output_container *alloc_output_container(){
 }
 
 static void open_output_file(const char *filename, int width, int height, AVCodec *codec,
-                                          input_container *audio_input, output_container *output){
+                                          output_container *output){
   /* Init container context (infers format from file extension) */
   AVFormatContext *muxer = NULL;
   avformat_alloc_output_context2(&muxer, NULL, NULL, filename);
@@ -259,8 +262,8 @@ static void open_output_file(const char *filename, int width, int height, AVCode
   output->video_encoder = video_encoder;
 
   /* Add audio stream if needed */
-  if(audio_input != NULL)
-    add_audio_output(output, audio_input->decoder);
+  if(output->audio_input != NULL)
+    add_audio_output(output, output->audio_input->decoder);
 
   /* Open output file file */
   if (!(muxer->oformat->flags & AVFMT_NOFILE))
@@ -283,6 +286,9 @@ static void close_output_file(output_container *output){
     close_filter_container(output->video_filter);
     avcodec_close(output->video_encoder);
     avcodec_free_context(&(output->video_encoder));
+  }
+  if(output->audio_input != NULL){
+    close_input_file(output->audio_input);
   }
   if(output->audio_encoder != NULL){
     close_filter_container(output->audio_filter);
@@ -345,7 +351,8 @@ static AVFrame * read_single_frame(const char *filename){
   Rf_error("No suitable stream or frame found");
 }
 
-void sync_audio_stream(input_container * input, output_container * output, int force_flush){
+void sync_audio_stream(output_container * output, int force_flush){
+  input_container * input = output->audio_input;
   if(input == NULL || input->completed)
     return;
   AVPacket *pkt = av_packet_alloc();
@@ -407,7 +414,15 @@ void sync_audio_stream(input_container * input, output_container * output, int f
   av_frame_free(&frame);
 }
 
-SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc, SEXP audio){
+static void fin_output(SEXP ptr){
+  output_container *x = (output_container*) R_ExternalPtrAddr(ptr);
+  if(x == NULL)
+    return;
+  R_ClearExternalPtr(ptr);
+  close_output_file(x);
+}
+
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr, SEXP enc, SEXP audio, SEXP ptr){
   double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = NULL;
   if(Rf_length(enc)) {
@@ -425,7 +440,10 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
   AVFrame * frame = av_frame_alloc();
   AVPacket *pkt = av_packet_alloc();
   output_container *output = alloc_output_container();
-  input_container * audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
+  output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
+
+  /* Setup cleanups */
+  run_on_exit(ptr, fin_output, output);
 
   /* Loop over input image files files */
   int len = Rf_length(in_files);
@@ -454,7 +472,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(ret, "av_buffersink_get_frame");
         frame->pict_type = AV_PICTURE_TYPE_I;
         if(output->muxer == NULL)
-          open_output_file(CHAR(STRING_ELT(out_file, 0)), frame->width, frame->height, codec, audio_input, output);
+          open_output_file(CHAR(STRING_ELT(out_file, 0)), frame->width, frame->height, codec, output);
         bail_if(avcodec_send_frame(output->video_encoder, frame), "avcodec_send_frame");
         av_frame_unref(frame);
       }
@@ -476,15 +494,13 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP filterstr
         bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
         av_packet_unref(pkt);
         R_CheckUserInterrupt();
-        sync_audio_stream(audio_input, output, 0);
+        sync_audio_stream(output, 0);
       }
     }
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
-  sync_audio_stream(audio_input, output, 1);
-  close_input_file(audio_input);
-  close_output_file(output);
+  sync_audio_stream(output, 1);
   av_packet_free(&pkt);
   av_frame_free(&frame);
   return out_file;
