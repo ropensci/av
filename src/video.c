@@ -81,8 +81,44 @@ static void close_filter_container(filter_container *filter){
   av_free(filter);
 }
 
-static output_container *new_output_container(){
-  return (output_container*) av_mallocz(sizeof(output_container));
+static void close_output_file(output_container *output){
+  if(output->audio_input != NULL){
+    close_input(&output->audio_input);
+  }
+  if(output->video_input != NULL){
+    close_input(&output->video_input);
+  }
+  if(output->video_encoder != NULL){
+    close_filter_container(output->video_filter);
+    avcodec_close(output->video_encoder);
+    avcodec_free_context(&(output->video_encoder));
+  }
+  if(output->audio_encoder != NULL){
+    close_filter_container(output->audio_filter);
+    avcodec_close(output->audio_encoder);
+    avcodec_free_context(&(output->audio_encoder));
+  }
+  if(output->muxer != NULL){
+    bail_if(av_write_trailer(output->muxer), "av_write_trailer");
+    if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
+      avio_closep(&output->muxer->pb);
+    avformat_free_context(output->muxer);
+  }
+  av_free(output);
+}
+
+static void fin_output(SEXP ptr){
+  output_container *x = (output_container*) R_ExternalPtrAddr(ptr);
+  if(x == NULL)
+    return;
+  R_ClearExternalPtr(ptr);
+  close_output_file(x);
+}
+
+static output_container *new_output_container(SEXP ptr){
+  output_container *output = av_mallocz(sizeof(output_container));
+  run_on_exit(ptr, fin_output, output);
+  return output;
 }
 
 static input_container *open_audio_input(const char *filename){
@@ -283,31 +319,7 @@ static void open_output_file(const char *filename, int width, int height, AVCode
   av_dump_format(muxer, 0, filename, 1);
 }
 
-static void close_output_file(output_container *output){
-  if(output->audio_input != NULL){
-    close_input(&output->audio_input);
-  }
-  if(output->video_input != NULL){
-    close_input(&output->video_input);
-  }
-  if(output->video_encoder != NULL){
-    close_filter_container(output->video_filter);
-    avcodec_close(output->video_encoder);
-    avcodec_free_context(&(output->video_encoder));
-  }
-  if(output->audio_encoder != NULL){
-    close_filter_container(output->audio_filter);
-    avcodec_close(output->audio_encoder);
-    avcodec_free_context(&(output->audio_encoder));
-  }
-  if(output->muxer != NULL){
-    bail_if(av_write_trailer(output->muxer), "av_write_trailer");
-    if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
-      avio_closep(&output->muxer->pb);
-    avformat_free_context(output->muxer);
-  }
-  av_free(output);
-}
+
 
 static AVFrame * read_single_frame(const char *filename, output_container *output){
   AVFormatContext *ifmt_ctx = NULL;
@@ -419,14 +431,6 @@ void sync_audio_stream(output_container * output, int force_flush){
   av_frame_free(&frame);
 }
 
-static void fin_output(SEXP ptr){
-  output_container *x = (output_container*) R_ExternalPtrAddr(ptr);
-  if(x == NULL)
-    return;
-  R_ClearExternalPtr(ptr);
-  close_output_file(x);
-}
-
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, SEXP enc, SEXP audio, SEXP ptr){
   double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = NULL;
@@ -444,11 +448,8 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
   AVFrame * image = NULL;
   AVFrame * frame = av_frame_alloc();
   AVPacket *pkt = av_packet_alloc();
-  output_container *output = new_output_container();
+  output_container *output = new_output_container(ptr);
   output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
-
-  /* Setup cleanups */
-  run_on_exit(ptr, fin_output, output);
 
   /* Loop over input image files files */
   int len = Rf_length(in_files);
