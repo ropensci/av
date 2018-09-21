@@ -5,3 +5,5 @@
 ^LICENSE\.md$
 ^.travis.yml$
 ^appveyor\.yml$
+^[^/]+\.(mp4|mkv|mov|flv|gif)$
+^README\.md$
