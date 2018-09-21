@@ -82,3 +82,21 @@ test_that("speed up/down filters", {
     expect_equal(info$duration, (length(png_files)-1) / (framerate / x))
   }
 })
+
+test_that("test error handling", {
+  wrongfile <- system.file('DESCRIPTION', package='av')
+  file.copy(wrongfile, tmp <- tempfile(fileext = '.png'))
+  unlink("video.mp4")
+  expect_error(av_encode_video(wrongfile, verbose = FALSE), "input")
+  expect_false(file.exists("video.mp4"))
+  expect_error(av_encode_video(tmp, verbose = -8), "input")
+  expect_false(file.exists("video.mp4"))
+  expect_error(av_encode_video(png_files, filter = "doesnontexist", verbose = -8), "filter")
+  expect_false(file.exists("video.mp4"))
+
+  # Test time limit
+  setTimeLimit(elapsed = 2, transient = TRUE)
+  timings <- system.time(expect_error(av_encode_video(rep(png_files, 100), verbose = FALSE), "time"))
+  setTimeLimit()
+  expect_lt(timings[['elapsed']], 2.5)
+})
