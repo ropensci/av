@@ -4,10 +4,10 @@ Title: Working with Audio and Video
 Version: 0.2
 Authors@R: person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroen@berkeley.edu",
     comment = c(ORCID = "0000-0002-4035-0289"))
-Description: Bindings to FFmpeg <http://www.ffmpeg.org/> AV library for working with audio 
+Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for working with audio 
     and video in R. Generate high quality videos files by capturing images from the R graphics
-    device combined with custom audio stream. This package interfaces directly to the FFmpeg C
-    API and does not require any command line utilities.
+    device combined with custom audio stream. This package interfaces directly to the C API
+    and does not require any command line utilities.
 License: MIT + file LICENSE
 URL: https://github.com/ropensci/av (devel)
     http://www.ffmpeg.org/ (upstream)
