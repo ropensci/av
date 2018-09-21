@@ -3,16 +3,16 @@
 > R Bindings to FFmpeg
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![Build Status](https://travis-ci.org/jeroen/av.svg?branch=master)](https://travis-ci.org/jeroen/av)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jeroen/av?branch=master)](https://ci.appveyor.com/project/jeroen/av)
+[![Build Status](https://travis-ci.org/ropensci/av.svg?branch=master)](https://travis-ci.org/ropensci/av)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ropensci/av?branch=master)](https://ci.appveyor.com/project/jeroen/av)
 
 ## Installation
 
-You can install the development version from [GitHub](https://github.com/jeroen/av) with:
+You can install the development version from [GitHub](https://github.com/ropensci/av) with:
 
 ```r
 # Install from GH
-devtools::install_github("jeroen/av")
+devtools::install_github("ropensci/av")
 
 # For the demo
 devtools::install_github("thomasp85/gganimate")
@@ -28,10 +28,10 @@ You can easily use the `av_encode_video()` function in gganimate:
 library(gganimate)
 
 # Define the "renderer" for gganimate
-av_renderer <- function(filter = "null", filename = 'output.mp4'){
+av_renderer <- function(vfilter = "null", filename = 'output.mp4'){
   function(frames, fps){
     unlink(filename)
-    av::av_encode_video(frames, filename, framerate = fps, filter = filter)
+    av::av_encode_video(frames, filename, framerate = fps, vfilter = vfilter)
   }
 }
 
@@ -53,7 +53,7 @@ You can add a custom [ffmpeg video filter chain](https://ffmpeg.org/ffmpeg-filte
 
 ```r
 # Continue on the example above
-myrenderer <- av_renderer(filter = 'negate=1, fade=in:0:15:color=orange')
+myrenderer <- av_renderer(vfilter = 'negate=1, fade=in:0:15:color=orange')
 df <- animate(p, renderer = myrenderer, width = 720*q, height = 480*q, res = 72*q, fps = 25)
 av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')
@@ -62,7 +62,7 @@ utils::browseURL('output.mp4')
 Filters can also affect the final fps of the video. For example this filter will double fps because it halves presentation the timestamp (pts) of each frame. Hence the output framerate is actually 20!
 
 ```r
-myrenderer <- av_renderer(filter = "setpts=0.5*PTS")
+myrenderer <- av_renderer(vfilter = "setpts=0.5*PTS")
 df <- animate(p, renderer = myrenderer, fps = 10)
 av::av_video_info('output.mp4')
 utils::browseURL('output.mp4')
@@ -87,7 +87,7 @@ makeplot <- function(){
 
 # Play 1 plot per sec, and use an interpolation filter to convert into 10 fps
 video_file <- file.path(tempdir(), 'output.mp4')
-av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, filter = 'framerate=fps=10')
+av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
 av::av_video_info(video_file)
 utils::browseURL(video_file)
 ```
