@@ -5,10 +5,13 @@
 \alias{av_demo}
 \title{Demo Video}
 \usage{
-av_demo(width = 960, height = 720, framerate = 5, verbose = TRUE,
-  ...)
+av_demo(output = "demo.mp4", width = 960, height = 720,
+  framerate = 5, verbose = TRUE, ...)
 }
 \arguments{
+\item{output}{name of the output file. File extension must correspond to a known
+container format such as \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.}
+
 \item{width}{width in pixels of the graphics device}
 
 \item{height}{height in pixels of the graphics device}
