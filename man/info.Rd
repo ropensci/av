@@ -14,7 +14,8 @@ av_video_info(file)
 Get video info such as width, height, format, duration and framerate.
 }
 \seealso{
-Other av: \code{\link{capturing}}, \code{\link{encoding}},
-  \code{\link{formats}}, \code{\link{logging}}
+Other av: \code{\link{capturing}}, \code{\link{demo}},
+  \code{\link{encoding}}, \code{\link{formats}},
+  \code{\link{logging}}
 }
 \concept{av}

@@ -57,7 +57,8 @@ av::av_video_info(video_file)
 utils::browseURL(video_file)}
 }
 \seealso{
-Other av: \code{\link{encoding}}, \code{\link{formats}},
-  \code{\link{info}}, \code{\link{logging}}
+Other av: \code{\link{demo}}, \code{\link{encoding}},
+  \code{\link{formats}}, \code{\link{info}},
+  \code{\link{logging}}
 }
 \concept{av}

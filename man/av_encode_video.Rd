@@ -47,7 +47,8 @@ to the \code{libx264} video codec which has excellent compression and works out 
 on all \href{https://caniuse.com/#search=h264}{modern browsers} and operating systems.
 }
 \seealso{
-Other av: \code{\link{capturing}}, \code{\link{formats}},
-  \code{\link{info}}, \code{\link{logging}}
+Other av: \code{\link{capturing}}, \code{\link{demo}},
+  \code{\link{formats}}, \code{\link{info}},
+  \code{\link{logging}}
 }
 \concept{av}
