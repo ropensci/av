@@ -26,6 +26,7 @@ av_demo <- function(output = "demo.mp4", width = 960, height = 720, framerate = 
     if(as.logical(verbose))
       cat("done!\n", file = stderr())
   }, width = width, height = height, res = res, framerate = framerate, verbose = verbose, ...)
-  utils::browseURL(video)
+  if(interactive())
+    utils::browseURL(video)
   return(video)
 }
