@@ -6,7 +6,6 @@
 [![Build Status](https://travis-ci.org/ropensci/av.svg?branch=master)](https://travis-ci.org/ropensci/av)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ropensci/av?branch=master)](https://ci.appveyor.com/project/jeroen/av)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/av)](https://cran.r-project.org/package=av)
-[![cran checks](https://cranchecks.info/badges/summary/av)](https://cran.r-project.org/web/checks/check_results_av.html)
 
 ## Installation
 
