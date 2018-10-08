@@ -6,13 +6,13 @@
 # R CMD INSTALL --configure-vars='INCLUDE_DIR=/.../include LIB_DIR=/.../lib'
 
 # Library settings
-PKG_CONFIG_NAME="libavfilter"
-PKG_DEB_NAME="libavfilter-dev"
+PKG_CONFIG_NAME="libavdevice"
+PKG_DEB_NAME="libavdevice-dev"
 PKG_RPM_NAME="ffmpeg-devel (https://rpmfusion.org)"
 PKG_CSW_NAME="ffmpeg_dev"
 PKG_BREW_NAME="ffmpeg"
 PKG_TEST_HEADER="<libavfilter/version.h>"
-PKG_LIBS="-lavfilter"
+PKG_LIBS="-lavdevice"
 
 # FFMPEG 3 and 4 include libavfilter 6.0
 pkg-config ${PKG_CONFIG_NAME} --atleast-version=6 2>/dev/null

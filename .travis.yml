@@ -11,7 +11,7 @@ matrix:
       addons:
         apt:
           update: true
-          packages: libavfilter-dev
+          packages: libavdevice-dev
           sources:
             - sourceline: 'ppa:jonathonf/ffmpeg-4'
             - sourceline: 'ppa:jonathonf/ffmpeg-3'
@@ -19,7 +19,7 @@ matrix:
       addons:
         apt:
           update: true
-          packages: libavfilter-dev
+          packages: libavdevice-dev
           sources:
             - sourceline: 'ppa:jonathonf/ffmpeg-3'
     - os: osx

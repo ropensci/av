@@ -6,6 +6,7 @@
 #include <libavformat/version.h>
 #include <libavfilter/avfilter.h>
 #include <libavutil/pixdesc.h>
+#include <libavdevice/avdevice.h>
 
 static SEXP safe_string(const char *x){
   if(x == NULL)

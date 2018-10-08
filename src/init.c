@@ -7,6 +7,7 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/version.h>
 #include <libavfilter/avfilter.h>
+#include <libavdevice/avdevice.h>
 
 /* In theory this should be thread safe and R is not */
 void my_log_callback(void *ptr, int level, const char *fmt, va_list vargs){
@@ -27,6 +28,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
   avfilter_register_all();
 #endif
   avformat_network_init();
+  avdevice_register_all();
   av_log_set_callback(my_log_callback);
 
   /* .Call calls */
@@ -34,6 +36,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
   extern SEXP R_list_codecs();
   extern SEXP R_list_demuxers();
   extern SEXP R_list_filters();
+  extern SEXP R_list_input_devices();
   extern SEXP R_list_muxers();
   extern SEXP R_log_level(SEXP);
   extern SEXP R_new_ptr();
@@ -44,6 +47,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
     {"R_encode_video",  (DL_FUNC) &R_encode_video,  7},
     {"R_list_codecs",   (DL_FUNC) &R_list_codecs,   0},
     {"R_list_demuxers", (DL_FUNC) &R_list_demuxers, 0},
+    {"R_list_input_devices",  (DL_FUNC) &R_list_input_devices,  0},
     {"R_list_filters",  (DL_FUNC) &R_list_filters,  0},
     {"R_list_muxers",   (DL_FUNC) &R_list_muxers,   0},
     {"R_log_level",     (DL_FUNC) &R_log_level,     1},
