@@ -27,7 +27,11 @@ devtools::install_github("thomasp85/gganimate")
 
 ## Demo Video
 
-Generate a demo video with some random plots and free [demo music](https://freemusicarchive.org/music/Synapsis/~/Wonderland):
+Generate a demo video with some random plots and free [demo music](https://www.youtube.com/watch?v=35sTb_c7fJI):  
+
+Attribution:  
+Big Horns Intro by Audionautix is licensed under a Creative Commons Attribution license (https://creativecommons.org/licenses/by/4.0/)
+Artist: http://audionautix.com/
 
 ```r
 av::av_demo()
