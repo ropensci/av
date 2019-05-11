@@ -30,7 +30,7 @@ devtools::install_github("thomasp85/gganimate")
 Generate a demo video with some random plots and free [demo music](https://www.youtube.com/watch?v=35sTb_c7fJI):  
 
 Music in the demo video:  
-Big Horns Intro by Audionautix is licensed under a Creative Commons Attribution license (https://creativecommons.org/licenses/by/4.0/)
+Big Horns Intro by Audionautix is licensed under a Creative Commons Attribution license   (https://creativecommons.org/licenses/by/4.0/)  
 Artist: http://audionautix.com/
 
 ```r
