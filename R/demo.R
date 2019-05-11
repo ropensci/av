@@ -25,7 +25,7 @@ av_demo <- function(output = "demo.mp4", width = 960, height = 720, framerate = 
   dy <- function(x,y) {4*y**3+2*x**2-26*y+4*x*y-22}
 
   # gradient descent parameters
-  num_iter <- 240
+  num_iter <- len
   learning_rate <- 0.0005
   x_val <- 6
   y_val <- 6
