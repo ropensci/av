@@ -9,16 +9,22 @@
 #' @name demo
 #' @family av
 av_demo <- function(output = "demo.mp4", width = 960, height = 720, framerate = 24, verbose = TRUE, ...){
+  
+  # Attribution:
+  # Big Horns Intro by Audionautix is licensed under a Creative Commons Attribution license
+  # (https://creativecommons.org/licenses/by/4.0/)
+  # Artist: http://audionautix.com/
   big_horns_intro <- system.file('samples/Big_Horns_Intro.mp3', package='av', mustWork = TRUE)
   info <- av_video_info(big_horns_intro)
   len <- framerate * round(info$duration)
   res <- round(72 * min(width, height) / 480)
 
-  x <- seq(-6, 6, length = 100)
-  y <- x
-
   # Himmelblau's function: https://en.wikipedia.org/wiki/Himmelblau%27s_function
   f <- function(x, y) { (x^2+y-11)^2 + (x+y^2-7)^2 }
+
+  x <- seq(-6, 6, length = 100)
+  y <- x
+  z <- outer(x, y, f)
 
   # partial derivatives
   dx <- function(x,y) {4*x**3-4*x*y-42*x+4*x*y-14}
@@ -53,9 +59,6 @@ av_demo <- function(output = "demo.mp4", width = 960, height = 720, framerate = 
     updates_y[i] <- y_val
     updates_z[i] <- z_val
   }
-
-  # plot
-  z <- outer(x, y, f)
 
   video <- av_capture_graphics(output = output,  audio = big_horns_intro, {
     for(i in seq_len(len)){
