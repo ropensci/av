@@ -39,10 +39,10 @@ test_that("convert images into video formats", {
 })
 
 test_that("audio sampling works", {
-  wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
+  big_horns_intro <- system.file('samples/Big_Horns_Intro.mp3', package='av', mustWork = TRUE)
   for(ext in c("mkv", "mp4", "mov", "flv")){
     filename <- paste0("test.", ext)
-    av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE, audio = wonderland)
+    av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE, audio = big_horns_intro)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
     unlink(filename)
