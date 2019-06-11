@@ -15,8 +15,8 @@ matrix:
           update: true
           packages: libavfilter-dev
           sources:
-            - sourceline: 'ppa:jeroen/ffmpeg-4'
-            - sourceline: 'ppa:jeroen/ffmpeg-3'
+            - sourceline: 'ppa:cran/ffmpeg-4'
+            - sourceline: 'ppa:cran/ffmpeg-3'
     - os: osx
       brew_packages: ffmpeg
     - os: osx
@@ -31,7 +31,7 @@ addons:
     update: true
     packages: libavdevice-dev
     sources:
-      - sourceline: 'ppa:jeroen/ffmpeg-3'
+      - sourceline: 'ppa:cran/ffmpeg-3'
 
 warnings_are_errors: true
 
