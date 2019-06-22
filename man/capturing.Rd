@@ -54,7 +54,7 @@ makeplot <- function(){
 video_file <- file.path(tempdir(), 'output.mp4')
 av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
 av::av_video_info(video_file)
-utils::browseURL(video_file)}
+# utils::browseURL(video_file)}
 }
 \seealso{
 Other av: \code{\link{demo}}, \code{\link{encoding}},

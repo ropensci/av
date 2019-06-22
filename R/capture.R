@@ -28,7 +28,7 @@
 #' video_file <- file.path(tempdir(), 'output.mp4')
 #' av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
 #' av::av_video_info(video_file)
-#' utils::browseURL(video_file)}
+#' # utils::browseURL(video_file)}
 av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height = 480, framerate = 1,
                        vfilter = "null", audio = NULL, verbose = TRUE, ...){
   imgdir <- tempfile('tmppng')
