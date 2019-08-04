@@ -489,32 +489,15 @@ static int encode_output_frames(output_container *output, AVCodec *codec, int co
   }
 }
 
-SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, SEXP enc, SEXP audio, SEXP ptr){
-  double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
-  AVCodec *codec = NULL;
-  if(Rf_length(enc)) {
-    codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
-  } else {
-    AVOutputFormat *frmt = av_guess_format(NULL, CHAR(STRING_ELT(out_file, 0)), NULL);
-    bail_if_null(frmt, "av_guess_format");
-    codec = avcodec_find_encoder(frmt->video_codec);
-  }
-  bail_if_null(codec, "avcodec_find_encoder_by_name");
+/* Loop over input image files files */
+void encode_input_files(output_container *output, AVCodec *codec, SEXP in_files, double duration, const char * filter_string){
   enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-
-  /* Start the output video */
-  AVFrame * image = NULL;
-  output_container *output = new_output_container(ptr);
-  output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
-  output->output_file = CHAR(STRING_ELT(out_file, 0));
-
-  /* Loop over input image files files */
   int len = Rf_length(in_files);
   for(int i = 0; i <= len; i++){
-    image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(i, len-1))), output);
+    AVFrame * image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(i, len-1))), output);
     image->pts = i * duration;
     if(output->video_filter == NULL)
-      output->video_filter = open_video_filter(image, pix_fmt, CHAR(STRING_ELT(vfilter, 0)));
+      output->video_filter = open_video_filter(image, pix_fmt, filter_string);
     bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
     av_frame_free(&image);
     if(i == len){
@@ -524,10 +507,31 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
 
     /* Loop over frames returned by filter */
     if(encode_output_frames(output, codec, i * 100 / len))
-      goto done;
+      return;
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
-done:
+}
+
+SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, SEXP enc, SEXP audio, SEXP ptr){
+  double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
+  const char * filter_string = CHAR(STRING_ELT(vfilter, 0));
+  AVCodec *codec = NULL;
+  if(Rf_length(enc)) {
+    codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
+  } else {
+    AVOutputFormat *frmt = av_guess_format(NULL, CHAR(STRING_ELT(out_file, 0)), NULL);
+    bail_if_null(frmt, "av_guess_format");
+    codec = avcodec_find_encoder(frmt->video_codec);
+  }
+  bail_if_null(codec, "avcodec_find_encoder_by_name");
+
+  /* Start the output video */
+  output_container *output = new_output_container(ptr);
+  output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
+  output->output_file = CHAR(STRING_ELT(out_file, 0));
+  encode_input_files(output, codec, in_files, duration, filter_string);
+
+  /* Flush audio stream */
   sync_audio_stream(output, -1);
   return out_file;
 }
