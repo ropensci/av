@@ -437,6 +437,27 @@ void sync_audio_stream(output_container * output, int64_t pts){
   av_frame_free(&frame);
 }
 
+int recode_output_packet(output_container *output, AVPacket *pkt, int counter){
+  while(1){
+    int ret = avcodec_receive_packet(output->video_encoder, pkt);
+    if (ret == AVERROR(EAGAIN))
+      return 0;
+    if (ret == AVERROR_EOF){
+      av_log(NULL, AV_LOG_INFO, " - video stream completed!\n");
+      return 1;
+    }
+    bail_if(ret, "avcodec_receive_packet");
+    pkt->stream_index = output->video_stream->index;
+    av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
+           (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, counter);
+    av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
+    sync_audio_stream(output, pkt->pts);
+    bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
+    av_packet_unref(pkt);
+    R_CheckUserInterrupt();
+  }
+}
+
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, SEXP enc, SEXP audio, SEXP ptr){
   double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   AVCodec *codec = NULL;
@@ -489,24 +510,8 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
       }
 
       /* re-encode output packet */
-      while(1){
-        int ret = avcodec_receive_packet(output->video_encoder, pkt);
-        if (ret == AVERROR(EAGAIN))
-          break;
-        if (ret == AVERROR_EOF){
-          av_log(NULL, AV_LOG_INFO, " - video stream completed!\n");
-          goto done;
-        }
-        bail_if(ret, "avcodec_receive_packet");
-        pkt->stream_index = output->video_stream->index;
-        av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
-               (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, i * 100 / len);
-        av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
-        sync_audio_stream(output, pkt->pts);
-        bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
-        av_packet_unref(pkt);
-        R_CheckUserInterrupt();
-      }
+      if(recode_output_packet(output, pkt, i * 100 / len))
+        goto done;
     }
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
