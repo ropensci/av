@@ -437,7 +437,10 @@ void sync_audio_stream(output_container * output, int64_t pts){
   av_frame_free(&frame);
 }
 
-int recode_output_packet(output_container *output, AVPacket *pkt, int counter){
+int recode_output_packet(output_container *output, int counter){
+  static AVPacket *pkt = NULL;
+  if(pkt == NULL)
+    pkt = av_packet_alloc();
   while(1){
     int ret = avcodec_receive_packet(output->video_encoder, pkt);
     if (ret == AVERROR(EAGAIN))
@@ -474,7 +477,6 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
   /* Start the output video */
   AVFrame * image = NULL;
   AVFrame * frame = av_frame_alloc();
-  AVPacket *pkt = av_packet_alloc();
   output_container *output = new_output_container(ptr);
   output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
 
@@ -510,14 +512,13 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, 
       }
 
       /* re-encode output packet */
-      if(recode_output_packet(output, pkt, i * 100 / len))
+      if(recode_output_packet(output, i * 100 / len))
         goto done;
     }
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 done:
   sync_audio_stream(output, -1);
-  av_packet_free(&pkt);
   av_frame_free(&frame);
   return out_file;
 }
