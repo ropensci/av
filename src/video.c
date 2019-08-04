@@ -332,6 +332,13 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
   bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
   bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
 
+  static AVPacket *pkt = NULL;
+  static AVFrame *picture = NULL;
+  if(pkt == NULL){
+    pkt = av_packet_alloc();
+    picture = av_frame_alloc();
+  }
+
   /* Try all input streams */
   for (int i = 0; i < demuxer->nb_streams; i++) {
     AVStream *stream = demuxer->streams[i];
@@ -347,8 +354,6 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
     decoder->framerate = av_guess_frame_rate(demuxer, stream, NULL);
     bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2");
     int ret;
-    AVPacket *pkt = av_packet_alloc();
-    AVFrame *picture = av_frame_alloc();
     do {
       ret = av_read_frame(demuxer, pkt);
       if(ret == AVERROR_EOF){
@@ -366,7 +371,6 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
       if(ret2 == AVERROR(EAGAIN))
         continue;
       bail_if(ret2, "avcodec_receive_frame");
-      av_packet_free(&pkt);
       close_input(&output->video_input);
       return picture;
     } while(ret == 0);
@@ -499,7 +503,6 @@ void encode_input_files(output_container *output, AVCodec *codec, SEXP in_files,
     if(output->video_filter == NULL)
       output->video_filter = open_video_filter(image, pix_fmt, filter_string);
     bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
-    av_frame_free(&image);
     if(i == len){
       bail_if_null(output->video_filter, "Faild to read any input frames");
       bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
