@@ -470,8 +470,8 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
   }
 
   /* Try all input streams */
-  for (int i = 0; i < demuxer->nb_streams; i++) {
-    AVStream *stream = demuxer->streams[i];
+  for (int si = 0; si < demuxer->nb_streams; si++) {
+    AVStream *stream = demuxer->streams[si];
     if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
       continue;
     AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
@@ -490,7 +490,7 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
         bail_if(avcodec_send_packet(decoder, NULL), "flushing avcodec_send_packet");
       } else {
         bail_if(ret, "av_read_frame");
-        if(pkt->stream_index != i){
+        if(pkt->stream_index != si){
           av_packet_unref(pkt);
           continue; //wrong stream
         }
@@ -511,10 +511,10 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
 /* Loop over input image files files */
 void encode_input_files(output_container *output, AVCodec *codec, SEXP in_files, double duration, const char * filter_string){
   int len = Rf_length(in_files);
-  for(int i = 0; i <= len; i++){
-    AVFrame * image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(i, len-1))), output);
-    image->pts = i * duration;
-    if(feed_to_filter(image, output, codec, filter_string, i * 100 / len))
+  for(int fi = 0; fi <= len; fi++){
+    AVFrame * image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(fi, len-1))), output);
+    image->pts = fi * duration;
+    if(feed_to_filter(image, output, codec, filter_string, fi * 100 / len))
       return;
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
