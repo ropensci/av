@@ -461,7 +461,7 @@ int feed_to_filter(AVFrame * image, output_container *output){
   return encode_output_frames(output);
 }
 
-static AVFrame * read_single_frame(const char *filename, output_container *output){
+int read_from_input(const char *filename, output_container *output){
   AVFormatContext *demuxer = NULL;
   bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
   bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
@@ -504,10 +504,14 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
       int ret2 = avcodec_receive_frame(decoder, picture);
       if(ret2 == AVERROR(EAGAIN))
         continue;
+      if(ret2 == AVERROR_EOF){
+        close_input(&output->video_input);
+        return 0;
+      }
       bail_if(ret2, "avcodec_receive_frame");
       picture->pts = (output->count++) * output->duration;
-      close_input(&output->video_input);
-      return picture;
+      if(feed_to_filter(picture, output))
+        return 1;
     } while(ret == 0);
     break; // one video stream per file is enough
   }
@@ -518,9 +522,8 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
 void encode_input_files(output_container *output, SEXP in_files){
   int len = Rf_length(in_files);
   for(int fi = 0; fi <= len; fi++){
-    AVFrame * image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(fi, len-1))), output);
     output->progress_pct = fi * 100 / len;
-    if(feed_to_filter(image, output))
+    if(read_from_input(CHAR(STRING_ELT(in_files, FFMIN(fi, len-1))), output))
       return;
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
