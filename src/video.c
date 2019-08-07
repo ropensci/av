@@ -391,57 +391,6 @@ void sync_audio_stream(output_container * output, int64_t pts){
   av_frame_free(&frame);
 }
 
-static AVFrame * read_single_frame(const char *filename, output_container *output){
-  AVFormatContext *demuxer = NULL;
-  bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
-  bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
-
-  static AVPacket *pkt = NULL;
-  static AVFrame *picture = NULL;
-  if(pkt == NULL){
-    pkt = av_packet_alloc();
-    picture = av_frame_alloc();
-  }
-
-  /* Try all input streams */
-  for (int i = 0; i < demuxer->nb_streams; i++) {
-    AVStream *stream = demuxer->streams[i];
-    if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
-      continue;
-    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
-    bail_if_null(codec, "avcodec_find_decoder");
-    AVCodecContext *decoder = avcodec_alloc_context3(codec);
-
-    /* This cleans input on.exit */
-    output->video_input = new_input_container(demuxer, decoder, stream);
-    bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
-    decoder->framerate = av_guess_frame_rate(demuxer, stream, NULL);
-    bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2");
-    int ret;
-    do {
-      ret = av_read_frame(demuxer, pkt);
-      if(ret == AVERROR_EOF){
-        bail_if(avcodec_send_packet(decoder, NULL), "flushing avcodec_send_packet");
-      } else {
-        bail_if(ret, "av_read_frame");
-        if(pkt->stream_index != i){
-          av_packet_unref(pkt);
-          continue; //wrong stream
-        }
-        bail_if(avcodec_send_packet(decoder, pkt), "avcodec_send_packet");
-      }
-      av_packet_unref(pkt);
-      int ret2 = avcodec_receive_frame(decoder, picture);
-      if(ret2 == AVERROR(EAGAIN))
-        continue;
-      bail_if(ret2, "avcodec_receive_frame");
-      close_input(&output->video_input);
-      return picture;
-    } while(ret == 0);
-  }
-  Rf_error("Input data does not contain suitable video stream");
-}
-
 static int recode_output_packet(output_container *output, int progress_pct){
   static AVPacket *pkt = NULL;
   if(pkt == NULL)
@@ -506,6 +455,57 @@ int feed_to_filter(AVFrame * image, output_container *output, AVCodec *codec, co
 
   /* Read and encode frames returned by filter */
   return encode_output_frames(output, codec, progress_pct);
+}
+
+static AVFrame * read_single_frame(const char *filename, output_container *output){
+  AVFormatContext *demuxer = NULL;
+  bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
+  bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
+
+  static AVPacket *pkt = NULL;
+  static AVFrame *picture = NULL;
+  if(pkt == NULL){
+    pkt = av_packet_alloc();
+    picture = av_frame_alloc();
+  }
+
+  /* Try all input streams */
+  for (int i = 0; i < demuxer->nb_streams; i++) {
+    AVStream *stream = demuxer->streams[i];
+    if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
+      continue;
+    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    bail_if_null(codec, "avcodec_find_decoder");
+    AVCodecContext *decoder = avcodec_alloc_context3(codec);
+
+    /* This cleans input on.exit */
+    output->video_input = new_input_container(demuxer, decoder, stream);
+    bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
+    decoder->framerate = av_guess_frame_rate(demuxer, stream, NULL);
+    bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2");
+    int ret;
+    do {
+      ret = av_read_frame(demuxer, pkt);
+      if(ret == AVERROR_EOF){
+        bail_if(avcodec_send_packet(decoder, NULL), "flushing avcodec_send_packet");
+      } else {
+        bail_if(ret, "av_read_frame");
+        if(pkt->stream_index != i){
+          av_packet_unref(pkt);
+          continue; //wrong stream
+        }
+        bail_if(avcodec_send_packet(decoder, pkt), "avcodec_send_packet");
+      }
+      av_packet_unref(pkt);
+      int ret2 = avcodec_receive_frame(decoder, picture);
+      if(ret2 == AVERROR(EAGAIN))
+        continue;
+      bail_if(ret2, "avcodec_receive_frame");
+      close_input(&output->video_input);
+      return picture;
+    } while(ret == 0);
+  }
+  Rf_error("Input data does not contain suitable video stream");
 }
 
 /* Loop over input image files files */
