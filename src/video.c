@@ -442,7 +442,7 @@ void sync_audio_stream(output_container * output, int64_t pts){
   av_frame_free(&frame);
 }
 
-static int recode_output_packet(output_container *output, int counter){
+static int recode_output_packet(output_container *output, int progress_pct){
   static AVPacket *pkt = NULL;
   if(pkt == NULL)
     pkt = av_packet_alloc();
@@ -457,7 +457,7 @@ static int recode_output_packet(output_container *output, int counter){
     bail_if(ret, "avcodec_receive_packet");
     pkt->stream_index = output->video_stream->index;
     av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
-           (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, counter);
+           (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, progress_pct);
     av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
     sync_audio_stream(output, pkt->pts);
     bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
@@ -467,7 +467,7 @@ static int recode_output_packet(output_container *output, int counter){
 }
 
 /* Loop over frames returned by filter */
-static int encode_output_frames(output_container *output, AVCodec *codec, int counter){
+static int encode_output_frames(output_container *output, AVCodec *codec, int progress_pct){
   static AVFrame * frame = NULL;
   if(frame == NULL)
     frame = av_frame_alloc();
@@ -488,7 +488,7 @@ static int encode_output_frames(output_container *output, AVCodec *codec, int co
     }
 
     /* re-encode output packet */
-    if(recode_output_packet(output, counter))
+    if(recode_output_packet(output, progress_pct))
       return 1;
   }
 }
@@ -508,7 +508,7 @@ void encode_input_files(output_container *output, AVCodec *codec, SEXP in_files,
       bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
     }
 
-    /* Loop over frames returned by filter */
+    /* Read and encode frames returned by filter */
     if(encode_output_frames(output, codec, i * 100 / len))
       return;
   }
