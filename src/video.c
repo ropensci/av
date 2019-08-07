@@ -493,23 +493,28 @@ static int encode_output_frames(output_container *output, AVCodec *codec, int pr
   }
 }
 
+int feed_to_filter(AVFrame * image, output_container *output, AVCodec *codec, const char * filter_string, int progress_pct){
+  enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  if(output->video_filter == NULL)
+    output->video_filter = open_video_filter(image, pix_fmt, filter_string);
+  bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
+
+  if(progress_pct == 100){
+    bail_if_null(output->video_filter, "Faild to read any input frames");
+    bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
+  }
+
+  /* Read and encode frames returned by filter */
+  return encode_output_frames(output, codec, progress_pct);
+}
+
 /* Loop over input image files files */
 void encode_input_files(output_container *output, AVCodec *codec, SEXP in_files, double duration, const char * filter_string){
-  enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
   int len = Rf_length(in_files);
   for(int i = 0; i <= len; i++){
     AVFrame * image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(i, len-1))), output);
     image->pts = i * duration;
-    if(output->video_filter == NULL)
-      output->video_filter = open_video_filter(image, pix_fmt, filter_string);
-    bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
-    if(i == len){
-      bail_if_null(output->video_filter, "Faild to read any input frames");
-      bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
-    }
-
-    /* Read and encode frames returned by filter */
-    if(encode_output_frames(output, codec, i * 100 / len))
+    if(feed_to_filter(image, output, codec, filter_string, i * 100 / len))
       return;
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
