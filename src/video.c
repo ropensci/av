@@ -504,6 +504,7 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
       close_input(&output->video_input);
       return picture;
     } while(ret == 0);
+    break; // one video stream per file is enough
   }
   Rf_error("Input data does not contain suitable video stream");
 }
