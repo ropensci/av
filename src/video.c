@@ -25,6 +25,7 @@ typedef struct {
 } filter_container;
 
 typedef struct {
+  AVCodec *codec;
   AVFormatContext *muxer;
   input_container *audio_input;
   input_container *video_input;
@@ -34,7 +35,11 @@ typedef struct {
   filter_container *audio_filter;
   AVCodecContext *video_encoder;
   AVCodecContext *audio_encoder;
+  const char * filter_string;
   const char * output_file;
+  double duration;
+  int64_t count;
+  int progress_pct;
 } output_container;
 
 static void warn_if(int ret, const char * what){
@@ -275,15 +280,14 @@ static void add_audio_output(output_container *container, AVCodecContext *audio_
   container->audio_stream = audio_stream;
 }
 
-static void open_output_file(const char *filename, int width, int height, AVCodec *codec,
-                                          output_container *output){
+static void open_output_file(const char *filename, int width, int height, output_container *output){
   /* Init container context (infers format from file extension) */
   AVFormatContext *muxer = NULL;
   avformat_alloc_output_context2(&muxer, NULL, NULL, filename);
   bail_if_null(muxer, "avformat_alloc_output_context2");
 
   /* Init video encoder */
-  AVCodecContext *video_encoder = avcodec_alloc_context3(codec);
+  AVCodecContext *video_encoder = avcodec_alloc_context3(output->codec);
   bail_if_null(video_encoder, "avcodec_alloc_context3");
   video_encoder->height = height;
   video_encoder->width = width;
@@ -293,19 +297,19 @@ static void open_output_file(const char *filename, int width, int height, AVCode
   video_encoder->gop_size = 5; //ignored for AV_PICTURE_TYPE_I anyway
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
-  video_encoder->pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  video_encoder->pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
   if (muxer->oformat->flags & AVFMT_GLOBALHEADER)
     video_encoder->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
   /* Open the codec, and set some x264 preferences */
-  bail_if(avcodec_open2(video_encoder, codec, NULL), "avcodec_open2");
-  if (codec->id == AV_CODEC_ID_H264){
+  bail_if(avcodec_open2(video_encoder, output->codec, NULL), "avcodec_open2");
+  if (output->codec->id == AV_CODEC_ID_H264){
     bail_if(av_opt_set(video_encoder->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
     //bail_if(av_opt_set(video_encoder->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
   }
 
   /* Start a video stream */
-  AVStream *video_stream = avformat_new_stream(muxer, codec);
+  AVStream *video_stream = avformat_new_stream(muxer, output->codec);
   bail_if_null(video_stream, "avformat_new_stream");
   bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
 
@@ -391,7 +395,7 @@ void sync_audio_stream(output_container * output, int64_t pts){
   av_frame_free(&frame);
 }
 
-static int recode_output_packet(output_container *output, int progress_pct){
+static int recode_output_packet(output_container *output){
   static AVPacket *pkt = NULL;
   if(pkt == NULL)
     pkt = av_packet_alloc();
@@ -406,7 +410,7 @@ static int recode_output_packet(output_container *output, int progress_pct){
     bail_if(ret, "avcodec_receive_packet");
     pkt->stream_index = output->video_stream->index;
     av_log(NULL, AV_LOG_INFO, "\rAdding frame %d at timestamp %.2fsec (%d%%)",
-           (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, progress_pct);
+           (int) output->video_stream->nb_frames + 1, (double) pkt->pts / VIDEO_TIME_BASE, output->progress_pct);
     av_packet_rescale_ts(pkt, output->video_encoder->time_base, output->video_stream->time_base);
     sync_audio_stream(output, pkt->pts);
     bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
@@ -416,7 +420,7 @@ static int recode_output_packet(output_container *output, int progress_pct){
 }
 
 /* Loop over frames returned by filter */
-static int encode_output_frames(output_container *output, AVCodec *codec, int progress_pct){
+static int encode_output_frames(output_container *output){
   static AVFrame * frame = NULL;
   if(frame == NULL)
     frame = av_frame_alloc();
@@ -431,30 +435,30 @@ static int encode_output_frames(output_container *output, AVCodec *codec, int pr
       bail_if(ret, "av_buffersink_get_frame");
       frame->pict_type = AV_PICTURE_TYPE_I;
       if(output->muxer == NULL)
-        open_output_file(output->output_file, frame->width, frame->height, codec, output);
+        open_output_file(output->output_file, frame->width, frame->height, output);
       bail_if(avcodec_send_frame(output->video_encoder, frame), "avcodec_send_frame");
       av_frame_unref(frame);
     }
 
     /* re-encode output packet */
-    if(recode_output_packet(output, progress_pct))
+    if(recode_output_packet(output))
       return 1;
   }
 }
 
-int feed_to_filter(AVFrame * image, output_container *output, AVCodec *codec, const char * filter_string, int progress_pct){
-  enum AVPixelFormat pix_fmt = codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+int feed_to_filter(AVFrame * image, output_container *output){
+  enum AVPixelFormat pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
   if(output->video_filter == NULL)
-    output->video_filter = open_video_filter(image, pix_fmt, filter_string);
+    output->video_filter = open_video_filter(image, pix_fmt, output->filter_string);
   bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
 
-  if(progress_pct == 100){
+  if(output->progress_pct == 100){
     bail_if_null(output->video_filter, "Faild to read any input frames");
     bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
   }
 
   /* Read and encode frames returned by filter */
-  return encode_output_frames(output, codec, progress_pct);
+  return encode_output_frames(output);
 }
 
 static AVFrame * read_single_frame(const char *filename, output_container *output){
@@ -501,6 +505,7 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
       if(ret2 == AVERROR(EAGAIN))
         continue;
       bail_if(ret2, "avcodec_receive_frame");
+      picture->pts = (output->count++) * output->duration;
       close_input(&output->video_input);
       return picture;
     } while(ret == 0);
@@ -510,35 +515,34 @@ static AVFrame * read_single_frame(const char *filename, output_container *outpu
 }
 
 /* Loop over input image files files */
-void encode_input_files(output_container *output, AVCodec *codec, SEXP in_files, double duration, const char * filter_string){
+void encode_input_files(output_container *output, SEXP in_files){
   int len = Rf_length(in_files);
   for(int fi = 0; fi <= len; fi++){
     AVFrame * image = read_single_frame(CHAR(STRING_ELT(in_files, FFMIN(fi, len-1))), output);
-    image->pts = fi * duration;
-    if(feed_to_filter(image, output, codec, filter_string, fi * 100 / len))
+    output->progress_pct = fi * 100 / len;
+    if(feed_to_filter(image, output))
       return;
   }
   Rf_warning("Did not reach EOF, video may be incomplete");
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter, SEXP enc, SEXP audio, SEXP ptr){
-  double duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
-  const char * filter_string = CHAR(STRING_ELT(vfilter, 0));
-  AVCodec *codec = NULL;
+  output_container *output = new_output_container(ptr);
   if(Rf_length(enc)) {
-    codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
+    output->codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
   } else {
     AVOutputFormat *frmt = av_guess_format(NULL, CHAR(STRING_ELT(out_file, 0)), NULL);
     bail_if_null(frmt, "av_guess_format");
-    codec = avcodec_find_encoder(frmt->video_codec);
+    output->codec = avcodec_find_encoder(frmt->video_codec);
   }
-  bail_if_null(codec, "avcodec_find_encoder_by_name");
+  bail_if_null(output->codec, "avcodec_find_encoder_by_name");
 
   /* Start the output video */
-  output_container *output = new_output_container(ptr);
   output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
   output->output_file = CHAR(STRING_ELT(out_file, 0));
-  encode_input_files(output, codec, in_files, duration, filter_string);
+  output->duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
+  output->filter_string = CHAR(STRING_ELT(vfilter, 0));
+  encode_input_files(output, in_files);
 
   /* Flush audio stream */
   sync_audio_stream(output, -1);
