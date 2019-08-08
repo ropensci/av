@@ -473,16 +473,15 @@ static int encode_output_frames(output_container *output){
 
 int feed_to_filter(AVFrame * image, output_container *output){
   enum AVPixelFormat pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-  if(output->video_filter == NULL)
+  if(output->video_filter == NULL){
     output->video_filter = open_video_filter(image, pix_fmt, output->filter_string);
-  bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
-
-  if(output->progress_pct == 100){
-    bail_if_null(output->video_filter, "Faild to read any input frames");
-    bail_if(av_buffersrc_add_frame(output->video_filter->input, NULL), "flushing filter");
+    AVFrame *first = av_frame_clone(image);
+    bail_if(av_buffersrc_add_frame(output->video_filter->input, first), "av_buffersrc_add_frame");
+    av_frame_free(&first);
+    image->pts = (output->count++) * output->duration;
   }
 
-  /* Read and encode frames returned by filter */
+  bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
   return encode_output_frames(output);
 }
 
@@ -530,10 +529,7 @@ static int read_from_input(const char *filename, output_container *output){
       break;
     bail_if(ret2, "avcodec_receive_frame");
     picture->pts = (output->count++) * output->duration;
-    if(feed_to_filter(picture, output)){
-      close_input(&output->video_input);
-      return 1;
-    }
+    feed_to_filter(picture, output);
   } while(ret != AVERROR_EOF);
   close_input(&output->video_input);
   return 0;
@@ -542,12 +538,13 @@ static int read_from_input(const char *filename, output_container *output){
 /* Loop over input image files files */
 static void encode_input_files(output_container *output, SEXP in_files){
   int len = Rf_length(in_files);
-  for(int fi = 0; fi <= len; fi++){
+  for(int fi = 0; fi < len; fi++){
     output->progress_pct = fi * 100 / len;
-    if(read_from_input(CHAR(STRING_ELT(in_files, FFMIN(fi, len-1))), output))
-      return;
+    read_from_input(CHAR(STRING_ELT(in_files, fi)), output);
   }
-  Rf_warning("Did not reach EOF, video may be incomplete");
+  bail_if_null(output->video_filter, "Faild to read any input images");
+  if(!feed_to_filter(NULL, output))
+    Rf_warning("Did not reach EOF, video may be incomplete");
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter,
