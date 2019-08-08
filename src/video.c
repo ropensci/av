@@ -500,7 +500,7 @@ int feed_to_filter(AVFrame * image, output_container *output){
   return encode_output_frames(output);
 }
 
-static int read_from_input(const char *filename, output_container *output){
+static void read_from_input(const char *filename, output_container *output){
   AVFormatContext *demuxer = NULL;
   bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
   bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
@@ -547,7 +547,6 @@ static int read_from_input(const char *filename, output_container *output){
     feed_to_filter(picture, output);
   } while(ret != AVERROR_EOF);
   close_input(&output->video_input);
-  return 0;
 }
 
 /* Loop over input image files files */
