@@ -524,15 +524,16 @@ static int read_from_input(const char *filename, output_container *output){
     int ret2 = avcodec_receive_frame(decoder, picture);
     if(ret2 == AVERROR(EAGAIN))
       continue;
-    if(ret2 == AVERROR_EOF){
-      close_input(&output->video_input);
-      return 0;
-    }
+    if(ret2 == AVERROR_EOF)
+      break;
     bail_if(ret2, "avcodec_receive_frame");
     picture->pts = (output->count++) * output->duration;
-    if(feed_to_filter(picture, output))
+    if(feed_to_filter(picture, output)){
+      close_input(&output->video_input);
       return 1;
+    }
   } while(ret != AVERROR_EOF);
+  close_input(&output->video_input);
   return 0;
 }
 
