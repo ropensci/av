@@ -11,6 +11,7 @@ framerate <- 10
 width <- 640 * q
 height <- 480 * q
 png_files <- NULL
+wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
 
 test_that("convert images into video formats", {
   png_path <- file.path(tempdir(), "frame%03d.png")
@@ -39,7 +40,6 @@ test_that("convert images into video formats", {
 })
 
 test_that("audio sampling works", {
-  wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
   for(ext in c("mkv", "mp4", "mov", "flv")){
     filename <- paste0("test.", ext)
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE, audio = wonderland)
@@ -92,6 +92,12 @@ test_that("test error handling", {
   expect_error(av_encode_video(tmp, verbose = -8), "input")
   expect_false(file.exists("video.mp4"))
   expect_error(av_encode_video(png_files, vfilter = "doesnontexist", verbose = -8), "filter")
+  expect_false(file.exists("video.mp4"))
+
+  # Test missing stream
+  expect_error(av_encode_video(png_files, audio = png_files[1]), "audio")
+  expect_false(file.exists("video.mp4"))
+  expect_error(av_encode_video(wonderland), "video")
   expect_false(file.exists("video.mp4"))
 
   # Test time limit
