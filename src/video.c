@@ -140,16 +140,17 @@ static int find_stream_type(AVFormatContext *demuxer, enum AVMediaType type){
 static int find_stream_video(AVFormatContext *demuxer, const char *file){
   int out = find_stream_type(demuxer, AVMEDIA_TYPE_VIDEO);
   if(out < 0){
+    avformat_close_input(&demuxer);
     avformat_free_context(demuxer);
     Rf_error("Input %s does not contain suitable video stream", file);
   }
-
   return out;
 }
 
 static int find_stream_audio(AVFormatContext *demuxer, const char *file){
   int out = find_stream_type(demuxer, AVMEDIA_TYPE_AUDIO);
   if(out < 0){
+    avformat_close_input(&demuxer);
     avformat_free_context(demuxer);
     Rf_error("Input %s does not contain suitable audio stream", file);
   }
