@@ -538,7 +538,7 @@ static int read_from_input(const char *filename, output_container *output){
 }
 
 /* Loop over input image files files */
-void encode_input_files(output_container *output, SEXP in_files){
+static void encode_input_files(output_container *output, SEXP in_files){
   int len = Rf_length(in_files);
   for(int fi = 0; fi <= len; fi++){
     output->progress_pct = fi * 100 / len;

@@ -9,12 +9,12 @@
 #include <libavfilter/avfilter.h>
 
 /* In theory this should be thread safe and R is not */
-void my_log_callback(void *ptr, int level, const char *fmt, va_list vargs){
+static void my_log_callback(void *ptr, int level, const char *fmt, va_list vargs){
   if(level <= av_log_get_level())
     REvprintf(fmt, vargs);
 }
 
-SEXP R_log_level(SEXP new_level){
+static SEXP R_log_level(SEXP new_level){
   if(Rf_length(new_level))
     av_log_set_level(Rf_asInteger(new_level));
   return Rf_ScalarInteger(av_log_get_level());
