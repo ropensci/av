@@ -512,7 +512,7 @@ int read_from_input(const char *filename, output_container *output){
       picture->pts = (output->count++) * output->duration;
       if(feed_to_filter(picture, output))
         return 1;
-    } while(ret == 0);
+    } while(ret != AVERROR_EOF);
     return 0; // one video stream per input file is enough
   }
   Rf_error("Input data does not contain suitable video stream");
