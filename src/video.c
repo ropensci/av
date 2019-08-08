@@ -471,16 +471,31 @@ static int encode_output_frames(output_container *output){
   }
 }
 
+/* We keep a reference to the previous frame, because we want to add
+ * a copy of that frame when we finalize the video.
+ */
 int feed_to_filter(AVFrame * image, output_container *output){
   enum AVPixelFormat pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  static AVFrame *previous = NULL;
+  if(previous == NULL)
+    previous = av_frame_alloc();
   if(output->video_filter == NULL){
-    output->video_filter = open_video_filter(image, pix_fmt, output->filter_string);
-    AVFrame *first = av_frame_clone(image);
-    bail_if(av_buffersrc_add_frame(output->video_filter->input, first), "av_buffersrc_add_frame");
-    av_frame_free(&first);
-    image->pts = (output->count++) * output->duration;
+    if(image == NULL){
+      Rf_error("Failed to read any input images");
+    } else {
+      output->video_filter = open_video_filter(image, pix_fmt, output->filter_string);
+    }
   }
-
+  if(image != NULL){
+    /* Release the previous image and update with current one. This should be cheap. */
+    av_frame_unref(previous);
+    av_frame_ref(previous, image);
+  } else {
+    /* Add a copy of the final frame before closing the filter */
+    previous->pts = (output->count++) * output->duration;
+    bail_if(av_buffersrc_add_frame(output->video_filter->input, previous), "av_buffersrc_add_frame");
+    av_frame_free(&previous);
+  }
   bail_if(av_buffersrc_add_frame(output->video_filter->input, image), "av_buffersrc_add_frame");
   return encode_output_frames(output);
 }
@@ -542,7 +557,6 @@ static void encode_input_files(output_container *output, SEXP in_files){
     output->progress_pct = fi * 100 / len;
     read_from_input(CHAR(STRING_ELT(in_files, fi)), output);
   }
-  bail_if_null(output->video_filter, "Faild to read any input images");
   if(!feed_to_filter(NULL, output))
     Rf_warning("Did not reach EOF, video may be incomplete");
 }
