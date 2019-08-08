@@ -1,0 +1,8 @@
+0.3
+  - Input can now contain video, i.e. multiple images per file. Previously
+    we would only read a single image from each input file, but now we read
+    all of them.
+  - Major refactoring to suppor the above, hopefully no breakage.
+
+0.2
+  - Initial CRAN release
