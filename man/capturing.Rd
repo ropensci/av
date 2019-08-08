@@ -26,7 +26,7 @@ frames.}
 \item{vfilter}{a string defining an ffmpeg filter graph. This is the same parameter
 as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 
-\item{audio}{optional file with sounds to add to the video}
+\item{audio}{optional audio or video input file with sound for the output video}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
 be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
