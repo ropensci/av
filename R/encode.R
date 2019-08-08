@@ -1,17 +1,20 @@
-#' Video Encoding
+#' Encode or Convert Video
 #'
-#' Encodes a set of images into a video, using custom container format, codec, fps, and
-#' [video filters](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters).
+#' Encodes a set of images into a video, using custom container format, codec, fps,
+#' [video filters](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters), and audio
+#' track. If input contains video files, this effectively combines and converts them
+#' to the specified output format.
 #'
-#' The container format is determined from the file extension of the output file, for
-#' example `mp4`, `mkv`, `mov`, or `flv`. Most systems also support `gif` output, but
-#' the compression~quality for gif is quite bad.
+#' The target container format is automatically determined from the file extension of
+#' the output file, for example `mp4`, `mkv`, `mov`, or `flv`. Most systems also
+#' support `gif` output, but the compression~quality for gif is quite bad.
 #' The [gifski](https://cran.r-project.org/package=gifski) package is better suited
 #' for generating animated gif files.
 #'
-#' It is recommended to use let the encoder choose the codec. Most video formats default
-#' to the `libx264` video codec which has excellent compression and works out of the box
-#' on all [modern browsers](https://caniuse.com/#search=h264) and operating systems.
+#' It is recommended to use let ffmpeg choose the suitable codec for a given container
+#' format. Most video formats default to the `libx264` video codec which has excellent
+#' compression and works on all modern [browsers](https://caniuse.com/#search=h264),
+#' operating systems, and digital TVs.
 #'
 #' @export
 #' @aliases av

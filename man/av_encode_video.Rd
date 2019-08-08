@@ -4,7 +4,7 @@
 \alias{encoding}
 \alias{av_encode_video}
 \alias{av}
-\title{Video Encoding}
+\title{Encode or Convert Video}
 \usage{
 av_encode_video(input, output = "video.mp4", framerate = 24,
   vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
@@ -32,19 +32,22 @@ default is \code{libx264} for most formats, which usually the best choice.}
 be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
 }
 \description{
-Encodes a set of images into a video, using custom container format, codec, fps, and
-\href{https://ffmpeg.org/ffmpeg-filters.html#Video-Filters}{video filters}.
+Encodes a set of images into a video, using custom container format, codec, fps,
+\href{https://ffmpeg.org/ffmpeg-filters.html#Video-Filters}{video filters}, and audio
+track. If input contains video files, this effectively combines and converts them
+to the specified output format.
 }
 \details{
-The container format is determined from the file extension of the output file, for
-example \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}. Most systems also support \code{gif} output, but
-the compression~quality for gif is quite bad.
+The target container format is automatically determined from the file extension of
+the output file, for example \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}. Most systems also
+support \code{gif} output, but the compression~quality for gif is quite bad.
 The \href{https://cran.r-project.org/package=gifski}{gifski} package is better suited
 for generating animated gif files.
 
-It is recommended to use let the encoder choose the codec. Most video formats default
-to the \code{libx264} video codec which has excellent compression and works out of the box
-on all \href{https://caniuse.com/#search=h264}{modern browsers} and operating systems.
+It is recommended to use let ffmpeg choose the suitable codec for a given container
+format. Most video formats default to the \code{libx264} video codec which has excellent
+compression and works on all modern \href{https://caniuse.com/#search=h264}{browsers},
+operating systems, and digital TVs.
 }
 \seealso{
 Other av: \code{\link{capturing}}, \code{\link{demo}},
