@@ -115,6 +115,7 @@ static void close_output_file(output_container *output){
       if (!(output->muxer->oformat->flags & AVFMT_NOFILE))
         avio_closep(&output->muxer->pb);
     }
+    avformat_close_input(&output->muxer);
     avformat_free_context(output->muxer);
   }
   av_free(output);
