@@ -18,11 +18,8 @@ install.packages("av")
 You can install the development version from [GitHub](https://github.com/ropensci/av) with:
 
 ```r
-# Install from GH
-devtools::install_github("ropensci/av")
-
-# For the demo
-devtools::install_github("thomasp85/gganimate")
+# Install from GitHub
+remotes::install_github("ropensci/av")
 ```
 
 ## Demo Video
@@ -40,19 +37,9 @@ This demo is totally lame, please open a PR with something better (in base R!).
 You can use `av_encode_video()` as the renderer in gganimate:
 
 ```r
-# Get latest gganimate
-# devtools::install_github("thomasp85/gganimate")
-library(gganimate)
-
-# Define the "renderer" for gganimate
-av_renderer <- function(vfilter = "null", filename = 'output.mp4'){
-  function(frames, fps){
-    unlink(filename)
-    av::av_encode_video(frames, filename, framerate = fps, vfilter = vfilter)
-  }
-}
 
 # Create the gganimate plot
+library(gganimate)
 p <- ggplot(airquality, aes(Day, Temp)) + 
   geom_line(size = 2, colour = 'steelblue') + 
   transition_states(Month, 4, 1) + 
@@ -60,8 +47,8 @@ p <- ggplot(airquality, aes(Day, Temp)) +
 
 # Render and show the video
 q <- 2
-df <- animate(p, renderer = av_renderer(), width = 720*q, height = 480*q, res = 72*q, fps = 25)
-utils::browseURL('output.mp4')
+df <- animate(p, renderer = av_renderer('animation.mp4'), width = 720*q, height = 480*q, res = 72*q, fps = 25)
+utils::browseURL('animation.mp4')
 ```
 
 ## Video Filters
@@ -70,24 +57,24 @@ You can add a custom [ffmpeg video filter chain](https://ffmpeg.org/ffmpeg-filte
 
 ```r
 # Continue on the example above
-myrenderer <- av_renderer(vfilter = 'negate=1, fade=in:0:15:color=orange')
-df <- animate(p, renderer = myrenderer, width = 720*q, height = 480*q, res = 72*q, fps = 25)
-av::av_video_info('output.mp4')
-utils::browseURL('output.mp4')
+filter_render <- av_renderer('orange.mp4', vfilter = 'negate=1, fade=in:0:15:color=orange')
+df <- animate(p, renderer = filter_render, width = 720*q, height = 480*q, res = 72*q, fps = 25)
+av::av_video_info('orange.mp4')
+utils::browseURL('orange.mp4')
 ```
 
-Filters can also affect the final fps of the video. For example this filter will double fps because it halves presentation the timestamp (pts) of each frame. Hence the output framerate is actually 20!
+Filters can also affect the final fps of the video. For example this filter will double fps because it halves presentation the timestamp (pts) of each frame. Hence the output framerate is actually 50!
 
 ```r
-myrenderer <- av_renderer(vfilter = "setpts=0.5*PTS")
-df <- animate(p, renderer = myrenderer, fps = 10)
-av::av_video_info('output.mp4')
-utils::browseURL('output.mp4')
+fast_render <- av_renderer('fast.mp4', vfilter = "setpts=0.5*PTS")
+df <- animate(p, renderer = fast_render, fps = 25)
+av::av_video_info('fast.mp4')
+utils::browseURL('fast.mp4')
 ```
 
-## Capture Graphics
+## Capture Graphics (without gganimate)
 
-Beside gganimate, we can use `av_capture_graphics()` to automatically record R graphics and turn them into a video. This example makes 12 plots and adds an interpolation filter to smoothen the transitions between the frames.
+Instead of using gganimate, we can use `av_capture_graphics()` to automatically record R graphics and turn them into a video. This example makes 12 plots and adds an interpolation filter to smoothen the transitions between the frames.
 
 ```r
 library(gapminder)
