@@ -9,8 +9,8 @@ Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for workin
     device combined with custom audio stream. This package interfaces directly to the C API
     and does not require any command line utilities.
 License: MIT + file LICENSE
-URL: https://github.com/ropensci/av (devel)
-    http://www.ffmpeg.org/ (upstream)
+URL: https://docs.ropensci.org/av (website), 
+    https://github.com/ropensci/av (devel)
 BugReports: https://github.com/ropensci/av/issues
 Encoding: UTF-8
 LazyData: true
