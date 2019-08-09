@@ -6,10 +6,9 @@
 #' @param video an input video
 #' @param destdir directory where to save the png files
 #' @param fps sample rate of images. Use `NULL` to get all images.
-av_video_images <- function(video, destdir = tempfile(), fps = 1){
+av_video_images <- function(video, destdir = tempfile(), fps = NULL){
   stopifnot(length(video) == 1)
-  vfilter <- if(length(fps))
-    paste0('fps=fps=', fps)
+  vfilter <- ifelse(length(fps), paste0('fps=fps=', fps), 'null')
   framerate <- av_video_info(video)$video$framerate
   dir.create(destdir)
   output <- file.path(destdir, 'image_%6d.jpg')

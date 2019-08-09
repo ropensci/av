@@ -4,7 +4,7 @@
 \alias{av_video_images}
 \title{Split Video into PNG}
 \usage{
-av_video_images(video, destdir = tempfile(), fps = 1)
+av_video_images(video, destdir = tempfile(), fps = NULL)
 }
 \arguments{
 \item{video}{an input video}
