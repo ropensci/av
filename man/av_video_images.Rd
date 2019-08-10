@@ -12,9 +12,9 @@ av_video_images(video, destdir = tempfile(), format = "jpg",
 
 \item{destdir}{directory where to save the png files}
 
-\item{fps}{sample rate of images. Use \code{NULL} to get all images.}
+\item{format}{image format such as \code{png} or \code{jpeg}, must be available from \code{av_encoders()}}
 
-\item{image}{format such as \code{png} or \code{jpeg}, must be available from \code{av_encoders()}}
+\item{fps}{sample rate of images. Use \code{NULL} to get all images.}
 }
 \description{
 Convert a video file in a set of PNG images.

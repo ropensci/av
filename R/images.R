@@ -6,7 +6,7 @@
 #' @param video an input video
 #' @param destdir directory where to save the png files
 #' @param fps sample rate of images. Use `NULL` to get all images.
-#' @param image format such as `png` or `jpeg`, must be available from `av_encoders()`
+#' @param format image format such as `png` or `jpeg`, must be available from `av_encoders()`
 av_video_images <- function(video, destdir = tempfile(), format = 'jpg', fps = NULL){
   stopifnot(length(video) == 1)
   vfilter <- ifelse(length(fps), paste0('fps=fps=', fps), 'null')
