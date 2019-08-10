@@ -6,12 +6,15 @@
 #' @param video an input video
 #' @param destdir directory where to save the png files
 #' @param fps sample rate of images. Use `NULL` to get all images.
-av_video_images <- function(video, destdir = tempfile(), fps = NULL){
+#' @param image format such as `png` or `jpeg`, must be available from `av_encoders()`
+av_video_images <- function(video, destdir = tempfile(), format = 'jpg', fps = NULL){
   stopifnot(length(video) == 1)
   vfilter <- ifelse(length(fps), paste0('fps=fps=', fps), 'null')
   framerate <- av_video_info(video)$video$framerate
   dir.create(destdir)
-  output <- file.path(destdir, 'image_%6d.jpg')
-  av_encode_video(input = video, output = output, framerate = framerate, vfilter = vfilter)
-  list.files(destdir, pattern = 'image_\\d{6}.jpg', full.names = TRUE)
+  codec <- switch(format, jpeg = 'mjpeg', jpg = 'mjpeg', format)
+  output <- file.path(destdir, paste0('image_%6d.', format))
+  av_encode_video(input = video, output = output, framerate = framerate,
+                  codec = codec, vfilter = vfilter)
+  list.files(destdir, pattern = paste0('image_\\d{6}.', format), full.names = TRUE)
 }

@@ -4,7 +4,8 @@
 \alias{av_video_images}
 \title{Split Video into PNG}
 \usage{
-av_video_images(video, destdir = tempfile(), fps = NULL)
+av_video_images(video, destdir = tempfile(), format = "jpg",
+  fps = NULL)
 }
 \arguments{
 \item{video}{an input video}
@@ -12,6 +13,8 @@ av_video_images(video, destdir = tempfile(), fps = NULL)
 \item{destdir}{directory where to save the png files}
 
 \item{fps}{sample rate of images. Use \code{NULL} to get all images.}
+
+\item{image}{format such as \code{png} or \code{jpeg}, must be available from \code{av_encoders()}}
 }
 \description{
 Convert a video file in a set of PNG images.
