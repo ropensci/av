@@ -54,7 +54,5 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter
   old_log_level <- av_log_level()
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
-  ptr <- new_ptr()
-  on.exit(run_cleanup(ptr), add = TRUE)
-  .Call(R_encode_video, input, output, framerate, vfilter, codec, audio, ptr)
+  .Call(R_encode_video, input, output, framerate, vfilter, codec, audio)
 }

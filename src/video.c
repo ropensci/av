@@ -7,8 +7,6 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
-void run_on_exit(SEXP ptr, R_CFinalizer_t fun, void *data);
-
 #define VIDEO_TIME_BASE 1000
 
 typedef struct {
@@ -40,6 +38,7 @@ typedef struct {
   double duration;
   int64_t count;
   int progress_pct;
+  SEXP in_files;
 } output_container;
 
 static void warn_if(int ret, const char * what){
@@ -92,7 +91,8 @@ static void close_filter_container(filter_container *filter){
   av_free(filter);
 }
 
-static void close_output_file(output_container *output){
+static void close_output_file(void *ptr, Rboolean jump){
+  output_container *output = ptr;
   if(output->audio_input != NULL){
     close_input(&output->audio_input);
   }
@@ -119,14 +119,6 @@ static void close_output_file(output_container *output){
     avformat_free_context(output->muxer);
   }
   av_free(output);
-}
-
-static void fin_output(SEXP ptr){
-  output_container *x = (output_container*) R_ExternalPtrAddr(ptr);
-  if(x == NULL)
-    return;
-  R_ClearExternalPtr(ptr);
-  close_output_file(x);
 }
 
 static int find_stream_type(AVFormatContext *demuxer, enum AVMediaType type){
@@ -156,12 +148,6 @@ static int find_stream_audio(AVFormatContext *demuxer, const char *file){
     Rf_error("Input %s does not contain suitable audio stream", file);
   }
   return out;
-}
-
-static output_container *new_output_container(SEXP ptr){
-  output_container *output = av_mallocz(sizeof(output_container));
-  run_on_exit(ptr, fin_output, output);
-  return output;
 }
 
 static input_container *open_audio_input(const char *filename){
@@ -550,36 +536,43 @@ static void read_from_input(const char *filename, output_container *output){
 }
 
 /* Loop over input image files files */
-static void encode_input_files(output_container *output, SEXP in_files){
-  int len = Rf_length(in_files);
+static SEXP encode_input_files(void *ptr){
+  output_container *output = ptr;
+
+  int len = Rf_length(output->in_files);
   for(int fi = 0; fi < len; fi++){
     output->progress_pct = fi * 100 / len;
-    read_from_input(CHAR(STRING_ELT(in_files, fi)), output);
+    read_from_input(CHAR(STRING_ELT(output->in_files, fi)), output);
   }
   if(!feed_to_filter(NULL, output))
     Rf_warning("Did not reach EOF, video may be incomplete");
+
+  /* Flush audio stream */
+  sync_audio_stream(output, -1);
+  return R_NilValue;
+}
+
+static AVCodec *get_default_codec(const char *filename){
+  AVOutputFormat *frmt = av_guess_format(NULL, filename, NULL);
+  bail_if_null(frmt, "av_guess_format");
+  return avcodec_find_encoder(frmt->video_codec);
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter,
-                    SEXP enc, SEXP audio, SEXP ptr){
-  output_container *output = new_output_container(ptr);
-  if(Rf_length(enc)) {
-    output->codec = avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0)));
-  } else {
-    AVOutputFormat *frmt = av_guess_format(NULL, CHAR(STRING_ELT(out_file, 0)), NULL);
-    bail_if_null(frmt, "av_guess_format");
-    output->codec = avcodec_find_encoder(frmt->video_codec);
-  }
-  bail_if_null(output->codec, "avcodec_find_encoder_by_name");
+                    SEXP enc, SEXP audio){
+  AVCodec *codec = Rf_length(enc) ?
+    avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0))) :
+    get_default_codec(CHAR(STRING_ELT(out_file, 0)));
+  bail_if_null(codec, "avcodec_find_encoder_by_name");
 
   /* Start the output video */
+  output_container *output = av_mallocz(sizeof(output_container));
   output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
   output->output_file = CHAR(STRING_ELT(out_file, 0));
   output->duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   output->filter_string = CHAR(STRING_ELT(vfilter, 0));
-  encode_input_files(output, in_files);
-
-  /* Flush audio stream */
-  sync_audio_stream(output, -1);
+  output->codec = codec;
+  output->in_files = in_files;
+  R_UnwindProtect(encode_input_files, output, close_output_file, output, NULL);
   return out_file;
 }

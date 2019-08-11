@@ -3,6 +3,7 @@
     we would only read a single image from each input file, but now we read
     all of them.
   - Major refactoring to suppor the above, hopefully no breakage.
+  - Switch to R_UnwindProtect to implement cleanup on exit
 
 0.2
   - Initial CRAN release
