@@ -31,23 +31,23 @@ attribute_visible void R_init_av(DllInfo *dll) {
 
   /* .Call calls */
   extern SEXP R_encode_video(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+  extern SEXP R_get_open_handles();
   extern SEXP R_list_codecs();
   extern SEXP R_list_demuxers();
   extern SEXP R_list_filters();
   extern SEXP R_list_muxers();
   extern SEXP R_log_level(SEXP);
-  extern SEXP R_new_ptr();
-  extern SEXP R_run_cleanup(SEXP);
   extern SEXP R_video_info(SEXP);
 
   static const R_CallMethodDef CallEntries[] = {
-    {"R_encode_video",  (DL_FUNC) &R_encode_video,  6},
-    {"R_list_codecs",   (DL_FUNC) &R_list_codecs,   0},
-    {"R_list_demuxers", (DL_FUNC) &R_list_demuxers, 0},
-    {"R_list_filters",  (DL_FUNC) &R_list_filters,  0},
-    {"R_list_muxers",   (DL_FUNC) &R_list_muxers,   0},
-    {"R_log_level",     (DL_FUNC) &R_log_level,     1},
-    {"R_video_info",    (DL_FUNC) &R_video_info,    1},
+    {"R_encode_video",     (DL_FUNC) &R_encode_video,     6},
+    {"R_get_open_handles", (DL_FUNC) &R_get_open_handles, 0},
+    {"R_list_codecs",      (DL_FUNC) &R_list_codecs,      0},
+    {"R_list_demuxers",    (DL_FUNC) &R_list_demuxers,    0},
+    {"R_list_filters",     (DL_FUNC) &R_list_filters,     0},
+    {"R_list_muxers",      (DL_FUNC) &R_list_muxers,      0},
+    {"R_log_level",        (DL_FUNC) &R_log_level,        1},
+    {"R_video_info",       (DL_FUNC) &R_video_info,       1},
     {NULL, NULL, 0}
   };
 

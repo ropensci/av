@@ -7,6 +7,12 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+static int total_open_handles = 0;
+
+SEXP R_get_open_handles(){
+  return Rf_ScalarInteger(total_open_handles);
+}
+
 #define VIDEO_TIME_BASE 1000
 
 typedef struct {
@@ -92,6 +98,7 @@ static void close_filter_container(filter_container *filter){
 }
 
 static void close_output_file(void *ptr, Rboolean jump){
+  total_open_handles--;
   output_container *output = ptr;
   if(output->audio_input != NULL){
     close_input(&output->audio_input);
@@ -537,8 +544,8 @@ static void read_from_input(const char *filename, output_container *output){
 
 /* Loop over input image files files */
 static SEXP encode_input_files(void *ptr){
+  total_open_handles++;
   output_container *output = ptr;
-
   int len = Rf_length(output->in_files);
   for(int fi = 0; fi < len; fi++){
     output->progress_pct = fi * 100 / len;

@@ -105,4 +105,5 @@ test_that("test error handling", {
   timings <- system.time(expect_error(av_encode_video(rep(png_files, 100), verbose = FALSE), "time"))
   setTimeLimit()
   expect_lt(timings[['elapsed']], 2.5)
+  expect_equal(get_open_handles(), 0)
 })

@@ -15,3 +15,8 @@ av_log_level <- function(set = NULL){
   }
   .Call(R_log_level, set)
 }
+
+#' @useDynLib av R_get_open_handles
+get_open_handles <- function(){
+  .Call(R_get_open_handles)
+}
