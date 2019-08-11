@@ -354,8 +354,13 @@ void sync_audio_stream(output_container * output, int64_t pts){
   input_container * input = output->audio_input;
   if(input == NULL || input->completed)
     return;
-  AVPacket *pkt = av_packet_alloc();
-  AVFrame *frame = av_frame_alloc();
+  static AVPacket *pkt = NULL;
+  static AVFrame *frame = NULL;
+  if(pkt == NULL){
+    pkt = av_packet_alloc();
+    frame = av_frame_alloc();
+  }
+
   while(force_flush || av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
                                      pts, output->video_stream->time_base) < 0) {
 
@@ -409,8 +414,8 @@ void sync_audio_stream(output_container * output, int64_t pts){
       av_packet_unref(pkt);
     }
   }
-  av_packet_free(&pkt);
-  av_frame_free(&frame);
+  av_packet_unref(pkt);
+  av_frame_unref(frame);
 }
 
 static int recode_output_packet(output_container *output){
