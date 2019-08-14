@@ -30,6 +30,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
   av_log_set_callback(my_log_callback);
 
   /* .Call calls */
+  extern SEXP R_encode_audio(SEXP, SEXP);
   extern SEXP R_encode_video(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_get_open_handles();
   extern SEXP R_list_codecs();
@@ -40,6 +41,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
   extern SEXP R_video_info(SEXP);
 
   static const R_CallMethodDef CallEntries[] = {
+    {"R_encode_audio",     (DL_FUNC) &R_encode_audio,     2},
     {"R_encode_video",     (DL_FUNC) &R_encode_video,     6},
     {"R_get_open_handles", (DL_FUNC) &R_get_open_handles, 0},
     {"R_list_codecs",      (DL_FUNC) &R_list_codecs,      0},

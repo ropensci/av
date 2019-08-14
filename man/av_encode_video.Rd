@@ -4,10 +4,13 @@
 \alias{encoding}
 \alias{av_encode_video}
 \alias{av}
+\alias{av_encode_audio}
 \title{Encode or Convert Video}
 \usage{
 av_encode_video(input, output = "video.mp4", framerate = 24,
   vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
+
+av_encode_audio(audio, output = "output.mp3")
 }
 \arguments{
 \item{input}{a vector with images such as png files. A video input file is treated
@@ -26,7 +29,7 @@ as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 \item{codec}{name of the video codec as listed in \link{av_encoders}. The
 default is \code{libx264} for most formats, which usually the best choice.}
 
-\item{audio}{optional audio or video input file with sound for the output video}
+\item{audio}{audio or video input file with sound for the output video}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
 be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}

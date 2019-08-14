@@ -33,7 +33,7 @@
 #' frames.
 #' @param codec name of the video codec as listed in [av_encoders][av_encoders]. The
 #' default is `libx264` for most formats, which usually the best choice.
-#' @param audio optional audio or video input file with sound for the output video
+#' @param audio audio or video input file with sound for the output video
 #' @param verbose emit some output and a progress meter counting processed images. Must
 #' be `TRUE` or `FALSE` or an integer with a valid [log_level](av_log_level).
 av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter = "null",
@@ -55,4 +55,16 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
   .Call(R_encode_video, input, output, framerate, vfilter, codec, audio)
+}
+
+#' @rdname av_encode_video
+#' @export
+#' @useDynLib av R_encode_audio
+av_encode_audio <- function(audio, output = 'output.mp3'){
+  stopifnot(length(audio) > 0)
+  audio <- normalizePath(audio, mustWork = TRUE)
+  stopifnot(length(output) == 1)
+  output <- normalizePath(output, mustWork = FALSE)
+  stopifnot(file.exists(dirname(output)))
+  .Call(R_encode_audio, audio, output)
 }

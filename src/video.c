@@ -276,7 +276,40 @@ static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat f
   return new_filter_container(buffersrc_ctx, buffersink_ctx, filter_graph);
 }
 
-static void add_audio_output(output_container *container, AVCodecContext *audio_decoder){
+static void add_video_output(output_container *output, int width, int height){
+  AVCodecContext *video_encoder = avcodec_alloc_context3(output->codec);
+  bail_if_null(video_encoder, "avcodec_alloc_context3");
+  video_encoder->height = height;
+  video_encoder->width = width;
+  video_encoder->time_base.num = 1;
+  video_encoder->time_base.den = VIDEO_TIME_BASE;
+  video_encoder->framerate = av_inv_q(video_encoder->time_base);
+  video_encoder->gop_size = 5; //ignored for AV_PICTURE_TYPE_I anyway
+
+  /* Try to use codec preferred pixel format, otherwise default to YUV420 */
+  video_encoder->pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  if (output->muxer->oformat->flags & AVFMT_GLOBALHEADER)
+    video_encoder->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+  /* Open the codec, and set some x264 preferences */
+  bail_if(avcodec_open2(video_encoder, output->codec, NULL), "avcodec_open2");
+  if (output->codec->id == AV_CODEC_ID_H264){
+    bail_if(av_opt_set(video_encoder->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
+    //bail_if(av_opt_set(video_encoder->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
+  }
+
+  /* Start a video stream */
+  AVStream *video_stream = avformat_new_stream(output->muxer, output->codec);
+  bail_if_null(video_stream, "avformat_new_stream");
+  bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
+
+  /* Store relevant objects */
+  output->video_stream = video_stream;
+  output->video_encoder = video_encoder;
+}
+
+static void add_audio_output(output_container *container){
+  AVCodecContext *audio_decoder = container->audio_input->decoder;
   AVCodec *output_codec = avcodec_find_encoder(container->muxer->oformat->audio_codec);
   bail_if_null(output_codec, "Failed to find default audio codec");
   AVCodecContext *audio_encoder = avcodec_alloc_context3(output_codec);
@@ -298,55 +331,28 @@ static void add_audio_output(output_container *container, AVCodecContext *audio_
   container->audio_stream = audio_stream;
 }
 
-static void open_output_file(const char *filename, int width, int height, output_container *output){
+static void open_output_file(int width, int height, output_container *output){
   /* Init container context (infers format from file extension) */
   AVFormatContext *muxer = NULL;
-  avformat_alloc_output_context2(&muxer, NULL, NULL, filename);
+  avformat_alloc_output_context2(&muxer, NULL, NULL, output->output_file);
   bail_if_null(muxer, "avformat_alloc_output_context2");
+  output->muxer = muxer;
 
   /* Init video encoder */
-  AVCodecContext *video_encoder = avcodec_alloc_context3(output->codec);
-  bail_if_null(video_encoder, "avcodec_alloc_context3");
-  video_encoder->height = height;
-  video_encoder->width = width;
-  video_encoder->time_base.num = 1;
-  video_encoder->time_base.den = VIDEO_TIME_BASE;
-  video_encoder->framerate = av_inv_q(video_encoder->time_base);
-  video_encoder->gop_size = 5; //ignored for AV_PICTURE_TYPE_I anyway
-
-  /* Try to use codec preferred pixel format, otherwise default to YUV420 */
-  video_encoder->pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-  if (muxer->oformat->flags & AVFMT_GLOBALHEADER)
-    video_encoder->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-  /* Open the codec, and set some x264 preferences */
-  bail_if(avcodec_open2(video_encoder, output->codec, NULL), "avcodec_open2");
-  if (output->codec->id == AV_CODEC_ID_H264){
-    bail_if(av_opt_set(video_encoder->priv_data, "preset", "slow", 0), "Set x264 preset to slow");
-    //bail_if(av_opt_set(video_encoder->priv_data, "crf", "0", 0), "Set x264 quality to lossless");
-  }
-
-  /* Start a video stream */
-  AVStream *video_stream = avformat_new_stream(muxer, output->codec);
-  bail_if_null(video_stream, "avformat_new_stream");
-  bail_if(avcodec_parameters_from_context(video_stream->codecpar, video_encoder), "avcodec_parameters_from_context");
-
-  /* Store relevant objects */
-  output->muxer = muxer;
-  output->video_stream = video_stream;
-  output->video_encoder = video_encoder;
+  if(output->in_files != NULL)
+    add_video_output(output, width, height);
 
   /* Add audio stream if needed */
   if(output->audio_input != NULL)
-    add_audio_output(output, output->audio_input->decoder);
+    add_audio_output(output);
 
   /* Open output file file */
   if (!(muxer->oformat->flags & AVFMT_NOFILE))
-    bail_if(avio_open(&muxer->pb, filename, AVIO_FLAG_WRITE), "avio_open");
+    bail_if(avio_open(&muxer->pb, output->output_file, AVIO_FLAG_WRITE), "avio_open");
   bail_if(avformat_write_header(muxer, NULL), "avformat_write_header");
 
   //print info and return
-  av_dump_format(muxer, 0, filename, 1);
+  av_dump_format(muxer, 0, output->output_file, 1);
 }
 
 void sync_audio_stream(output_container * output, int64_t pts){
@@ -360,10 +366,9 @@ void sync_audio_stream(output_container * output, int64_t pts){
     pkt = av_packet_alloc();
     frame = av_frame_alloc();
   }
-
-  while(force_flush || av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
+  while(pts == 1e18 || force_flush ||
+        av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
                                      pts, output->video_stream->time_base) < 0) {
-
     int ret = avcodec_receive_packet(output->audio_encoder, pkt);
     if (ret == AVERROR(EAGAIN)){
       while(1){
@@ -412,6 +417,7 @@ void sync_audio_stream(output_container * output, int64_t pts){
       av_packet_rescale_ts(pkt, output->audio_encoder->time_base, output->audio_stream->time_base);
       bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
       av_packet_unref(pkt);
+      R_CheckUserInterrupt();
     }
   }
   av_packet_unref(pkt);
@@ -458,7 +464,7 @@ static int encode_output_frames(output_container *output){
       bail_if(ret, "av_buffersink_get_frame");
       frame->pict_type = AV_PICTURE_TYPE_I;
       if(output->muxer == NULL)
-        open_output_file(output->output_file, frame->width, frame->height, output);
+        open_output_file(frame->width, frame->height, output);
       bail_if(avcodec_send_frame(output->video_encoder, frame), "avcodec_send_frame");
       av_frame_unref(frame);
     }
@@ -586,5 +592,22 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter,
   output->codec = codec;
   output->in_files = in_files;
   R_UnwindProtect(encode_input_files, output, close_output_file, output, NULL);
+  return out_file;
+}
+
+/* Loop over input image files files */
+static SEXP encode_audio_input(void *ptr){
+  total_open_handles++;
+  output_container *output = ptr;
+  open_output_file(0, 0, output);
+  sync_audio_stream(output, 1e18);
+  return R_NilValue;
+}
+
+SEXP R_encode_audio(SEXP audio, SEXP out_file){
+  output_container *output = av_mallocz(sizeof(output_container));
+  output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
+  output->output_file = CHAR(STRING_ELT(out_file, 0));
+  R_UnwindProtect(encode_audio_input, output, close_output_file, output, NULL);
   return out_file;
 }
