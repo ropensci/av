@@ -5,6 +5,7 @@
 
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
+#define PTS_EVERYTHING 1e18
 #include <Rinternals.h>
 
 static int total_open_handles = 0;
@@ -357,6 +358,7 @@ static void open_output_file(int width, int height, output_container *output){
 
 void sync_audio_stream(output_container * output, int64_t pts){
   int force_flush = pts == -1;
+  int force_everything = pts == PTS_EVERYTHING;
   input_container * input = output->audio_input;
   if(input == NULL || input->completed)
     return;
@@ -366,7 +368,7 @@ void sync_audio_stream(output_container * output, int64_t pts){
     pkt = av_packet_alloc();
     frame = av_frame_alloc();
   }
-  while(pts == 1e18 || force_flush ||
+  while(force_everything || force_flush ||
         av_compare_ts(output->audio_stream->cur_dts, output->audio_stream->time_base,
                                      pts, output->video_stream->time_base) < 0) {
     int ret = avcodec_receive_packet(output->audio_encoder, pkt);
@@ -416,8 +418,12 @@ void sync_audio_stream(output_container * output, int64_t pts){
       pkt->stream_index = output->audio_stream->index;
       av_packet_rescale_ts(pkt, output->audio_encoder->time_base, output->audio_stream->time_base);
       bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
-      av_packet_unref(pkt);
+      if(force_everything){
+        av_log(NULL, AV_LOG_INFO, "\rAdding audio frame %d at timestamp %.2fsec",
+               (int) output->audio_stream->nb_frames + 1, (double) output->audio_stream->cur_dts / 1000);
+      }
       R_CheckUserInterrupt();
+      av_packet_unref(pkt);
     }
   }
   av_packet_unref(pkt);
@@ -600,7 +606,7 @@ static SEXP encode_audio_input(void *ptr){
   total_open_handles++;
   output_container *output = ptr;
   open_output_file(0, 0, output);
-  sync_audio_stream(output, 1e18);
+  sync_audio_stream(output, PTS_EVERYTHING);
   return R_NilValue;
 }
 
