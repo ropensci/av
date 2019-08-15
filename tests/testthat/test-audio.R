@@ -3,10 +3,10 @@ context("Convert Audio")
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
 
 test_that("Audio can be converted to various formats", {
-  tmp_wav <- tempfile(fileext = '.wav')
-  tmp_mp3 <- tempfile(fileext = '.mp3')
-  tmp_mp4 <- tempfile(fileext = '.mp4')
-  tmp_mkv <- tempfile(fileext = '.mkv')
+  tmp_wav <- normalizePath(tempfile(fileext = '.wav'), mustWork = FALSE)
+  tmp_mp3 <- normalizePath(tempfile(fileext = '.mp3'), mustWork = FALSE)
+  tmp_mp4 <- normalizePath(tempfile(fileext = '.mp4'), mustWork = FALSE)
+  tmp_mkv <- normalizePath(tempfile(fileext = '.mkv'), mustWork = FALSE)
   input_info <- av_video_info(wonderland)
 
   # Convert mp3 to mkv (defaults to libvorbis audio)
