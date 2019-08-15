@@ -356,7 +356,7 @@ static void open_output_file(int width, int height, output_container *output){
   av_dump_format(muxer, 0, output->output_file, 1);
 }
 
-void sync_audio_stream(output_container * output, int64_t pts){
+static void sync_audio_stream(output_container * output, int64_t pts){
   int force_flush = pts == -1;
   int force_everything = pts == PTS_EVERYTHING;
   input_container * input = output->audio_input;
@@ -484,7 +484,7 @@ static int encode_output_frames(output_container *output){
 /* We keep a reference to the previous frame, because we want to add
  * a copy of that frame when we finalize the video.
  */
-int feed_to_filter(AVFrame * image, output_container *output){
+static int feed_to_filter(AVFrame * image, output_container *output){
   enum AVPixelFormat pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
   static AVFrame *previous = NULL;
   if(previous == NULL)
