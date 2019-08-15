@@ -6,15 +6,10 @@
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #define PTS_EVERYTHING 1e18
+#define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
 
 static int total_open_handles = 0;
-
-SEXP R_get_open_handles(){
-  return Rf_ScalarInteger(total_open_handles);
-}
-
-#define VIDEO_TIME_BASE 1000
 
 typedef struct {
   int completed;
@@ -616,4 +611,8 @@ SEXP R_encode_audio(SEXP audio, SEXP out_file){
   output->output_file = CHAR(STRING_ELT(out_file, 0));
   R_UnwindProtect(encode_audio_input, output, close_output_file, output, NULL);
   return out_file;
+}
+
+SEXP R_get_open_handles(){
+  return Rf_ScalarInteger(total_open_handles);
 }
