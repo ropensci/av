@@ -59,8 +59,8 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter
 
 #' @rdname av_encode_video
 #' @export
-#' @useDynLib av R_encode_audio
-av_encode_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
+#' @useDynLib av R_convert_audio
+av_convert_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
   stopifnot(length(audio) > 0)
   audio <- normalizePath(audio, mustWork = TRUE)
   stopifnot(length(output) == 1)
@@ -71,5 +71,5 @@ av_encode_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
   old_log_level <- av_log_level()
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
-  .Call(R_encode_audio, audio, output)
+  .Call(R_convert_audio, audio, output)
 }

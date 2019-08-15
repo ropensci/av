@@ -605,7 +605,7 @@ static SEXP encode_audio_input(void *ptr){
   return R_NilValue;
 }
 
-SEXP R_encode_audio(SEXP audio, SEXP out_file){
+SEXP R_convert_audio(SEXP audio, SEXP out_file){
   output_container *output = av_mallocz(sizeof(output_container));
   output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
   output->output_file = CHAR(STRING_ELT(out_file, 0));
