@@ -35,7 +35,7 @@ default is \code{libx264} for most formats, which usually the best choice.}
 \item{audio}{audio or video input file with sound for the output video}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
-be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
+be \code{TRUE} or \code{FALSE} or an integer with a valid \link{log_level}.}
 
 \item{video}{input video file with optionally also an audio track}
 }
