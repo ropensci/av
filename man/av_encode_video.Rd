@@ -5,12 +5,15 @@
 \alias{av_encode_video}
 \alias{av}
 \alias{av_convert_audio}
+\alias{av_convert_video}
 \title{Encode or Convert Video}
 \usage{
 av_encode_video(input, output = "video.mp4", framerate = 24,
   vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
 
 av_convert_audio(audio, output = "output.mp3", verbose = TRUE)
+
+av_convert_video(input, output = "video.mp4", verbose = TRUE)
 }
 \arguments{
 \item{input}{a vector with images such as png files. A video input file is treated

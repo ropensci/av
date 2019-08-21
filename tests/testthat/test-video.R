@@ -10,32 +10,42 @@ n <- 50
 framerate <- 10
 width <- 640 * q
 height <- 480 * q
-png_files <- NULL
+png_path <- file.path(tempdir(), "frame%03d.png")
+png_files <- sprintf(png_path, 1:n)
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
 
 test_that("convert images into video formats", {
-  png_path <- file.path(tempdir(), "frame%03d.png")
   png(png_path, width = width, height = height, res = 72 * q)
   par(ask = FALSE)
   for(i in 1:n){
     hist(rnorm(100, mean = i), main = paste("histogram with mean", i))
   }
   dev.off()
-  png_files <<- sprintf(png_path, 1:n)
   for(ext in c("mkv", "mp4", "mov", "flv", "gif")){
     filename <- paste0("test.", ext)
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
-    unlink(filename)
+
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
     expect_equal(info$video$codec, switch(ext, gif='gif', flv='flv', 'h264'))
     expect_equal(info$video$framerate, framerate)
 
     # Gif doesn't have video metadata (duration)
-    if(ext != 'gif')
+    if(ext != 'gif'){
       expect_equal(info$duration, n / framerate)
+
+      # Test converting video to video
+      av_convert_video(filename, 'test2.mp4', verbose = FALSE)
+      info <- av_video_info('test2.mp4')
+      unlink('test2.mp4')
+      expect_equal(info$video$width, width)
+      expect_equal(info$video$height, height)
+      expect_equal(info$video$framerate, framerate)
+      expect_null(info$audio)
+    }
+    unlink(filename)
   }
 })
 
@@ -45,7 +55,7 @@ test_that("audio sampling works", {
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE, audio = wonderland)
     expect_true(file.exists(filename))
     info <- av_video_info(filename)
-    unlink(filename)
+
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
     expect_equal(info$video$codec, switch(ext, gif='gif', flv='flv', 'h264'))
@@ -54,9 +64,25 @@ test_that("audio sampling works", {
     expect_equal(info$audio$channels, 2)
     expect_equal(info$audio$sample_rate, 44100)
 
-    # Audio stream may slightly alter the duration, 1 sec margin
-    expect_gte(info$duration, n / framerate)
-    expect_lt(info$duration - 1, n / framerate)
+    # Audio stream may slightly alter the duration, 5% margin
+    expect_equal(info$duration, n / framerate, tolerance = 0.05)
+
+    # Test converting video to video
+    av_convert_video(filename, 'test2.mp4', verbose = FALSE)
+    info <- av_video_info('test2.mp4')
+    unlink('test2.mp4')
+    expect_equal(info$video$width, width)
+    expect_equal(info$video$height, height)
+    expect_equal(info$video$framerate, framerate)
+
+    expect_equal(info$audio$channels, 2)
+    expect_equal(info$audio$sample_rate, 44100)
+
+    # Audio stream may slightly alter the duration, 5% margin
+    expect_equal(info$duration, n / framerate, tolerance =  0.05)
+
+    # Cleanup
+    unlink(filename)
   }
 })
 

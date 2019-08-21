@@ -2,6 +2,7 @@
 
 export(av_capture_graphics)
 export(av_convert_audio)
+export(av_convert_video)
 export(av_decoders)
 export(av_demo)
 export(av_demuxers)

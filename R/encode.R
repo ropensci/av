@@ -49,6 +49,7 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter
   codec <- as.character(codec)
   if(length(audio))
     audio <- normalizePath(audio, mustWork = TRUE)
+  audio <- as.character(audio)
   if(is.logical(verbose))
     verbose <- ifelse(isTRUE(verbose), 32, 16)
   old_log_level <- av_log_level()
@@ -72,4 +73,16 @@ av_convert_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
   .Call(R_convert_audio, audio, output)
+}
+
+#' @rdname av_encode_video
+#' @export
+av_convert_video <- function(input, output = "video.mp4", verbose = TRUE){
+  info <- av_video_info(input)
+  if(nrow(info$video) == 0)
+    stop("No suitable input video stream found")
+  framerate <- info$video$framerate[1]
+  audio <- if(length(info$audio) && nrow(info$audio)) input
+  av_encode_video(input = input, audio = audio, output = output,
+                  framerate = framerate, verbose = verbose)
 }
