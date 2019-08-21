@@ -4,19 +4,19 @@
 \alias{encoding}
 \alias{av_encode_video}
 \alias{av}
-\alias{av_convert_audio}
 \alias{av_convert_video}
-\title{Encode or Convert Video}
+\alias{av_convert_audio}
+\title{Encode or Convert Audio / Video}
 \usage{
-av_encode_video(input, output = "video.mp4", framerate = 24,
+av_encode_video(input, output = "output.mp4", framerate = 24,
   vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
 
-av_convert_audio(audio, output = "output.mp3", verbose = TRUE)
+av_convert_video(input, output = "output.mp4", verbose = TRUE)
 
-av_convert_video(input, output = "video.mp4", verbose = TRUE)
+av_convert_audio(audio, output = "output.mp3", verbose = TRUE)
 }
 \arguments{
-\item{input}{a vector with images such as png files. A video input file is treated
+\item{input}{a vector with image or video files. A video input file is treated
 as a series of images. All input files should have the same width and height.}
 
 \item{output}{name of the output file. File extension must correspond to a known
@@ -54,6 +54,10 @@ It is recommended to use let ffmpeg choose the suitable codec for a given contai
 format. Most video formats default to the \code{libx264} video codec which has excellent
 compression and works on all modern \href{https://caniuse.com/#search=h264}{browsers},
 operating systems, and digital TVs.
+
+It is safe to interrupt the encoding process by pressing CTRL+C, or via \link{setTimeLimit}.
+When the encoding is interrupted, the output stream is properly finalized and all open
+files and resources are properly closed.
 }
 \seealso{
 Other av: \code{\link{capturing}}, \code{\link{demo}},

@@ -1,4 +1,4 @@
-#' Encode or Convert Video
+#' Encode or Convert Audio / Video
 #'
 #' Encodes a set of images into a video, using custom container format, codec, fps,
 #' [video filters](https://ffmpeg.org/ffmpeg-filters.html#Video-Filters), and audio
@@ -16,13 +16,17 @@
 #' compression and works on all modern [browsers](https://caniuse.com/#search=h264),
 #' operating systems, and digital TVs.
 #'
+#' It is safe to interrupt the encoding process by pressing CTRL+C, or via [setTimeLimit].
+#' When the encoding is interrupted, the output stream is properly finalized and all open
+#' files and resources are properly closed.
+#'
 #' @export
 #' @aliases av
 #' @family av
 #' @name encoding
 #' @useDynLib av R_encode_video
-#' @rdname av_encode_video
-#' @param input a vector with images such as png files. A video input file is treated
+#' @rdname encoding
+#' @param input a vector with image or video files. A video input file is treated
 #' as a series of images. All input files should have the same width and height.
 #' @param output name of the output file. File extension must correspond to a known
 #' container format such as `mp4`, `mkv`, `mov`, or `flv`.
@@ -36,7 +40,7 @@
 #' @param audio audio or video input file with sound for the output video
 #' @param verbose emit some output and a progress meter counting processed images. Must
 #' be `TRUE` or `FALSE` or an integer with a valid [log_level](av_log_level).
-av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter = "null",
+av_encode_video <- function(input, output = "output.mp4", framerate = 24, vfilter = "null",
                             codec = NULL, audio = NULL, verbose = TRUE){
   stopifnot(length(input) > 0)
   input <- normalizePath(input, mustWork = TRUE)
@@ -58,7 +62,19 @@ av_encode_video <- function(input, output = "video.mp4", framerate = 24, vfilter
   .Call(R_encode_video, input, output, framerate, vfilter, codec, audio)
 }
 
-#' @rdname av_encode_video
+#' @rdname encoding
+#' @export
+av_convert_video <- function(input, output = "output.mp4", verbose = TRUE){
+  info <- av_video_info(input)
+  if(nrow(info$video) == 0)
+    stop("No suitable input video stream found")
+  framerate <- info$video$framerate[1]
+  audio <- if(length(info$audio) && nrow(info$audio)) input
+  av_encode_video(input = input, audio = audio, output = output,
+                  framerate = framerate, verbose = verbose)
+}
+
+#' @rdname encoding
 #' @export
 #' @useDynLib av R_convert_audio
 av_convert_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
@@ -73,16 +89,4 @@ av_convert_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
   .Call(R_convert_audio, audio, output)
-}
-
-#' @rdname av_encode_video
-#' @export
-av_convert_video <- function(input, output = "video.mp4", verbose = TRUE){
-  info <- av_video_info(input)
-  if(nrow(info$video) == 0)
-    stop("No suitable input video stream found")
-  framerate <- info$video$framerate[1]
-  audio <- if(length(info$audio) && nrow(info$audio)) input
-  av_encode_video(input = input, audio = audio, output = output,
-                  framerate = framerate, verbose = verbose)
 }
