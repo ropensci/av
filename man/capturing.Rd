@@ -29,7 +29,7 @@ as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 \item{audio}{audio or video input file with sound for the output video}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
-be \code{TRUE} or \code{FALSE} or an integer with a valid \link{log_level}.}
+be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 
 \item{...}{extra graphics parameters passed to \code{\link[=png]{png()}}}
 }

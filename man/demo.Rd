@@ -21,7 +21,7 @@ output fps may be different if you specify a filter that modifies speed or inter
 frames.}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
-be \code{TRUE} or \code{FALSE} or an integer with a valid \link{log_level}.}
+be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 
 \item{...}{other parameters passed to \link{av_capture_graphics}.}
 }

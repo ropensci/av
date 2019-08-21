@@ -39,7 +39,7 @@
 #' default is `libx264` for most formats, which usually the best choice.
 #' @param audio audio or video input file with sound for the output video
 #' @param verbose emit some output and a progress meter counting processed images. Must
-#' be `TRUE` or `FALSE` or an integer with a valid [log_level].
+#' be `TRUE` or `FALSE` or an integer with a valid [av_log_level].
 av_encode_video <- function(input, output = "output.mp4", framerate = 24, vfilter = "null",
                             codec = NULL, audio = NULL, verbose = TRUE){
   stopifnot(length(input) > 0)
