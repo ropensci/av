@@ -64,20 +64,21 @@ av_encode_video <- function(input, output = "output.mp4", framerate = 24, vfilte
 
 #' @rdname encoding
 #' @export
-av_convert_video <- function(input, output = "output.mp4", verbose = TRUE){
-  info <- av_video_info(input)
+#' @param video input video file with optionally also an audio track
+av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
+  info <- av_video_info(video)
   if(nrow(info$video) == 0)
     stop("No suitable input video stream found")
   framerate <- info$video$framerate[1]
-  audio <- if(length(info$audio) && nrow(info$audio)) input
-  av_encode_video(input = input, audio = audio, output = output,
+  audio <- if(length(info$audio) && nrow(info$audio)) video
+  av_encode_video(input = video, audio = audio, output = output,
                   framerate = framerate, verbose = verbose)
 }
 
 #' @rdname encoding
 #' @export
 #' @useDynLib av R_convert_audio
-av_convert_audio <- function(audio, output = 'output.mp3', verbose = TRUE){
+av_audio_convert <- function(audio, output = 'output.mp3', verbose = TRUE){
   stopifnot(length(audio) > 0)
   audio <- normalizePath(audio, mustWork = TRUE)
   stopifnot(length(output) == 1)

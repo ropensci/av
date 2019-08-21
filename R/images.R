@@ -1,6 +1,12 @@
-#' Split Video into PNG
+#' Convert video to images
 #'
-#' Convert a video file in a set of PNG images.
+#' Splits a video file in a set of image files. Default image format is
+#' jpeg which has good speed and compression. Use `format = "png"` for
+#' losless images.
+#'
+#' For large input videos you can set fps to sample only a limited number
+#' of images per second. This also works with fractions, for example `fps = 0.2`
+#' will output one image for every 5 sec of video.
 #'
 #' @export
 #' @param video an input video

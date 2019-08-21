@@ -37,7 +37,7 @@ test_that("convert images into video formats", {
       expect_equal(info$duration, n / framerate)
 
       # Test converting video to video
-      av_convert_video(filename, 'test2.mp4', verbose = FALSE)
+      av_video_convert(filename, 'test2.mp4', verbose = FALSE)
       info <- av_video_info('test2.mp4')
       unlink('test2.mp4')
       expect_equal(info$video$width, width)
@@ -68,7 +68,7 @@ test_that("audio sampling works", {
     expect_equal(info$duration, n / framerate, tolerance = 0.05)
 
     # Test converting video to video
-    av_convert_video(filename, 'test2.mp4', verbose = FALSE)
+    av_video_convert(filename, 'test2.mp4', verbose = FALSE)
     info <- av_video_info('test2.mp4')
     unlink('test2.mp4')
     expect_equal(info$video$width, width)

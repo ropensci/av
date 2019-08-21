@@ -1,6 +1,7 @@
 #' Video Info
 #'
 #' Get video info such as width, height, format, duration and framerate.
+#' This may also be used for audio input files.
 #'
 #' @export
 #' @name info

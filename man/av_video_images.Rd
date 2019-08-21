@@ -2,7 +2,7 @@
 % Please edit documentation in R/images.R
 \name{av_video_images}
 \alias{av_video_images}
-\title{Split Video into PNG}
+\title{Convert video to images}
 \usage{
 av_video_images(video, destdir = tempfile(), format = "jpg",
   fps = NULL)
@@ -17,5 +17,12 @@ av_video_images(video, destdir = tempfile(), format = "jpg",
 \item{fps}{sample rate of images. Use \code{NULL} to get all images.}
 }
 \description{
-Convert a video file in a set of PNG images.
+Splits a video file in a set of image files. Default image format is
+jpeg which has good speed and compression. Use \code{format = "png"} for
+losless images.
+}
+\details{
+For large input videos you can set fps to sample only a limited number
+of images per second. This also works with fractions, for example \code{fps = 0.2}
+will output one image for every 5 sec of video.
 }

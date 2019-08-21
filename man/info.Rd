@@ -12,6 +12,7 @@ av_video_info(file)
 }
 \description{
 Get video info such as width, height, format, duration and framerate.
+This may also be used for audio input files.
 }
 \seealso{
 Other av: \code{\link{capturing}}, \code{\link{demo}},

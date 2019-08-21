@@ -3,7 +3,8 @@
     we would only read a single image from each input file, but now we read
     all of them.
   - Major refactoring to suppor the above, hopefully no breakage.
-  - New functions av_convert_video() and av_convert_audio()
+  - New functions av_video_convert() and av_audio_convert()
+  - New function av_video_images()
   - Switch to R_UnwindProtect to implement cleanup on exit
   - Test, tests, tests, so many tests.
 

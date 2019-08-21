@@ -10,28 +10,28 @@ test_that("Audio can be converted to various formats", {
   input_info <- av_video_info(wonderland)
 
   # Convert mp3 to mkv (defaults to libvorbis audio)
-  expect_equal(av_convert_audio(wonderland, tmp_mkv, verbose = FALSE), tmp_mkv)
+  expect_equal(av_audio_convert(wonderland, tmp_mkv, verbose = FALSE), tmp_mkv)
   expect_true(file.exists(tmp_mkv))
   mkv_info <- av_video_info(tmp_mkv)
   expect_equal(input_info$duration, mkv_info$duration, tolerance = 0.1)
   expect_equal(nrow(mkv_info$audio), 1)
 
   # Convert mp3 to mp4 (defaults to aac audio)
-  expect_equal(av_convert_audio(wonderland, tmp_mp4, verbose = FALSE), tmp_mp4)
+  expect_equal(av_audio_convert(wonderland, tmp_mp4, verbose = FALSE), tmp_mp4)
   expect_true(file.exists(tmp_mp4))
   mp4_info <- av_video_info(tmp_mp4)
   expect_equal(input_info$duration, mp4_info$duration, tolerance = 0.1)
   expect_equal(nrow(mp4_info$audio), 1)
 
   # Convert mp3 to wav
-  expect_equal(av_convert_audio(wonderland, tmp_wav, verbose = FALSE), tmp_wav)
+  expect_equal(av_audio_convert(wonderland, tmp_wav, verbose = FALSE), tmp_wav)
   expect_true(file.exists(tmp_wav))
   wav_info <- av_video_info(tmp_wav)
   expect_equal(input_info$duration, wav_info$duration, tolerance = 0.1)
   expect_equal(nrow(wav_info$audio), 1)
 
   # Convert wav to mp3
-  expect_equal(av_convert_audio(tmp_wav, tmp_mp3, verbose = FALSE), tmp_mp3)
+  expect_equal(av_audio_convert(tmp_wav, tmp_mp3, verbose = FALSE), tmp_mp3)
   expect_true(file.exists(tmp_mp3))
   mp3_info <- av_video_info(tmp_mp3)
   expect_equal(input_info$duration, mp3_info$duration, tolerance = 0.1)

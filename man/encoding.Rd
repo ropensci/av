@@ -4,16 +4,16 @@
 \alias{encoding}
 \alias{av_encode_video}
 \alias{av}
-\alias{av_convert_video}
-\alias{av_convert_audio}
+\alias{av_video_convert}
+\alias{av_audio_convert}
 \title{Encode or Convert Audio / Video}
 \usage{
 av_encode_video(input, output = "output.mp4", framerate = 24,
   vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
 
-av_convert_video(input, output = "output.mp4", verbose = TRUE)
+av_video_convert(video, output = "output.mp4", verbose = TRUE)
 
-av_convert_audio(audio, output = "output.mp3", verbose = TRUE)
+av_audio_convert(audio, output = "output.mp3", verbose = TRUE)
 }
 \arguments{
 \item{input}{a vector with image or video files. A video input file is treated
@@ -36,6 +36,8 @@ default is \code{libx264} for most formats, which usually the best choice.}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
 be \code{TRUE} or \code{FALSE} or an integer with a valid \href{av_log_level}{log_level}.}
+
+\item{video}{input video file with optionally also an audio track}
 }
 \description{
 Encodes a set of images into a video, using custom container format, codec, fps,
