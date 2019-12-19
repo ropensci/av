@@ -1,3 +1,6 @@
+0.4
+  - Detect and error in configure if FFmpeg is too old
+
 0.3
   - Input can now contain video, i.e. multiple images per file. Previously
     we would only read a single image from each input file, but now we read
