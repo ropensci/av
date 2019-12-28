@@ -21,6 +21,7 @@ if [ $? -eq 0 ]; then
   if [ "$(lsb_release -c 2>/dev/null | grep xenial)" ]; then
     echo "On Ubuntu Trusty/Xenial use our PPA: " 2>/dev/null
     echo "  sudo add-apt-repository -y ppa:cran/ffmpeg-3" 2>/dev/null
+    echo "  sudo apt-get update" 2>/dev/null
     echo "  sudo apt-get dist-upgrade" 2>/dev/null
   fi
   exit 1
