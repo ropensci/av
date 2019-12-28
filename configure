@@ -14,10 +14,15 @@ PKG_BREW_NAME="ffmpeg"
 PKG_TEST_HEADER="<libavfilter/version.h>"
 PKG_LIBS="-lavfilter"
 
-# Detect too old ffmpeg
+# Check if FFmpeg is too old
 pkg-config ${PKG_CONFIG_NAME} --max-version=5.99 2>/dev/null
 if [ $? -eq 0 ]; then
   echo "ERROR: Your version of FFmpeg is too old! Need at least FFmpeg (>= 3.2)" 1>&2
+  if [ $(lsb_release -c 2>/dev/null | grep Xenial) ]; then
+    echo "On Ubuntu Trusty/Xenial use our PPA: " 2>/dev/null
+    echo "  sudo add-apt-repository -y ppa:cran/ffmpeg-3" 2>/dev/null
+    echo "  sudo apt-get dist-upgrade" 2>/dev/null
+  fi
   exit 1
 fi
 
@@ -53,12 +58,12 @@ echo "Using PKG_CFLAGS=$PKG_CFLAGS"
 echo "Using PKG_LIBS=$PKG_LIBS"
 
 # Find compiler
-CXXCPP=$(${R_HOME}/bin/R CMD config CXXCPP)
+CXX=$(${R_HOME}/bin/R CMD config CXX)
 CXXFLAGS=$(${R_HOME}/bin/R CMD config CXXFLAGS)
 CPPFLAGS=$(${R_HOME}/bin/R CMD config CPPFLAGS)
 
 # Test for libzmq
-echo "#include $PKG_TEST_HEADER" | ${CXXCPP} ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ -  >/dev/null 2>&1
+echo "#include $PKG_TEST_HEADER" | ${CXX} -E ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ -  >/dev/null 2>&1
 
 if [ $? -ne 0 ]; then
   echo "------------------------- ANTICONF ERROR ---------------------------"
