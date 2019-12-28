@@ -32,10 +32,3 @@ addons:
     packages: libavdevice-dev
     sources:
       - sourceline: 'ppa:cran/ffmpeg-3'
-
-warnings_are_errors: true
-
-notifications:
-  email:
-    on_success: change
-    on_failure: change
