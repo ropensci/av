@@ -40,6 +40,8 @@ typedef struct {
   double duration;
   int64_t count;
   int progress_pct;
+  int channels;
+  int sample_rate;
   SEXP in_files;
 } output_container;
 
@@ -310,9 +312,9 @@ static void add_audio_output(output_container *container){
   bail_if_null(output_codec, "Failed to find default audio codec");
   AVCodecContext *audio_encoder = avcodec_alloc_context3(output_codec);
   bail_if_null(audio_encoder, "avcodec_alloc_context3 (audio)");
-  audio_encoder->channels = audio_decoder->channels;
-  audio_encoder->channel_layout = av_get_default_channel_layout(audio_decoder->channels);
-  audio_encoder->sample_rate = audio_decoder->sample_rate;
+  audio_encoder->channels = container->channels ? container->channels : audio_decoder->channels;
+  audio_encoder->channel_layout = av_get_default_channel_layout(audio_encoder->channels);
+  audio_encoder->sample_rate = container->sample_rate ? container->sample_rate : audio_decoder->sample_rate;
   audio_encoder->sample_fmt = output_codec->sample_fmts[0];
   audio_encoder->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
@@ -605,8 +607,12 @@ static SEXP encode_audio_input(void *ptr){
   return R_NilValue;
 }
 
-SEXP R_convert_audio(SEXP audio, SEXP out_file){
+SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_channels, SEXP sample_rate){
   output_container *output = av_mallocz(sizeof(output_container));
+  if(Rf_length(out_channels))
+    output->channels = Rf_asInteger(out_channels);
+  if(Rf_length(sample_rate))
+    output->sample_rate = Rf_asInteger(sample_rate);
   output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
   output->output_file = CHAR(STRING_ELT(out_file, 0));
   R_UnwindProtect(encode_audio_input, output, close_output_file, output, NULL);

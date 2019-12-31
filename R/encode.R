@@ -78,16 +78,23 @@ av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
 #' @rdname encoding
 #' @export
 #' @useDynLib av R_convert_audio
-av_audio_convert <- function(audio, output = 'output.mp3', verbose = TRUE){
+#' @param channels number of output channels. Default `NULL` is to match input
+#' @param sample_rate output sampling rate. Default `NULL` is to match input
+av_audio_convert <- function(audio, output = 'output.mp3', channels = NULL,
+                             sample_rate = NULL, verbose = TRUE){
   stopifnot(length(audio) > 0)
   audio <- normalizePath(audio, mustWork = TRUE)
   stopifnot(length(output) == 1)
   output <- normalizePath(output, mustWork = FALSE)
   stopifnot(file.exists(dirname(output)))
+  if(length(channels))
+    stopifnot(is.numeric(channels))
+  if(length(sample_rate))
+    stopifnot(is.numeric(sample_rate))
   if(is.logical(verbose))
     verbose <- ifelse(isTRUE(verbose), 32, 16)
   old_log_level <- av_log_level()
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
-  .Call(R_convert_audio, audio, output)
+  .Call(R_convert_audio, audio, output, channels, sample_rate)
 }

@@ -1,5 +1,6 @@
 0.4
   - Detect and error in configure if FFmpeg is too old
+  - New parameters channel and sample_rate in av_audio_convert()
 
 0.3
   - Input can now contain video, i.e. multiple images per file. Previously

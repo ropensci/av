@@ -1,7 +1,7 @@
 Package: av
 Type: Package
 Title: Working with Audio and Video in R
-Version: 0.3
+Version: 0.3.9000
 Authors@R: person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroen@berkeley.edu",
     comment = c(ORCID = "0000-0002-4035-0289"))
 Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for working with audio 
@@ -15,7 +15,7 @@ URL: https://docs.ropensci.org/av (website),
 BugReports: https://github.com/ropensci/av/issues
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
 SystemRequirements: FFmpeg (>= 3.2); with at least libx264 and lame (mp3) drivers.
 	INSTALL: libavfilter-dev (deb), ffmpeg-devel (rpm), ffmpeg (brew).

@@ -8,12 +8,25 @@
 \alias{av_audio_convert}
 \title{Encode or Convert Audio / Video}
 \usage{
-av_encode_video(input, output = "output.mp4", framerate = 24,
-  vfilter = "null", codec = NULL, audio = NULL, verbose = TRUE)
+av_encode_video(
+  input,
+  output = "output.mp4",
+  framerate = 24,
+  vfilter = "null",
+  codec = NULL,
+  audio = NULL,
+  verbose = TRUE
+)
 
 av_video_convert(video, output = "output.mp4", verbose = TRUE)
 
-av_audio_convert(audio, output = "output.mp3", verbose = TRUE)
+av_audio_convert(
+  audio,
+  output = "output.mp3",
+  channels = NULL,
+  sample_rate = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{input}{a vector with image or video files. A video input file is treated
@@ -38,6 +51,10 @@ default is \code{libx264} for most formats, which usually the best choice.}
 be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 
 \item{video}{input video file with optionally also an audio track}
+
+\item{channels}{number of output channels. Default \code{NULL} is to match input}
+
+\item{sample_rate}{output sampling rate. Default \code{NULL} is to match input}
 }
 \description{
 Encodes a set of images into a video, using custom container format, codec, fps,
@@ -62,8 +79,11 @@ When the encoding is interrupted, the output stream is properly finalized and al
 files and resources are properly closed.
 }
 \seealso{
-Other av: \code{\link{capturing}}, \code{\link{demo}},
-  \code{\link{formats}}, \code{\link{info}},
-  \code{\link{logging}}
+Other av: 
+\code{\link{capturing}},
+\code{\link{demo}()},
+\code{\link{formats}},
+\code{\link{info}},
+\code{\link{logging}}
 }
 \concept{av}
