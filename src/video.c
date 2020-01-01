@@ -37,6 +37,7 @@ typedef struct {
   AVCodecContext *audio_encoder;
   const char * filter_string;
   const char * output_file;
+  const char * format_name;
   double duration;
   int64_t count;
   int progress_pct;
@@ -332,7 +333,7 @@ static void add_audio_output(output_container *container){
 static void open_output_file(int width, int height, output_container *output){
   /* Init container context (infers format from file extension) */
   AVFormatContext *muxer = NULL;
-  avformat_alloc_output_context2(&muxer, NULL, NULL, output->output_file);
+  avformat_alloc_output_context2(&muxer, NULL, output->format_name, output->output_file);
   bail_if_null(muxer, "avformat_alloc_output_context2");
   output->muxer = muxer;
 
@@ -607,12 +608,14 @@ static SEXP encode_audio_input(void *ptr){
   return R_NilValue;
 }
 
-SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_channels, SEXP sample_rate){
+SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_format, SEXP out_channels, SEXP sample_rate){
   output_container *output = av_mallocz(sizeof(output_container));
   if(Rf_length(out_channels))
     output->channels = Rf_asInteger(out_channels);
   if(Rf_length(sample_rate))
     output->sample_rate = Rf_asInteger(sample_rate);
+  if(Rf_length(out_format))
+    output->format_name = CHAR(STRING_ELT(out_format, 0));
   output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
   output->output_file = CHAR(STRING_ELT(out_file, 0));
   R_UnwindProtect(encode_audio_input, output, close_output_file, output, NULL);

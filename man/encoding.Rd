@@ -23,6 +23,7 @@ av_video_convert(video, output = "output.mp4", verbose = TRUE)
 av_audio_convert(
   audio,
   output = "output.mp3",
+  format = NULL,
   channels = NULL,
   sample_rate = NULL,
   verbose = TRUE
@@ -51,6 +52,9 @@ default is \code{libx264} for most formats, which usually the best choice.}
 be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 
 \item{video}{input video file with optionally also an audio track}
+
+\item{format}{a valid format name from the list of \code{av_muxers()}. Default
+\code{NULL} tries to guess a format from the file extension.}
 
 \item{channels}{number of output channels. Default \code{NULL} is to match input}
 
