@@ -4,8 +4,7 @@
 \alias{av_video_images}
 \title{Convert video to images}
 \usage{
-av_video_images(video, destdir = tempfile(), format = "jpg",
-  fps = NULL)
+av_video_images(video, destdir = tempfile(), format = "jpg", fps = NULL)
 }
 \arguments{
 \item{video}{an input video}

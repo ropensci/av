@@ -14,8 +14,11 @@ av_log_level(set = NULL)
 Get or set the \href{https://www.ffmpeg.org/doxygen/4.0/group__lavu__log__constants.html}{log level}.
 }
 \seealso{
-Other av: \code{\link{capturing}}, \code{\link{demo}},
-  \code{\link{encoding}}, \code{\link{formats}},
-  \code{\link{info}}
+Other av: 
+\code{\link{capturing}},
+\code{\link{demo}()},
+\code{\link{encoding}},
+\code{\link{formats}},
+\code{\link{info}}
 }
 \concept{av}

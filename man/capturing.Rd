@@ -5,9 +5,17 @@
 \alias{av_capture_graphics}
 \title{Record Video from Graphics Device}
 \usage{
-av_capture_graphics(expr, output = "output.mp4", width = 720,
-  height = 480, framerate = 1, vfilter = "null", audio = NULL,
-  verbose = TRUE, ...)
+av_capture_graphics(
+  expr,
+  output = "output.mp4",
+  width = 720,
+  height = 480,
+  framerate = 1,
+  vfilter = "null",
+  audio = NULL,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{expr}{an R expression that generates the graphics to capture}
@@ -57,8 +65,11 @@ av::av_video_info(video_file)
 # utils::browseURL(video_file)}
 }
 \seealso{
-Other av: \code{\link{demo}}, \code{\link{encoding}},
-  \code{\link{formats}}, \code{\link{info}},
-  \code{\link{logging}}
+Other av: 
+\code{\link{demo}()},
+\code{\link{encoding}},
+\code{\link{formats}},
+\code{\link{info}},
+\code{\link{logging}}
 }
 \concept{av}

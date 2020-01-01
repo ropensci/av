@@ -36,8 +36,11 @@ However for encoding and muxing such videos, ffmpeg must have been configured wi
 specific external libraries for a given codec or format.
 }
 \seealso{
-Other av: \code{\link{capturing}}, \code{\link{demo}},
-  \code{\link{encoding}}, \code{\link{info}},
-  \code{\link{logging}}
+Other av: 
+\code{\link{capturing}},
+\code{\link{demo}()},
+\code{\link{encoding}},
+\code{\link{info}},
+\code{\link{logging}}
 }
 \concept{av}

@@ -5,8 +5,14 @@
 \alias{av_demo}
 \title{Demo Video}
 \usage{
-av_demo(output = "demo.mp4", width = 960, height = 720,
-  framerate = 5, verbose = TRUE, ...)
+av_demo(
+  output = "demo.mp4",
+  width = 960,
+  height = 720,
+  framerate = 5,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{output}{name of the output file. File extension must correspond to a known
@@ -29,8 +35,11 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 Generates random video for testing purposes.
 }
 \seealso{
-Other av: \code{\link{capturing}}, \code{\link{encoding}},
-  \code{\link{formats}}, \code{\link{info}},
-  \code{\link{logging}}
+Other av: 
+\code{\link{capturing}},
+\code{\link{encoding}},
+\code{\link{formats}},
+\code{\link{info}},
+\code{\link{logging}}
 }
 \concept{av}
