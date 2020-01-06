@@ -26,6 +26,8 @@ typedef struct {
   AVAudioFifo *fifo;
   input_container *audio_input;
   int channels;
+  int winsize;
+  float overlap;
   float *window_func_lut;
   float **src_data;
   double **dst_data;
@@ -140,11 +142,13 @@ static double amp_scale(double a, int ascale){
   return a;
 }
 
-static SEXP run_fft(spectrum_container *output, int fft_size, int win_func, float overlap, int ascale){
+static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
   AVPacket *pkt = av_packet_alloc();
   AVFrame *frame = av_frame_alloc();
   input_container * input = output->audio_input;
   AVCodecContext *decoder = input->decoder;
+  int fft_size = output->winsize;
+  float overlap = output->overlap;
   int channels = decoder->channels;
   output->channels = channels;
   int fft_bits = av_log2(fft_size);
@@ -243,11 +247,13 @@ static SEXP run_fft(spectrum_container *output, int fft_size, int win_func, floa
 
 static SEXP calculate_audio_fft(void *output){
   total_open_handles++;
-  return run_fft(output, 2048, WFUNC_HANNING, 0.75, AS_LOG);
+  return run_fft(output, WFUNC_HANNING, AS_LOG);
 }
 
-SEXP R_audio_fft(SEXP audio){
+SEXP R_audio_fft(SEXP audio, SEXP winsize, SEXP overlap){
   spectrum_container *output = av_mallocz(sizeof(spectrum_container));
+  output->winsize = Rf_asInteger(winsize);
+  output->overlap = Rf_asReal(overlap);
   output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
   return R_UnwindProtect(calculate_audio_fft, output, close_spectrum_container, output, NULL);
 }

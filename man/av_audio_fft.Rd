@@ -4,11 +4,19 @@
 \alias{av_audio_fft}
 \title{Calculate FFT}
 \usage{
-av_audio_fft(audio)
+av_audio_fft(audio, win_size = 2048, overlap = 0.75)
 }
 \arguments{
-\item{audio}{audio or video input file with sound for the output video}
+\item{audio}{path to the audio file}
+
+\item{win_size}{sample size of the moving fft window}
+
+\item{overlap}{number between 0 and 1 of overlap proportion for moving fft window}
 }
 \description{
 Convert audio into frequency domain.
+}
+\examples{
+wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
+av_audio_fft(wonderland, 4096)
 }
