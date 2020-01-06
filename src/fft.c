@@ -3,13 +3,11 @@
 #include <libavutil/audio_fifo.h>
 #include "window_func.h"
 
-enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
-
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
-#define PTS_EVERYTHING 1e18
-#define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
+
+enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
 
 extern int total_open_handles;
 
@@ -196,6 +194,7 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
         bail_if(nb_written < frame->nb_samples, "av_audio_fifo_write");
         av_frame_unref(frame);
       }
+      R_CheckUserInterrupt();
     }
     while ((av_audio_fifo_size(output->fifo) >= window_size) || (av_audio_fifo_size(output->fifo) > 0 && eof)) {
       int n_samples = av_audio_fifo_peek(output->fifo, (void**)output->src_data, window_size);
@@ -232,14 +231,19 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
         }
       }
       av_audio_fifo_drain(output->fifo, hop_size);
+      R_CheckUserInterrupt();
       iter++;
     }
   }
-  SEXP dims = PROTECT(Rf_allocVector(INTSXP, 2));
+  SEXP dims = PROTECT(Rf_allocVector(INTSXP, 3));
   INTEGER(dims)[0] = output_range;
   INTEGER(dims)[1] = iter;
-  SEXP out = PROTECT(Rf_allocVector(REALSXP, iter * output_range));
-  memcpy(REAL(out), output->dst_data[0], sizeof(double) * iter * output_range);
+  INTEGER(dims)[2] = channels;
+  SEXP out = PROTECT(Rf_allocVector(REALSXP, channels * iter * output_range));
+  size_t n_slices = iter * output_range;
+  for(int ch = 0; ch < channels; ch++){
+    memcpy(REAL(out) + ch * n_slices, output->dst_data[ch], n_slices * sizeof(double));
+  }
   Rf_setAttrib(out, R_DimSymbol, dims);
   UNPROTECT(2);
   return out;
