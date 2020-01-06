@@ -11,7 +11,7 @@ enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
 
-static int total_open_handles = 0;
+extern int total_open_handles;
 
 typedef struct {
   int completed;
