@@ -43,7 +43,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
 
   static const R_CallMethodDef CallEntries[] = {
     {"R_audio_fft",        (DL_FUNC) &R_audio_fft,        5},
-    {"R_convert_audio",    (DL_FUNC) &R_convert_audio,    5},
+    {"R_convert_audio",    (DL_FUNC) &R_convert_audio,    4},
     {"R_encode_video",     (DL_FUNC) &R_encode_video,     6},
     {"R_get_open_handles", (DL_FUNC) &R_get_open_handles, 0},
     {"R_list_codecs",      (DL_FUNC) &R_list_codecs,      0},

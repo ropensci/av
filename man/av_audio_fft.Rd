@@ -4,13 +4,7 @@
 \alias{av_audio_fft}
 \title{Calculate FFT}
 \usage{
-av_audio_fft(
-  audio,
-  win_size = 2048,
-  overlap = 0.75,
-  sample_rate = NULL,
-  to_mono = TRUE
-)
+av_audio_fft(audio, win_size = 2048, overlap = 0.75, sample_rate = NULL)
 }
 \arguments{
 \item{audio}{path to the audio file}
@@ -20,8 +14,6 @@ av_audio_fft(
 \item{overlap}{number between 0 and 1 of overlap proportion for moving fft window}
 
 \item{sample_rate}{option to downsample before fft}
-
-\item{to_mono}{convert to mono sounds before fft}
 }
 \description{
 Convert audio into frequency domain.
