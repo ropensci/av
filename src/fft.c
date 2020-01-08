@@ -144,13 +144,14 @@ static SwrContext *create_resampler(AVCodecContext *decoder, int64_t sample_rate
   return swr;
 }
 
-static double scaled_window_vec(float *vec, int win_size, int win_func, float *overlap){
-  vec = av_realloc_f(NULL, win_size, sizeof(*vec));
-  generate_window_func(vec, win_size, win_func, overlap);
+static double scaled_window_vec(float **vec, int win_size, int win_func, float *overlap){
+  float *tmp = av_calloc(win_size, sizeof(*tmp));
+  generate_window_func(tmp, win_size, win_func, overlap);
   double scale = 0;
   for (int i = 0; i < win_size; i++) {
-    scale += vec[i] * vec[i];
+    scale += tmp[i] * tmp[i];
   }
+  *vec = tmp;
   return scale;
 }
 
@@ -171,7 +172,7 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
   output->fft_data = av_calloc(window_size, sizeof(*output->fft_data));
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
-  double scale = scaled_window_vec(output->window_vec, window_size, win_func, &overlap);
+  double scale = scaled_window_vec(&output->window_vec, window_size, win_func, &overlap);
   int eof = 0;
   while(!eof){
     while(!eof && av_audio_fifo_size(output->fifo) < window_size){
