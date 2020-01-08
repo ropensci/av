@@ -255,10 +255,11 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
       iter++;
     }
   }
-  SEXP dims = PROTECT(Rf_allocVector(INTSXP, 3));
+  SEXP dims = PROTECT(Rf_allocVector(INTSXP, output->keep_channels ? 3 : 2));
   INTEGER(dims)[0] = output_range;
   INTEGER(dims)[1] = iter;
-  INTEGER(dims)[2] = channels;
+  if(output->keep_channels)
+    INTEGER(dims)[2] = channels;
   SEXP out = PROTECT(Rf_allocVector(REALSXP, channels * iter * output_range));
   size_t n_slices = iter * output_range;
   for(int ch = 0; ch < channels; ch++){
