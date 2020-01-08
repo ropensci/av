@@ -1,6 +1,7 @@
 #include <libavformat/avformat.h>
 #include <libavcodec/avfft.h>
 #include <libavutil/audio_fifo.h>
+#include <libswresample/swresample.h>
 #include "window_func.h"
 
 #define R_NO_REMAP
@@ -19,12 +20,15 @@ typedef struct {
 } input_container;
 
 typedef struct {
+  SwrContext *swr;
   FFTContext *fft;
   FFTComplex **fft_data;
   AVAudioFifo *fifo;
   input_container *audio_input;
   int channels;
   int winsize;
+  int sample_rate;
+  int keep_channels;
   float overlap;
   float *window_func_lut;
   float **src_data;
@@ -81,6 +85,8 @@ static void close_spectrum_container(void *ptr, Rboolean jump){
     av_fft_end(s->fft);
   if(s->fifo)
     av_audio_fifo_free(s->fifo);
+  if(s->swr)
+    swr_free(&s->swr);
   if(s->window_func_lut)
     av_free(s->window_func_lut);
   free_ptr_array((void**) s->fft_data, channels);
@@ -140,6 +146,14 @@ static double amp_scale(double a, int ascale){
   return a;
 }
 
+/* https://stackoverflow.com/questions/14989397/how-to-convert-sample-rate-from-av-sample-fmt-fltp-to-av-sample-fmt-s16 */
+static SwrContext *create_resampler(AVCodecContext *decoder, int64_t sample_rate, int64_t ch_layout){
+  SwrContext *swr = swr_alloc_set_opts(NULL, ch_layout, AV_SAMPLE_FMT_FLTP, sample_rate,
+    decoder->channel_layout, decoder->sample_fmt, decoder->sample_rate, 0, NULL);
+  bail_if(swr_init(swr), "swr_init");
+  return swr;
+}
+
 static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
   AVPacket *pkt = av_packet_alloc();
   AVFrame *frame = av_frame_alloc();
@@ -147,13 +161,15 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
   AVCodecContext *decoder = input->decoder;
   int fft_size = output->winsize;
   float overlap = output->overlap;
-  int channels = decoder->channels;
+  int channels = output->keep_channels ? decoder->channels : 1;
   output->channels = channels;
   int fft_bits = av_log2(fft_size);
   int window_size = 1 << fft_bits;
   int hop_size = window_size * (1 - overlap);
   int output_range = window_size / 2;
   int iter = 0;
+  output->swr = create_resampler(decoder, output->sample_rate,
+                                 output->keep_channels ? decoder->channel_layout : AV_CH_LAYOUT_MONO);
   output->fft = av_fft_init(fft_bits, 0);
   output->fft_data = av_calloc(channels, sizeof(*output->fft_data));
   float scale = 0;
@@ -163,7 +179,7 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
     output->fft_data[ch] = av_calloc(window_size, sizeof(**output->fft_data));
     output->src_data[ch] = av_calloc(window_size, sizeof(**output->src_data));
   }
-  output->fifo = av_audio_fifo_alloc(decoder->sample_fmt, decoder->channels, window_size);
+  output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
   output->window_func_lut = av_realloc_f(NULL, window_size, sizeof(*output->window_func_lut));
   generate_window_func(output->window_func_lut, window_size, win_func, &overlap);
   for (int i = 0; i < window_size; i++) {
@@ -190,9 +206,13 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
         break;
       } else {
         bail_if(ret, "avcodec_receive_frame");
-        int nb_written = av_audio_fifo_write(output->fifo, (void **)frame->extended_data, frame->nb_samples);
-        bail_if(nb_written < frame->nb_samples, "av_audio_fifo_write");
+        uint8_t *buf = NULL; /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04 */
+        av_samples_alloc(&buf, NULL, output->channels, output->winsize, AV_SAMPLE_FMT_FLTP, 0);
+        int out_samples = swr_convert (output->swr, &buf, output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
         av_frame_unref(frame);
+        int nb_written = av_audio_fifo_write(output->fifo, (void **) &buf, out_samples);
+        av_freep(&buf);
+        bail_if(nb_written, "av_audio_fifo_write");
       }
       R_CheckUserInterrupt();
     }
@@ -254,10 +274,13 @@ static SEXP calculate_audio_fft(void *output){
   return run_fft(output, WFUNC_HANNING, AS_LOG);
 }
 
-SEXP R_audio_fft(SEXP audio, SEXP winsize, SEXP overlap){
+SEXP R_audio_fft(SEXP audio, SEXP winsize, SEXP overlap, SEXP sample_rate, SEXP keep_channels){
   spectrum_container *output = av_mallocz(sizeof(spectrum_container));
   output->winsize = Rf_asInteger(winsize);
   output->overlap = Rf_asReal(overlap);
+  output->keep_channels = Rf_asLogical(keep_channels);
   output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
+  output->sample_rate = Rf_length(sample_rate) ? Rf_asInteger(sample_rate) :
+    output->audio_input->decoder->sample_rate;
   return R_UnwindProtect(calculate_audio_fft, output, close_spectrum_container, output, NULL);
 }
