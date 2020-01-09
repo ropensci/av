@@ -19,6 +19,7 @@ typedef struct {
 } input_container;
 
 typedef struct {
+  uint8_t *buf;
   SwrContext *swr;
   FFTContext *fft;
   FFTComplex *fft_data;
@@ -81,6 +82,8 @@ static void close_spectrum_container(void *ptr, Rboolean jump){
     av_free(s->src_data);
   if(s->dst_data)
     av_free(s->dst_data);
+  if(s->buf)
+    av_freep(&s->buf);
 }
 
 static int find_stream_type(AVFormatContext *demuxer, enum AVMediaType type){
@@ -177,6 +180,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   output->fft_data = av_calloc(window_size, sizeof(*output->fft_data));
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
+  av_samples_alloc(&output->buf, NULL, 1, 4 * output->winsize, AV_SAMPLE_FMT_FLTP, 0);
   double scale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
   while(!eof){
@@ -189,7 +193,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
         } else {
           bail_if(ret, "av_read_frame");
           if(pkt->stream_index == input->stream->index){
-            av_packet_rescale_ts(pkt, input->stream->time_base, input->decoder->time_base);
+            //av_packet_rescale_ts(pkt, input->stream->time_base, input->decoder->time_base);
             bail_if(avcodec_send_packet(input->decoder, pkt), "avcodec_send_packet (audio)");
             av_packet_unref(pkt);
           }
@@ -199,12 +203,11 @@ static SEXP run_fft(spectrum_container *output, int ascale){
         break;
       } else {
         bail_if(ret, "avcodec_receive_frame");
-        uint8_t *buf = NULL; /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04 */
-        av_samples_alloc(&buf, NULL, 1, output->winsize, AV_SAMPLE_FMT_FLTP, 0);
-        int out_samples = swr_convert (output->swr, &buf, output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
+        /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04
+         * 4x is a conservative multiplier for when the input samle_fmt is smaller than 32 bit (such as flac)*/
+        int out_samples = swr_convert (output->swr, &output->buf, 4 * output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
         av_frame_unref(frame);
-        int nb_written = av_audio_fifo_write(output->fifo, (void **) &buf, out_samples);
-        av_freep(&buf);
+        int nb_written = av_audio_fifo_write(output->fifo, (void **) &output->buf, out_samples);
         bail_if(nb_written, "av_audio_fifo_write");
       }
       R_CheckUserInterrupt();
