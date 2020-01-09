@@ -59,7 +59,7 @@ parzen(n)
 bohman(n)
 }
 \arguments{
-\item{n}{number of elements}
+\item{n}{size of the window (number of weights to generate)}
 }
 \description{
 Several common \href{https://en.wikipedia.org/wiki/Window_function}{windows function}

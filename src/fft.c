@@ -2,7 +2,6 @@
 #include <libavcodec/avfft.h>
 #include <libavutil/audio_fifo.h>
 #include <libswresample/swresample.h>
-#include "window_func.h"
 
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
@@ -28,7 +27,7 @@ typedef struct {
   int winsize;
   int sample_rate;
   float overlap;
-  float *window_vec;
+  float *winvec;
   float *src_data;
   double *dst_data;
 } spectrum_container;
@@ -74,8 +73,8 @@ static void close_spectrum_container(void *ptr, Rboolean jump){
     av_audio_fifo_free(s->fifo);
   if(s->swr)
     swr_free(&s->swr);
-  if(s->window_vec)
-    av_free(s->window_vec);
+  if(s->winvec)
+    av_free(s->winvec);
   if(s->fft_data)
     av_free(s->fft_data);
   if(s->src_data)
@@ -144,18 +143,24 @@ static SwrContext *create_resampler(AVCodecContext *decoder, int64_t sample_rate
   return swr;
 }
 
-static double scaled_window_vec(float **vec, int win_size, int win_func, float *overlap){
-  float *tmp = av_calloc(win_size, sizeof(*tmp));
-  generate_window_func(tmp, win_size, win_func, overlap);
+static float *to_float(SEXP window){
+  size_t n = Rf_length(window);
+  double *input = REAL(window);
+  float *output = av_calloc(n, sizeof(*output));
+  for(int i = 0; i < n; i++)
+    output[i] = (float) input[i];
+  return output;
+}
+
+static double calc_window_scale(int winsize, float *winvec){
   double scale = 0;
-  for (int i = 0; i < win_size; i++) {
-    scale += tmp[i] * tmp[i];
+  for (int i = 0; i < winsize; i++) {
+    scale += winvec[i] * winvec[i];
   }
-  *vec = tmp;
   return scale;
 }
 
-static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
+static SEXP run_fft(spectrum_container *output, int ascale){
   AVPacket *pkt = av_packet_alloc();
   AVFrame *frame = av_frame_alloc();
   input_container * input = output->input;
@@ -172,7 +177,7 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
   output->fft_data = av_calloc(window_size, sizeof(*output->fft_data));
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
-  double scale = scaled_window_vec(&output->window_vec, window_size, win_func, &overlap);
+  double scale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
   while(!eof){
     while(!eof && av_audio_fifo_size(output->fifo) < window_size){
@@ -211,7 +216,7 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
       FFTComplex *fft_channel = output->fft_data;
       int n;
       for (n = 0; n < n_samples; n++) {
-        fft_channel[n].re = src[n] * output->window_vec[n];
+        fft_channel[n].re = src[n] * output->winvec[n];
         fft_channel[n].im = 0;
       }
       for (; n < window_size; n++) {
@@ -244,12 +249,13 @@ static SEXP run_fft(spectrum_container *output, int win_func, int ascale){
 
 static SEXP calculate_audio_fft(void *output){
   total_open_handles++;
-  return run_fft(output, WFUNC_HANNING, AS_LOG);
+  return run_fft(output, AS_LOG);
 }
 
-SEXP R_audio_fft(SEXP audio, SEXP winsize, SEXP overlap, SEXP sample_rate){
+SEXP R_audio_fft(SEXP audio, SEXP window, SEXP overlap, SEXP sample_rate){
   spectrum_container *output = av_mallocz(sizeof(spectrum_container));
-  output->winsize = Rf_asInteger(winsize);
+  output->winsize = Rf_length(window);
+  output->winvec = to_float(window);
   output->overlap = Rf_asReal(overlap);
   output->input = open_input(CHAR(STRING_ELT(audio, 0)));
   output->sample_rate = Rf_length(sample_rate) ? Rf_asInteger(sample_rate) :

@@ -2,23 +2,29 @@
 % Please edit documentation in R/fft.R
 \name{av_audio_fft}
 \alias{av_audio_fft}
-\title{Calculate FFT}
+\title{Read audio frequency data}
 \usage{
-av_audio_fft(audio, win_size = 2048, overlap = 0.75, sample_rate = NULL)
+av_audio_fft(audio, window = hanning(2048), overlap = 0.75, sample_rate = NULL)
 }
 \arguments{
 \item{audio}{path to the audio file}
 
-\item{win_size}{sample size of the moving fft window}
+\item{window}{vector with weights defining the moving \link[=hanning]{fft window function}.
+The length of this vector is the size of the window and hence determines the output
+frequency range.}
 
-\item{overlap}{number between 0 and 1 of overlap proportion for moving fft window}
+\item{overlap}{value between 0 and 1 of overlap proportion between moving fft windows}
 
-\item{sample_rate}{option to downsample before fft}
+\item{sample_rate}{downsample audio to reduce FFT output size. Default keeps sample
+rate from the input file.}
 }
 \description{
-Convert audio into frequency domain.
+Very fast implementation to read arbitrary audio file format and directly
+stream-convert to frequency domain (spectrum data) using FFmpeg built-in FFT.
 }
 \examples{
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
-av_audio_fft(wonderland, 4096)
+dim(av_audio_fft(wonderland))
+dim(av_audio_fft(wonderland, hamming(4096)))
+dim(av_audio_fft(wonderland, sample_rate = 8000))
 }
