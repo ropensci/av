@@ -232,8 +232,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
       for (int n = 0; n < output_range; n++) {
         FFTSample re = fft_channel[n].re;
         FFTSample im = fft_channel[n].im;
-        double a = (sqrt((re) * (re) + (im) * (im))) / winscale;
-        output->dst_data[iter * output_range + n] = amp_scale(a, ascale);
+        output->dst_data[iter * output_range + n] = amp_scale(sqrt(re*re + im*im) / winscale, ascale);
       }
       av_audio_fifo_drain(output->fifo, hop_size);
       R_CheckUserInterrupt();
