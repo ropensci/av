@@ -181,7 +181,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
   av_samples_alloc(&output->buf, NULL, 1, 4 * output->winsize, AV_SAMPLE_FMT_FLTP, 0);
-  double scale = calc_window_scale(output->winsize, output->winvec);
+  double winscale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
   while(!eof){
     while(!eof && av_audio_fifo_size(output->fifo) < window_size){
@@ -232,7 +232,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
       for (int n = 0; n < output_range; n++) {
         FFTSample re = fft_channel[n].re;
         FFTSample im = fft_channel[n].im;
-        double a = (sqrt((re) * (re) + (im) * (im))) / scale;
+        double a = (sqrt((re) * (re) + (im) * (im))) / winscale;
         output->dst_data[iter * output_range + n] = amp_scale(a, ascale);
       }
       av_audio_fifo_drain(output->fifo, hop_size);
@@ -244,7 +244,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   INTEGER(dims)[0] = output_range;
   INTEGER(dims)[1] = iter;
   SEXP out = PROTECT(Rf_allocVector(REALSXP, iter * output_range));
-  memcpy(REAL(out), output->dst_data, iter * output_range * sizeof(double));
+  memcpy(REAL(out), output->dst_data, iter * output_range * sizeof(*output->dst_data));
   Rf_setAttrib(out, R_DimSymbol, dims);
   UNPROTECT(2);
   return out;
