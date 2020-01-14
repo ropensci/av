@@ -25,5 +25,14 @@ av_audio_fft <- function(audio, window = hanning(2048), overlap = 0.75, sample_r
   window <- as.numeric(window)
   if(!length(overlap) || overlap < 0 || overlap >= 1)
     stop("Overlap must be value between 0 and 1")
-  .Call(R_audio_fft, audio, window, overlap, sample_rate)
+  info <- av_video_info(audio)
+  out <- .Call(R_audio_fft, audio, window, overlap, sample_rate)
+  attr(out, 'time') <- seq(0, info$duration, length.out = ncol(out))
+  attr(out, 'frequency') <-  seq(0, info$audio$sample_rate * 0.5, length.out = nrow(out))
+  structure(out, class = 'av_fft')
+}
+
+#' @export
+plot.av_fft <- function(x, y, ...){
+  graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x), xlab = 'TIME', ylab = 'FREQUENCY (HZ)')
 }
