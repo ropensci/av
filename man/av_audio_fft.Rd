@@ -4,7 +4,7 @@
 \alias{av_audio_fft}
 \title{Read audio frequency data}
 \usage{
-av_audio_fft(audio, window = hanning(2048), overlap = 0.75, sample_rate = NULL)
+av_audio_fft(audio, window = hanning(1024), overlap = 0.75, sample_rate = NULL)
 }
 \arguments{
 \item{audio}{path to the audio file}

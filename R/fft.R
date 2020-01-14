@@ -16,7 +16,7 @@
 #' dim(av_audio_fft(wonderland))
 #' dim(av_audio_fft(wonderland, hamming(4096)))
 #' dim(av_audio_fft(wonderland, sample_rate = 8000))
-av_audio_fft <- function(audio, window = hanning(2048), overlap = 0.75, sample_rate = NULL){
+av_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample_rate = NULL){
   audio <- normalizePath(audio, mustWork = TRUE)
   overlap <- as.numeric(overlap)
   sample_rate <- as.integer(sample_rate)
@@ -34,9 +34,9 @@ av_audio_fft <- function(audio, window = hanning(2048), overlap = 0.75, sample_r
 
 #' @export
 plot.av_fft <- function(x, y, ...){
-  plot.new()
-  par(mar=c(5, 5, 3,3))
-  par(bg='black', col.axis='white', fg='white', family='mono', font=2, col.lab='white', col.main='white', mex=0.6)
+  #plot.new()
+  graphics::par(mar=c(5, 5, 3, 3), bg='black', col.axis='white', fg='white', family='mono',
+                font=2, col.lab='white', col.main='white', mex=0.6)
   #col <- rev(viridisLite::inferno(12))
   col <- c("#FCFFA4FF", "#F5DB4BFF", "#FCAD12FF", "#F78311FF", "#E65D2FFF", "#CB4149FF",
            "#A92E5EFF", "#85216BFF", "#60136EFF", "#3A0963FF", "#140B35FF", "#000004FF")

@@ -3,6 +3,7 @@
 \name{capturing}
 \alias{capturing}
 \alias{av_capture_graphics}
+\alias{av_audio_animation}
 \title{Record Video from Graphics Device}
 \usage{
 av_capture_graphics(
@@ -13,6 +14,14 @@ av_capture_graphics(
   framerate = 1,
   vfilter = "null",
   audio = NULL,
+  verbose = TRUE,
+  ...
+)
+
+av_audio_animation(
+  audio,
+  output = "output.mp4",
+  framerate = 25,
   verbose = TRUE,
   ...
 )
@@ -34,7 +43,7 @@ frames.}
 \item{vfilter}{a string defining an ffmpeg filter graph. This is the same parameter
 as the \code{-vf} argument in the \code{ffmpeg} command line utility.}
 
-\item{audio}{audio or video input file with sound for the output video}
+\item{audio}{path to media file with audio stream}
 
 \item{verbose}{emit some output and a progress meter counting processed images. Must
 be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}

@@ -6,7 +6,7 @@ test_that("Audio FFT", {
   for(ext in extensions){
     filename <- paste0('wonderland.', ext)
     av_audio_convert(wonderland, filename, verbose = FALSE)
-    data <- av_audio_fft(filename)
+    data <- av_audio_fft(filename, window = hanning(2048))
     expect_equal(dim(data)[1], 1024)
     expect_equal(dim(data)[2], 2584, tol = 0.001)
     unlink(filename)
