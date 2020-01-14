@@ -29,6 +29,7 @@ av_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample_r
   out <- .Call(R_audio_fft, audio, window, overlap, sample_rate)
   attr(out, 'time') <- seq(0, info$duration, length.out = ncol(out))
   attr(out, 'frequency') <-  seq(0, info$audio$sample_rate * 0.5, length.out = nrow(out))
+  attr(out, 'input') <- as.list(info$audio)
   structure(out, class = 'av_fft')
 }
 
@@ -42,4 +43,5 @@ plot.av_fft <- function(x, y, ...){
            "#A92E5EFF", "#85216BFF", "#60136EFF", "#3A0963FF", "#140B35FF", "#000004FF")
   graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x),
                   xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col, useRaster = TRUE)
+  #graphics::legend("topright", legend = "44.100hz", pch='', xjust = 1, yjust = 1, bty='n')
 }
