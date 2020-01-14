@@ -40,5 +40,6 @@ plot.av_fft <- function(x, y, ...){
   #col <- rev(viridisLite::inferno(12))
   col <- c("#FCFFA4FF", "#F5DB4BFF", "#FCAD12FF", "#F78311FF", "#E65D2FFF", "#CB4149FF",
            "#A92E5EFF", "#85216BFF", "#60136EFF", "#3A0963FF", "#140B35FF", "#000004FF")
-  graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x), xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col)
+  graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x),
+                  xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col, useRaster = TRUE)
 }
