@@ -54,8 +54,7 @@ av_audio_animation <- function(audio, output = "output.mp4", framerate = 25, ver
   movie <- av_capture_graphics({
     for(i in seq(0, info$duration, by = 1/framerate)){
       cat(sprintf("\rPlotting at %.2f sec...", i), file = stderr())
-      graphics::plot(fftdata)
-      graphics::abline(v=i, lwd = 2)
+      graphics::plot(fftdata, vline = i)
     }
   }, framerate = framerate, audio = audio, verbose = verbose, output = output, ...)
 }

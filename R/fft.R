@@ -34,9 +34,12 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample
 }
 
 #' @export
-plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, ...){
-  oldpar <- graphics::par(no.readonly = TRUE)
-  on.exit(graphics::par(oldpar))
+plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, vline = NULL, ...){
+  if(!isTRUE(keep.par)){
+    # This will also reset the coordinate scale of the plot
+    oldpar <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(oldpar))
+  }
   col <- if(isTRUE(dark)){
     graphics::par(bg='black', col.axis='white', fg='white', family='mono',
                   font=2, col.lab='white', col.main='white')
@@ -53,5 +56,8 @@ plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, ...){
     input <- attr(x, 'input')
     label <- sprintf("%d channel, %dHz", input$channels, input$sample_rate)
     graphics::legend("topright", legend = label, pch='', xjust = 1, yjust = 1, bty='o', cex = 0.7)
+  }
+  if(length(vline)){
+    graphics::abline(v = vline, lwd = 2)
   }
 }
