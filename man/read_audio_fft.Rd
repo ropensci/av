@@ -27,6 +27,11 @@ rate from the input file.}
 Very fast implementation to read arbitrary audio file format and directly
 stream-convert to frequency domain (spectrum data) using FFmpeg built-in FFT.
 }
+\details{
+There is a built-in \code{plot()} method for data returned by \link{read_audio_fft}. The
+\link{av_audio_animation} generates a video based on the fft data plot, with a moving
+bar and background sound.
+}
 \examples{
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
 dim(read_audio_fft(wonderland))

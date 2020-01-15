@@ -3,6 +3,10 @@
 #' Very fast implementation to read arbitrary audio file format and directly
 #' stream-convert to frequency domain (spectrum data) using FFmpeg built-in FFT.
 #'
+#' There is a built-in `plot()` method for data returned by [read_audio_fft]. The
+#' [av_audio_animation] generates a video based on the fft data plot, with a moving
+#' bar and background sound.
+#'
 #' @export
 #' @useDynLib av R_audio_fft
 #' @param audio path to the audio file
