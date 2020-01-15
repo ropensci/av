@@ -3,7 +3,7 @@
 \name{read_audio_fft}
 \alias{read_audio_fft}
 \alias{read_audio_bin}
-\title{Read audio frequency data}
+\title{Read audio binary and frequency data}
 \usage{
 read_audio_fft(
   audio,
@@ -29,8 +29,9 @@ rate from the input file.}
 \item{channels}{number of output channels, set to 1 to conver to mono sound}
 }
 \description{
-Very fast implementation to read arbitrary audio file format and directly
-stream-convert to frequency domain (spectrum data) using FFmpeg built-in FFT.
+Fast implementation to read audio files in any format. Use \link{read_audio_bin} to read
+raw audio samples, and \link{read_audio_fft} to stream-convert directly to frequency domain
+(spectrum data) using FFmpeg built-in FFT.
 }
 \details{
 There is a built-in \code{plot()} method for data returned by \link{read_audio_fft}. The

@@ -1,7 +1,8 @@
-#' Read audio frequency data
+#' Read audio binary and frequency data
 #'
-#' Very fast implementation to read arbitrary audio file format and directly
-#' stream-convert to frequency domain (spectrum data) using FFmpeg built-in FFT.
+#' Fast implementation to read audio files in any format. Use [read_audio_bin] to read
+#' raw audio samples, and [read_audio_fft] to stream-convert directly to frequency domain
+#' (spectrum data) using FFmpeg built-in FFT.
 #'
 #' There is a built-in `plot()` method for data returned by [read_audio_fft]. The
 #' [av_audio_animation] generates a video based on the fft data plot, with a moving
