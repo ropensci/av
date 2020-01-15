@@ -34,14 +34,24 @@ av_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample_r
 }
 
 #' @export
-plot.av_fft <- function(x, y, ...){
-  #plot.new()
-  graphics::par(mar=c(5, 5, 3, 3), bg='black', col.axis='white', fg='white', family='mono',
-                font=2, col.lab='white', col.main='white', mex=0.6)
-  #col <- rev(viridisLite::inferno(12))
-  col <- c("#FCFFA4FF", "#F5DB4BFF", "#FCAD12FF", "#F78311FF", "#E65D2FFF", "#CB4149FF",
-           "#A92E5EFF", "#85216BFF", "#60136EFF", "#3A0963FF", "#140B35FF", "#000004FF")
+plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar))
+  col <- if(isTRUE(dark)){
+    graphics::par(bg='black', col.axis='white', fg='white', family='mono',
+                  font=2, col.lab='white', col.main='white')
+    #rev(viridisLite::inferno(12))
+    c("#FCFFA4FF", "#F5DB4BFF", "#FCAD12FF", "#F78311FF", "#E65D2FFF", "#CB4149FF",
+             "#A92E5EFF", "#85216BFF", "#60136EFF", "#3A0963FF", "#140B35FF", "#000004FF")
+  } else {
+    grDevices::hcl.colors(12, "YlOrRd", rev = TRUE)
+  }
+  graphics::par(mar=c(5, 5, 3, 3), mex=0.6)
   graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x),
                   xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col, useRaster = TRUE)
-  #graphics::legend("topright", legend = "44.100hz", pch='', xjust = 1, yjust = 1, bty='n')
+  if(isTRUE(legend)){
+    input <- attr(x, 'input')
+    label <- sprintf("%d channel, %dHz", input$channels, input$sample_rate)
+    graphics::legend("topright", legend = label, pch='', xjust = 1, yjust = 1, bty='o', cex = 0.7)
+  }
 }
