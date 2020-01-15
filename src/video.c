@@ -9,7 +9,7 @@
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
 
-static int total_open_handles = 0;
+int total_open_handles = 0;
 
 typedef struct {
   int completed;
