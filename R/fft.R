@@ -8,6 +8,7 @@
 #' bar and background sound.
 #'
 #' @export
+#' @rdname read_audio
 #' @useDynLib av R_audio_fft
 #' @param audio path to the audio file
 #' @param window vector with weights defining the moving [fft window function][hanning].
@@ -35,6 +36,20 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample
   attr(out, 'frequency') <-  seq(0, info$audio$sample_rate * 0.5, length.out = nrow(out))
   attr(out, 'input') <- as.list(info$audio)
   structure(out, class = 'av_fft')
+}
+
+#' @export
+#' @rdname read_audio
+#' @param channels number of output channels, set to 1 to conver to mono sound
+read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL){
+  tmp <- tempfile(fileext = '.bin')
+  on.exit(unlink(tmp))
+  av_audio_convert(audio = audio, output = tmp, format = 's32le',
+                   channels = channels, sample_rate = sample_rate, verbose = FALSE)
+  out <- readBin(tmp, integer(), file.info(tmp)$size)
+  if(!length(channels))
+    channels <- av_video_info(audio)$audio$channels
+  structure(out, channels = channels)
 }
 
 #' @export

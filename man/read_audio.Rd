@@ -2,6 +2,7 @@
 % Please edit documentation in R/fft.R
 \name{read_audio_fft}
 \alias{read_audio_fft}
+\alias{read_audio_bin}
 \title{Read audio frequency data}
 \usage{
 read_audio_fft(
@@ -10,6 +11,8 @@ read_audio_fft(
   overlap = 0.75,
   sample_rate = NULL
 )
+
+read_audio_bin(audio, channels = NULL, sample_rate = NULL)
 }
 \arguments{
 \item{audio}{path to the audio file}
@@ -22,6 +25,8 @@ frequency range.}
 
 \item{sample_rate}{downsample audio to reduce FFT output size. Default keeps sample
 rate from the input file.}
+
+\item{channels}{number of output channels, set to 1 to conver to mono sound}
 }
 \description{
 Very fast implementation to read arbitrary audio file format and directly
