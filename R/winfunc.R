@@ -1,7 +1,7 @@
 #' Window functions
 #'
 #' Several common [windows function](https://en.wikipedia.org/wiki/Window_function)
-#' generators. The functions return a vector of weights to use in [av_audio_fft].
+#' generators. The functions return a vector of weights to use in [read_audio_fft].
 #'
 #' @export
 #' @name window functions

@@ -63,7 +63,7 @@ bohman(n)
 }
 \description{
 Several common \href{https://en.wikipedia.org/wiki/Window_function}{windows function}
-generators. The functions return a vector of weights to use in \link{av_audio_fft}.
+generators. The functions return a vector of weights to use in \link{read_audio_fft}.
 }
 \examples{
 # Window functions

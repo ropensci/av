@@ -51,7 +51,9 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 \item{...}{extra graphics parameters passed to \code{\link[=png]{png()}}}
 }
 \description{
-Runs the expression and captures all plots into a video.
+Runs the expression and captures all plots into a video. The \link{av_audio_animation}
+function is a wrapper that plots data from \link{read_audio_fft} with a moving bar and
+background audio.
 }
 \examples{
 \donttest{
