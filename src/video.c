@@ -9,7 +9,7 @@
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
 
-static int total_open_handles = 0;
+int total_open_handles = 0;
 
 typedef struct {
   int completed;
@@ -409,7 +409,7 @@ static void sync_audio_stream(output_container * output, int64_t pts){
         }
       }
     } else if (ret == AVERROR_EOF){
-      av_log(NULL, AV_LOG_INFO, "Audio stream complete!\n");
+      av_log(NULL, AV_LOG_INFO, " - audio stream completed!\n");
       input->completed = 1;
       break;
     } else {

@@ -1,8 +1,11 @@
 #' Record Video from Graphics Device
 #'
-#' Runs the expression and captures all plots into a video.
+#' Runs the expression and captures all plots into a video. The [av_audio_animation]
+#' function is a wrapper that plots data from [read_audio_fft] with a moving bar and
+#' background audio.
 #'
 #' @export
+#' @rdname capturing
 #' @name capturing
 #' @family av
 #' @inheritParams encoding
@@ -41,3 +44,18 @@ av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height
   images <- list.files(imgdir, pattern = 'tmpimg_\\d{5}.png', full.names = TRUE)
   av_encode_video(images, output = output, framerate = framerate, vfilter = vfilter, audio = audio, verbose = verbose)
 }
+
+#' @export
+#' @param audio path to media file with audio stream
+#' @rdname capturing
+av_audio_animation <- function(audio, output = "output.mp4", framerate = 25, verbose = TRUE, ...){
+  info <- av_video_info(audio)
+  fftdata <- read_audio_fft(audio)
+  movie <- av_capture_graphics({
+    for(i in seq(0, info$duration, by = 1/framerate)){
+      cat(sprintf("\rPlotting at %.2f sec...", i), file = stderr())
+      graphics::plot(fftdata, vline = i)
+    }
+  }, framerate = framerate, audio = audio, verbose = verbose, output = output, ...)
+}
+
