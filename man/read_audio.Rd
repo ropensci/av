@@ -34,9 +34,9 @@ raw audio samples, and \link{read_audio_fft} to stream-convert directly to frequ
 (spectrum data) using FFmpeg built-in FFT.
 }
 \details{
-There is a built-in \code{plot()} method for data returned by \link{read_audio_fft}. The
-\link{av_audio_animation} generates a video based on the fft data plot, with a moving
-bar and background sound.
+Use the \code{plot()} method on data returned by \link{read_audio_fft} to show the spectrogram.
+The \link{av_audio_animation} generates a video based on the spectrogram with a moving bar
+and background audio.
 }
 \examples{
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
