@@ -42,5 +42,12 @@ and background audio.
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
 dim(read_audio_fft(wonderland))
 dim(read_audio_fft(wonderland, hamming(4096)))
-dim(read_audio_fft(wonderland, sample_rate = 8000))
+
+# Get a shorter fragment
+av_audio_convert(wonderland, 'short.mp3', total_time = 5)
+fft_data <- read_audio_fft('short.mp3')
+
+# Plot the spectrogram
+plot(fft_data)
+unlink('short.mp3')
 }
