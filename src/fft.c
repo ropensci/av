@@ -33,6 +33,22 @@ typedef struct {
   double *dst_data;
 } spectrum_container;
 
+static size_t round_up(size_t v){
+  if(v == 0)
+    return 0;
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  /* 64 bit only */
+#if SIZE_MAX > 4294967296
+  v |= v >> 32;
+#endif
+  return ++v;
+}
+
 static void bail_if(int ret, const char * what){
   if(ret < 0)
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
@@ -228,7 +244,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
       }
       av_fft_permute(output->fft, fft_channel);
       av_fft_calc(output->fft, fft_channel);
-      output->dst_data = av_realloc_f(output->dst_data, (iter+1) * output_range, sizeof(*output->dst_data));
+      output->dst_data = av_realloc(output->dst_data, round_up((iter+1) * output_range * sizeof(*output->dst_data)));
       for (int n = 0; n < output_range; n++) {
         FFTSample re = fft_channel[n].re;
         FFTSample im = fft_channel[n].im;
