@@ -31,7 +31,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
 
   /* .Call calls */
   extern SEXP R_audio_fft(SEXP, SEXP, SEXP, SEXP);
-  extern SEXP R_convert_audio(SEXP, SEXP, SEXP, SEXP, SEXP);
+  extern SEXP R_convert_audio(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_encode_video(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_generate_window(SEXP, SEXP);
   extern SEXP R_get_open_handles();
@@ -44,7 +44,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
 
   static const R_CallMethodDef CallEntries[] = {
     {"R_audio_fft",        (DL_FUNC) &R_audio_fft,        4},
-    {"R_convert_audio",    (DL_FUNC) &R_convert_audio,    5},
+    {"R_convert_audio",    (DL_FUNC) &R_convert_audio,    7},
     {"R_encode_video",     (DL_FUNC) &R_encode_video,     6},
     {"R_generate_window",  (DL_FUNC) &R_generate_window,  2},
     {"R_get_open_handles", (DL_FUNC) &R_get_open_handles, 0},

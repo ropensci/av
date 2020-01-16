@@ -26,6 +26,8 @@ av_audio_convert(
   format = NULL,
   channels = NULL,
   sample_rate = NULL,
+  start_time = NULL,
+  total_time = NULL,
   verbose = TRUE
 )
 }
@@ -59,6 +61,11 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 \item{channels}{number of output channels. Default \code{NULL} is to match input}
 
 \item{sample_rate}{output sampling rate. Default \code{NULL} is to match input}
+
+\item{start_time}{number greater than 0, seeks in the input file to position.}
+
+\item{total_time}{approximate number of seconds at which to limit the duration
+of the output file.}
 }
 \description{
 Encodes a set of images into a video, using custom container format, codec, fps,
