@@ -39,15 +39,21 @@ The \link{av_audio_animation} generates a video based on the spectrogram with a 
 and background audio.
 }
 \examples{
+# Use a 5 sec fragment
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
-dim(read_audio_fft(wonderland))
-dim(read_audio_fft(wonderland, hamming(4096)))
+av_audio_convert(wonderland, 'example.mp3', total_time = 5)
 
-# Get a shorter fragment
-av_audio_convert(wonderland, 'short.mp3', total_time = 5)
-fft_data <- read_audio_fft('short.mp3')
+# Read as frequency spectrum
+fft_data <- read_audio_fft('example.mp3')
+dim(fft_data)
 
 # Plot the spectrogram
 plot(fft_data)
-unlink('short.mp3')
+
+# Show other parameters
+dim(read_audio_fft('example.mp3', hamming(2048)))
+dim(read_audio_fft('example.mp3', hamming(4096)))
+
+# Cleanup
+unlink('example.mp3')
 }

@@ -18,17 +18,23 @@
 #' @param overlap value between 0 and 1 of overlap proportion between moving fft windows
 #' @param sample_rate downsample audio to reduce FFT output size. Default keeps sample
 #' rate from the input file.
-#' @examples wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
-#' dim(read_audio_fft(wonderland))
-#' dim(read_audio_fft(wonderland, hamming(4096)))
+#' @examples # Use a 5 sec fragment
+#' wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
+#' av_audio_convert(wonderland, 'example.mp3', total_time = 5)
 #'
-#' # Get a shorter fragment
-#' av_audio_convert(wonderland, 'short.mp3', total_time = 5)
-#' fft_data <- read_audio_fft('short.mp3')
+#' # Read as frequency spectrum
+#' fft_data <- read_audio_fft('example.mp3')
+#' dim(fft_data)
 #'
 #' # Plot the spectrogram
 #' plot(fft_data)
-#' unlink('short.mp3')
+#'
+#' # Show other parameters
+#' dim(read_audio_fft('example.mp3', hamming(2048)))
+#' dim(read_audio_fft('example.mp3', hamming(4096)))
+#'
+#' # Cleanup
+#' unlink('example.mp3')
 read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample_rate = NULL){
   audio <- normalizePath(audio, mustWork = TRUE)
   overlap <- as.numeric(overlap)
