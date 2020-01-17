@@ -7,3 +7,4 @@
 ^appveyor\.yml$
 ^[^/]+\.(mp4|mkv|mov|flv|gif)$
 ^README\.md$
+^_pkgdown.yml$
