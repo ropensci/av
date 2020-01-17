@@ -67,7 +67,7 @@ read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL){
 }
 
 #' @export
-plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, vline = NULL, ...){
+plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, useRaster = TRUE, vline = NULL, ...){
   if(!isTRUE(keep.par)){
     # This will also reset the coordinate scale of the plot
     oldpar <- graphics::par(no.readonly = TRUE)
@@ -84,7 +84,7 @@ plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, vlin
   }
   graphics::par(mar=c(5, 5, 3, 3), mex=0.6)
   graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x),
-                  xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col, useRaster = TRUE)
+                  xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col, useRaster = useRaster)
   if(isTRUE(legend)){
     input <- attr(x, 'input')
     label <- sprintf("%d channel, %dHz", input$channels, input$sample_rate)
