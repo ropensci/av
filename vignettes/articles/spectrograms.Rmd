@@ -38,6 +38,19 @@ You can turn off dark mode to use the default R colors:
 plot(fft_data, dark = FALSE)
 ```
 
+## Spectrogram video
+
+You can also create a spectrogram video like this:
+
+```r
+av_audio_animation('short.mp3', width = 720, height = 480)
+```
+
+<video width="100%" controls>
+<source src="https://jeroen.github.io/videos/spectrogram.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+
 ## Compare with seewave
 
 Compare spectrograms using the `tico` audio sample included with the seewave package:
