@@ -17,6 +17,7 @@ matrix:
           sources:
             - sourceline: 'ppa:cran/ffmpeg-4'
             - sourceline: 'ppa:cran/ffmpeg-3'
+    - r: r-devel
     - os: osx
       brew_packages: ffmpeg
     - os: osx
