@@ -2,10 +2,6 @@
 title: "Spectrogram with av package"
 author: "Jeroen Ooms"
 date: "`r Sys.Date()`"
-vignette: >
-  %\VignetteIndexEntry{Spectrogram with av package}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
