@@ -1,0 +1,4 @@
+extra_packages:
+ - seewave
+ - ggplot2
+ - phonTools

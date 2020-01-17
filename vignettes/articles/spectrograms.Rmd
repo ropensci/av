@@ -1,0 +1,76 @@
+---
+title: "Spectrogram with av package"
+author: "Jeroen Ooms"
+date: "`r Sys.Date()`"
+vignette: >
+  %\VignetteIndexEntry{Spectrogram with av package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(av)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+First we create a 5 sec audio fragment to test with:
+
+
+```{r}
+# Get a shorter fragment
+wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
+av_audio_convert(wonderland, 'short.mp3', total_time = 5)
+```
+
+Calculate the frequency data and plot the spectrogram:
+
+```{r}
+fft_data <- read_audio_fft('short.mp3')
+plot(fft_data)
+```
+
+You can turn off dark mode to use the default R colors:
+
+```{r}
+plot(fft_data, dark = FALSE)
+```
+
+## Compare with seewave
+
+Compare spectrograms using the `tico` audio sample included with the seewave package:
+
+```{r}
+library(seewave)
+library(ggplot2)
+data(tico)
+ggspectro(tico, ovlp = 50) + geom_tile(aes(fill = amplitude)) + stat_contour()
+```
+
+To use av, we first save the wav file and then create spectrogram:
+
+```{r}
+# First export wav file
+savewav(tico, filename = 'tico.wav')
+plot(read_audio_fft('tico.wav'))
+```
+
+## Compare with phonTools
+
+Use the audio sample included with phonTools:
+
+```{r}
+library(phonTools)
+data(sound)
+spectrogram(sound, maxfreq = sound$fs/2)
+```
+
+
+Save the wav file and then create spectrogram. We match the default window function from phonTools:
+
+```{r}
+phonTools::writesound(sound, 'sound.wav')
+plot(read_audio_fft('sound.wav', window = phonTools::windowfunc(1024, 'kaiser')))
+```
