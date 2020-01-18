@@ -37,9 +37,9 @@ This demo is totally lame, please open a PR with something better (in base R!).
 You can use `av_encode_video()` as the renderer in gganimate:
 
 ```r
-
 # Create the gganimate plot
 library(gganimate)
+library(transformr)
 p <- ggplot(airquality, aes(Day, Temp)) + 
   geom_line(size = 2, colour = 'steelblue') + 
   transition_states(Month, 4, 1) + 
