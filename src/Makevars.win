@@ -1,6 +1,6 @@
 VERSION = 4.2.2
 RWINLIB = ../windows/ffmpeg-$(VERSION)
-PKG_CPPFLAGS = -I$(RWINLIB)/include
+PKG_CPPFLAGS = -I$(RWINLIB)/include -D__USE_MINGW_ANSI_STDIO=1
 PKG_LIBS = -L$(RWINLIB)/lib$(R_ARCH) \
 	-lavfilter -lswscale -lpostproc -lavformat -lavcodec -lswresample -lavutil \
 	-lvorbis -lvorbisenc -logg -lvpx \
