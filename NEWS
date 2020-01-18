@@ -5,7 +5,7 @@
     This reduces output video size, hopefully no major quality regressions.
   - New functions for audio! read_audio_fft() and read_audio_bin()
   - New method plot.fft_data() for spectogram, e.g: plot(read_audio_fft('sample.mp3'))
-  - New function av_audio_animation() to create spectrogram movie
+  - New function av_spectrogram_video() to create spectrogram movie
   - Detect and error in configure if FFmpeg is too old
   - New parameters channel and sample_rate in av_audio_convert()
 

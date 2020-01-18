@@ -3,7 +3,7 @@
 \name{capturing}
 \alias{capturing}
 \alias{av_capture_graphics}
-\alias{av_audio_animation}
+\alias{av_spectrogram_video}
 \title{Record Video from Graphics Device}
 \usage{
 av_capture_graphics(
@@ -18,7 +18,7 @@ av_capture_graphics(
   ...
 )
 
-av_audio_animation(
+av_spectrogram_video(
   audio,
   output = "output.mp4",
   framerate = 25,
@@ -51,7 +51,7 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 \item{...}{extra graphics parameters passed to \code{\link[=png]{png()}}}
 }
 \description{
-Runs the expression and captures all plots into a video. The \link{av_audio_animation}
+Runs the expression and captures all plots into a video. The \link{av_spectrogram_video}
 function is a wrapper that plots data from \link{read_audio_fft} with a moving bar and
 background audio.
 }

@@ -1,5 +1,5 @@
 ---
-title: "Spectrograms with the 'av' package"
+title: "Spectrograms in R using the 'av' package"
 author: "Jeroen Ooms"
 date: "`r Sys.Date()`"
 ---
@@ -39,7 +39,7 @@ plot(fft_data, dark = FALSE)
 You can also create a spectrogram video like this:
 
 ```{r}
-av_audio_animation('short.mp3', output = 'spectrogram.mp4', width = 1280, height = 720, res = 144)
+av_spectrogram_video('short.mp3', output = 'spectrogram.mp4', width = 1280, height = 720, res = 144)
 ```
 
 <video width="100%" controls>

@@ -5,7 +5,7 @@
 #' (spectrum data) using FFmpeg built-in FFT.
 #'
 #' Use the `plot()` method on data returned by [read_audio_fft] to show the spectrogram.
-#' The [av_audio_animation] generates a video based on the spectrogram with a moving bar
+#' The [av_spectrogram_video] generates a video based on the spectrogram with a moving bar
 #' and background audio.
 #'
 #' @export

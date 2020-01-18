@@ -35,7 +35,7 @@ raw audio samples, and \link{read_audio_fft} to stream-convert directly to frequ
 }
 \details{
 Use the \code{plot()} method on data returned by \link{read_audio_fft} to show the spectrogram.
-The \link{av_audio_animation} generates a video based on the spectrogram with a moving bar
+The \link{av_spectrogram_video} generates a video based on the spectrogram with a moving bar
 and background audio.
 }
 \examples{

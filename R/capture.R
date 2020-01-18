@@ -1,6 +1,6 @@
 #' Record Video from Graphics Device
 #'
-#' Runs the expression and captures all plots into a video. The [av_audio_animation]
+#' Runs the expression and captures all plots into a video. The [av_spectrogram_video]
 #' function is a wrapper that plots data from [read_audio_fft] with a moving bar and
 #' background audio.
 #'
@@ -48,7 +48,7 @@ av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height
 #' @export
 #' @param audio path to media file with audio stream
 #' @rdname capturing
-av_audio_animation <- function(audio, output = "output.mp4", framerate = 25, verbose = TRUE, ...){
+av_spectrogram_video <- function(audio, output = "output.mp4", framerate = 25, verbose = TRUE, ...){
   info <- av_video_info(audio)
   fftdata <- read_audio_fft(audio)
   movie <- av_capture_graphics({
