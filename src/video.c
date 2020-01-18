@@ -284,7 +284,9 @@ static void add_video_output(output_container *output, int width, int height){
   video_encoder->time_base.num = 1;
   video_encoder->time_base.den = VIDEO_TIME_BASE;
   video_encoder->framerate = av_inv_q(video_encoder->time_base);
-  video_encoder->gop_size = 5; //ignored for AV_PICTURE_TYPE_I anyway
+
+  /* 2020: disabled because is increase the filesize a lot */
+  //video_encoder->gop_size = 25; //one keyframe every 25 frames
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
   video_encoder->pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
@@ -472,9 +474,10 @@ static int encode_output_frames(output_container *output){
       bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame (flush video)");
     } else {
       bail_if(ret, "av_buffersink_get_frame");
-      frame->pict_type = AV_PICTURE_TYPE_I;
       if(output->muxer == NULL)
         open_output_file(frame->width, frame->height, output);
+      frame->quality = output->video_encoder->global_quality;
+      frame->pict_type = AV_PICTURE_TYPE_NONE;
       bail_if(avcodec_send_frame(output->video_encoder, frame), "avcodec_send_frame");
       av_frame_unref(frame);
     }
