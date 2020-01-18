@@ -477,7 +477,6 @@ static int encode_output_frames(output_container *output){
       if(output->muxer == NULL)
         open_output_file(frame->width, frame->height, output);
       frame->quality = output->video_encoder->global_quality;
-      frame->pict_type = AV_PICTURE_TYPE_NONE;
       bail_if(avcodec_send_frame(output->video_encoder, frame), "avcodec_send_frame");
       av_frame_unref(frame);
     }
@@ -561,6 +560,10 @@ static void read_from_input(const char *filename, output_container *output){
       break;
     bail_if(ret2, "avcodec_receive_frame");
     picture->pts = (output->count++) * output->duration;
+    //prevent keyframe at each image
+    //todo: find a way to do this for all length 1 input formats
+    if(decoder->codec->id == AV_CODEC_ID_PNG || decoder->codec->id == AV_CODEC_ID_MJPEG)
+      picture->pict_type = AV_PICTURE_TYPE_NONE;
     feed_to_filter(picture, output);
   } while(ret != AVERROR_EOF);
   close_input(&output->video_input);

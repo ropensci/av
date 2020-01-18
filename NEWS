@@ -1,8 +1,8 @@
 0.4
   - Windows/MacOS: CRAN binary packages now ship with ffmpeg 4.2.2 + drivers: vorbis,
     vpx, ogg, lame, xvid, x264
-  - Removed forced keyframes (gop_size) when encoding video. This reduces video sizes
-    a lot, hopefully no major quality regressions.
+  - Removed forced keyframes (gop_size) when encoding video from graphics or PNG images.
+    This reduces output video size, hopefully no major quality regressions.
   - New functions for audio! read_audio_fft() and read_audio_bin()
   - New method plot.fft_data() for spectogram, e.g: plot(read_audio_fft('sample.mp3'))
   - New function av_audio_animation() to create spectrogram movie
