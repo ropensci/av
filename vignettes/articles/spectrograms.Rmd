@@ -1,5 +1,5 @@
 ---
-title: "Spectrogram with av package"
+title: "Spectrograms with the 'av' package"
 author: "Jeroen Ooms"
 date: "`r Sys.Date()`"
 ---
