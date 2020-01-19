@@ -23,14 +23,14 @@ av_audio_convert(wonderland, 'short.mp3', total_time = 5)
 
 Calculate the frequency data and plot the spectrogram:
 
-```{r}
+```{r plot_spectrogram}
 fft_data <- read_audio_fft('short.mp3')
 plot(fft_data)
 ```
 
 You can turn off dark mode to use the default R colors:
 
-```{r}
+```{r plot_spectrogram_white}
 plot(fft_data, dark = FALSE)
 ```
 
@@ -38,7 +38,7 @@ plot(fft_data, dark = FALSE)
 
 You can also create a spectrogram video like this:
 
-```{r}
+```{r spectrogram_video}
 av_spectrogram_video('short.mp3', output = 'spectrogram.mp4', width = 1280, height = 720, res = 144)
 ```
 
@@ -51,7 +51,7 @@ Your browser does not support the video tag.
 
 We convert the audio sample to `wav` so that we can read it with tuneR:
 
-```{r}
+```{r convert_to_wav}
 # Conver to wav audio with av
 av_audio_convert('short.mp3', 'short.wav', channels = 1)
 
@@ -64,7 +64,7 @@ snd <- data@left - mean(data@left)
 
 We then use the signal package to calculate the spectrogram with similar parameters as av:
 
-```{r}
+```{r tuner_specgram}
 # create spectrogram
 spec <- signal::specgram(x = snd, n = 1024, Fs = data@samp.rate, overlap = 1024 * 0.75)
 
@@ -81,7 +81,7 @@ image(x = spec$t, y = spec$f,z = t(P), ylab = 'Freq [Hz]', xlab = 'Time [s]', us
 
 Compare spectrograms using the `tico` audio sample included with the seewave package:
 
-```{r}
+```{r seewave_spectrogram}
 library(seewave)
 library(ggplot2)
 data(tico)
@@ -90,7 +90,7 @@ ggspectro(tico, ovlp = 50) + geom_tile(aes(fill = amplitude)) + stat_contour()
 
 To use av, we first save the wav file and then create spectrogram:
 
-```{r}
+```{r av_tico}
 # First export wav file
 savewav(tico, filename = 'tico.wav')
 plot(read_audio_fft('tico.wav'))
@@ -100,16 +100,15 @@ plot(read_audio_fft('tico.wav'))
 
 Use the audio sample included with phonTools:
 
-```{r}
+```{r phontools_spectrogram}
 library(phonTools)
 data(sound)
 spectrogram(sound, maxfreq = sound$fs/2)
 ```
 
-
 Save the wav file and then create spectrogram. We match the default window function from phonTools:
 
-```{r}
+```{r av_phontools}
 phonTools::writesound(sound, 'sound.wav')
 plot(read_audio_fft('sound.wav', window = phonTools::windowfunc(1024, 'kaiser')))
 ```
