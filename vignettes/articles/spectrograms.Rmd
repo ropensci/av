@@ -47,6 +47,36 @@ av_spectrogram_video('short.mp3', output = 'spectrogram.mp4', width = 1280, heig
 Your browser does not support the video tag.
 </video>
 
+## Compare with tuneR/signal
+
+We convert the audio sample to `wav` so that we can read it with tuneR:
+
+```{r}
+# Conver to wav audio with av
+av_audio_convert('short.mp3', 'short.wav', channels = 1)
+
+# Read wav with tuneR
+data <- tuneR::readWave('short.wav')
+
+# demean to remove DC offset
+snd <- data@left - mean(data@left)
+```
+
+We then use the signal package to calculate the spectrogram with similar parameters as av:
+
+```{r}
+# create spectrogram
+spec <- signal::specgram(x = snd, n = 1024, Fs = data@samp.rate, overlap = 1024 * 0.75)
+
+# normalize and rescale to dB
+P <- abs(spec$S)
+P <- P/max(P)
+P <- 10*log10(P)
+
+# plot spectrogram
+image(x = spec$t, y = spec$f,z = t(P), ylab = 'Freq [Hz]', xlab = 'Time [s]', useRaster=TRUE)
+```
+
 ## Compare with seewave
 
 Compare spectrograms using the `tico` audio sample included with the seewave package:
