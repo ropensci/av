@@ -71,10 +71,13 @@ spec <- signal::specgram(x = snd, n = 1024, Fs = data@samp.rate, overlap = 1024 
 # normalize and rescale to dB
 P <- abs(spec$S)
 P <- P/max(P)
-P <- 10*log10(P)
+
+out <- pmax(1e-6, P)
+dim(out) <- dim(P)
+out <- log10(out) / log10(1e-6)
 
 # plot spectrogram
-image(x = spec$t, y = spec$f,z = t(P), ylab = 'Freq [Hz]', xlab = 'Time [s]', useRaster=TRUE)
+image(x = spec$t, y = spec$f, z = t(out), ylab = 'Freq [Hz]', xlab = 'Time [s]', useRaster=TRUE)
 ```
 
 ## Compare with seewave
