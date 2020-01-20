@@ -1,3 +1,6 @@
+0.4.1
+  - Unit test now uses CPU time instead of elapsed time.
+
 0.4
   - Windows/MacOS: CRAN binary packages now ship with ffmpeg 4.2.2 + drivers: vorbis,
     vpx, ogg, lame, xvid, x264

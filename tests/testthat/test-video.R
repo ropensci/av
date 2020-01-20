@@ -127,9 +127,9 @@ test_that("test error handling", {
   expect_false(file.exists("video.mp4"))
 
   # Test time limit
-  setTimeLimit(elapsed = 2, transient = TRUE)
+  setTimeLimit(cpu = 2, transient = TRUE)
   timings <- system.time(expect_error(av_encode_video(rep(png_files, 100), verbose = FALSE), "time"))
   setTimeLimit()
-  expect_lt(timings[['elapsed']], 2.5)
+  expect_lt(timings[['sys.self']], 2.5)
   expect_equal(get_open_handles(), 0)
 })
