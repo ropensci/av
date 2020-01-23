@@ -80,7 +80,9 @@ plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, useR
     c("#FCFFA4FF", "#F5DB4BFF", "#FCAD12FF", "#F78311FF", "#E65D2FFF", "#CB4149FF",
              "#A92E5EFF", "#85216BFF", "#60136EFF", "#3A0963FF", "#140B35FF", "#000004FF")
   } else {
-    grDevices::hcl.colors(12, "YlOrRd", rev = TRUE)
+    # hcl.colors(12, "YlOrRd", rev = TRUE)
+    c("#FFFFC8", "#FFF4B7", "#FBE49A", "#F8D074", "#F7BA3C", "#F5A100",
+      "#F28400", "#ED6200", "#E13C00", "#C32200", "#A20706", "#7D0025")
   }
   graphics::par(mar=c(5, 5, 3, 3), mex=0.6)
   graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x),
