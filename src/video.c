@@ -633,8 +633,10 @@ SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_format, SEXP out_channe
   output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
   if(Rf_length(start_pos)){
     double pos = Rf_asReal(start_pos);
-    if(pos > 0)
+    if(pos > 0){
       av_seek_frame(output->audio_input->demuxer, -1, pos * AV_TIME_BASE, AVSEEK_FLAG_ANY);
+      output->audio_input->stream->cur_dts = 0;
+    }
   }
   if(Rf_length(max_len)){
     output->max_len = Rf_asReal(max_len) * AV_TIME_BASE;

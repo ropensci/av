@@ -38,3 +38,12 @@ test_that("Audio can be converted to various formats", {
   expect_equal(nrow(mp3_info$audio), 1)
 
 })
+
+test_that("Audio truncation works as expected",{
+  for(start_time in c(0, 5, 20)){
+    tmp_mp3 <- normalizePath(tempfile(fileext = '.mp3'), mustWork = FALSE)
+    av_audio_convert(wonderland, tmp_mp3, start_time = start_time, total_time = 10, verbose = FALSE)
+    info <- av_video_info(tmp_mp3)
+    expect_equal(info$duration, 10, tolerance = 0.05)
+  }
+})
