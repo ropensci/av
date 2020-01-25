@@ -1,6 +1,7 @@
 0.4.1
   - Unit test now uses CPU time instead of elapsed time (BDR)
   - Added start_time and end_time paramters to read_audio_fft()
+  - Minor tweaks to configure script
 
 0.4
   - Windows/MacOS: CRAN binary packages now ship with ffmpeg 4.2.2 + drivers: vorbis,
