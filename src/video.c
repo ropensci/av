@@ -421,11 +421,11 @@ static void sync_audio_stream(output_container * output, int64_t pts){
       av_packet_rescale_ts(pkt, output->audio_encoder->time_base, audio_stream->time_base);
       bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
       if(force_everything){
-        int64_t elapsed = av_rescale_q(audio_stream->cur_dts, audio_stream->time_base, AV_TIME_BASE_Q);
+        int64_t elapsed = av_rescale_q(av_stream_get_end_pts(audio_stream), audio_stream->time_base, AV_TIME_BASE_Q);
         av_log(NULL, AV_LOG_INFO, "\rAdding audio frame %d at timestamp %.2fsec",
                (int) audio_stream->nb_frames + 1, (double) elapsed / AV_TIME_BASE);
       }
-      if(output->max_len && av_compare_ts(audio_stream->cur_dts, audio_stream->time_base,
+      if(output->max_len && av_compare_ts(av_stream_get_end_pts(audio_stream), audio_stream->time_base,
                        output->max_len, AV_TIME_BASE_Q) > 0){
         force_flush = 1;
       };
