@@ -13,3 +13,16 @@ test_that("Audio FFT", {
     unlink(filename)
   }
 })
+
+test_that("FFT time cutting",{
+  wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
+  fft_orig <- read_audio_fft(wonderland)
+  fft0 <- read_audio_fft(wonderland, start_time = 0, end_time = 10)
+  fft1 <- read_audio_fft(wonderland, start_time = 10, end_time = 20)
+  fft2 <- read_audio_fft(wonderland, start_time = 10, end_time = 100)
+
+  expect_equal(ncol(fft0), ncol(fft_orig)/3, tol = 0.01)
+  expect_equal(ncol(fft1), ncol(fft_orig)/3, tol = 0.01)
+  expect_equal(ncol(fft2), ncol(fft_orig)*2/3, tol = 0.01)
+
+})

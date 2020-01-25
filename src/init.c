@@ -30,7 +30,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
   av_log_set_callback(my_log_callback);
 
   /* .Call calls */
-  extern SEXP R_audio_fft(SEXP, SEXP, SEXP, SEXP);
+  extern SEXP R_audio_fft(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_convert_audio(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_encode_video(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_generate_window(SEXP, SEXP);
@@ -43,7 +43,7 @@ attribute_visible void R_init_av(DllInfo *dll) {
   extern SEXP R_video_info(SEXP);
 
   static const R_CallMethodDef CallEntries[] = {
-    {"R_audio_fft",        (DL_FUNC) &R_audio_fft,        4},
+    {"R_audio_fft",        (DL_FUNC) &R_audio_fft,        6},
     {"R_convert_audio",    (DL_FUNC) &R_convert_audio,    7},
     {"R_encode_video",     (DL_FUNC) &R_encode_video,     6},
     {"R_generate_window",  (DL_FUNC) &R_generate_window,  2},

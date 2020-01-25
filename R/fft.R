@@ -11,13 +11,15 @@
 #' @export
 #' @rdname read_audio
 #' @useDynLib av R_audio_fft
-#' @param audio path to the audio file
+#' @param audio path to the input sound or video file containing the audio stream
 #' @param window vector with weights defining the moving [fft window function][hanning].
 #' The length of this vector is the size of the window and hence determines the output
 #' frequency range.
 #' @param overlap value between 0 and 1 of overlap proportion between moving fft windows
 #' @param sample_rate downsample audio to reduce FFT output size. Default keeps sample
 #' rate from the input file.
+#' @param start_time,end_time number (in seconds) to limit fft to given time interval of
+#' the input audio stream.
 #' @examples # Use a 5 sec fragment
 #' wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
 #' av_audio_convert(wonderland, 'example.mp3', total_time = 5)
@@ -35,7 +37,8 @@
 #'
 #' # Cleanup
 #' unlink('example.mp3')
-read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample_rate = NULL){
+read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75,
+                           sample_rate = NULL, start_time = NULL, end_time = NULL){
   audio <- normalizePath(audio, mustWork = TRUE)
   overlap <- as.numeric(overlap)
   sample_rate <- as.integer(sample_rate)
@@ -45,7 +48,9 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample
   if(!length(overlap) || overlap < 0 || overlap >= 1)
     stop("Overlap must be value between 0 and 1")
   info <- av_video_info(audio)
-  out <- .Call(R_audio_fft, audio, window, overlap, sample_rate)
+  start_time <- as.numeric(start_time)
+  end_time <- as.numeric(end_time)
+  out <- .Call(R_audio_fft, audio, window, overlap, sample_rate, start_time, end_time)
   attr(out, 'time') <- seq(0, info$duration, length.out = ncol(out))
   attr(out, 'frequency') <-  seq(0, info$audio$sample_rate * 0.5, length.out = nrow(out))
   attr(out, 'input') <- as.list(info$audio)
@@ -54,7 +59,7 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75, sample
 
 #' @export
 #' @rdname read_audio
-#' @param channels number of output channels, set to 1 to conver to mono sound
+#' @param channels number of output channels, set to 1 to convert to mono sound
 read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL){
   tmp <- tempfile(fileext = '.bin')
   on.exit(unlink(tmp))

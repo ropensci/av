@@ -31,6 +31,7 @@ typedef struct {
   float *winvec;
   float *src_data;
   double *dst_data;
+  int64_t end_pts;
 } spectrum_container;
 
 static size_t round_up(size_t v){
@@ -200,6 +201,8 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   double winscale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
   while(!eof){
+
+    /* Step 1: fill the FIFO with audio samples */
     while(!eof && av_audio_fifo_size(output->fifo) < window_size){
       int ret = avcodec_receive_frame(input->decoder, frame);
       if(ret == AVERROR(EAGAIN)){
@@ -211,6 +214,11 @@ static SEXP run_fft(spectrum_container *output, int ascale){
           if(pkt->stream_index == input->stream->index){
             //av_packet_rescale_ts(pkt, input->stream->time_base, input->decoder->time_base);
             bail_if(avcodec_send_packet(input->decoder, pkt), "avcodec_send_packet (audio)");
+
+            /* Check for elapsed time limit */
+            int64_t elapsed = av_rescale_q(pkt->pts, input->stream->time_base, AV_TIME_BASE_Q);
+            if(output->end_pts > 0 && elapsed > output->end_pts)
+              eof = 1;
             av_packet_unref(pkt);
           }
         }
@@ -228,6 +236,8 @@ static SEXP run_fft(spectrum_container *output, int ascale){
       }
       R_CheckUserInterrupt();
     }
+
+    /* Step 2: read samples from the FIFO and store transformed data */
     while ((av_audio_fifo_size(output->fifo) >= window_size) || (av_audio_fifo_size(output->fifo) > 0 && eof)) {
       int n_samples = av_audio_fifo_peek(output->fifo, (void**) &(output->src_data), window_size);
       bail_if(n_samples, "av_audio_fifo_peek");
@@ -270,7 +280,7 @@ static SEXP calculate_audio_fft(void *output){
   return run_fft(output, AS_LOG);
 }
 
-SEXP R_audio_fft(SEXP audio, SEXP window, SEXP overlap, SEXP sample_rate){
+SEXP R_audio_fft(SEXP audio, SEXP window, SEXP overlap, SEXP sample_rate, SEXP start_time, SEXP end_time){
   spectrum_container *output = av_mallocz(sizeof(spectrum_container));
   output->winsize = Rf_length(window);
   output->winvec = to_float(window);
@@ -278,5 +288,15 @@ SEXP R_audio_fft(SEXP audio, SEXP window, SEXP overlap, SEXP sample_rate){
   output->input = open_input(CHAR(STRING_ELT(audio, 0)));
   output->sample_rate = Rf_length(sample_rate) ? Rf_asInteger(sample_rate) :
     output->input->decoder->sample_rate;
+  if(Rf_length(end_time)){
+    output->end_pts = Rf_asReal(end_time) * AV_TIME_BASE;
+  }
+  if(Rf_length(start_time)){
+    double pos = Rf_asReal(start_time);
+    if(pos > 0){
+      av_seek_frame(output->input->demuxer, -1, pos * AV_TIME_BASE, AVSEEK_FLAG_ANY);
+      //output->input->stream->cur_dts = 0;
+    }
+  }
   return R_UnwindProtect(calculate_audio_fft, output, close_spectrum_container, output, NULL);
 }
