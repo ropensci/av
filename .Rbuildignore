@@ -9,3 +9,4 @@
 ^README\.md$
 ^_pkgdown.yml$
 ^vignettes/articles
+^configure.log$

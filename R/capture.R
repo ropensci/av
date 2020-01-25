@@ -49,13 +49,12 @@ av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height
 #' @param audio path to media file with audio stream
 #' @rdname capturing
 av_spectrogram_video <- function(audio, output = "output.mp4", framerate = 25, verbose = TRUE, ...){
-  info <- av_video_info(audio)
   fftdata <- read_audio_fft(audio)
+  duration <- attr(fftdata, 'duration')
   movie <- av_capture_graphics({
-    for(i in seq(0, info$duration, by = 1/framerate)){
-      cat(sprintf("\rPlotting at %.2f sec...", i), file = stderr())
+    for(i in seq(0, duration, by = 1/framerate)){
+      cat(sprintf("\rPlotting frame at %.2f sec...", i), file = stderr())
       graphics::plot(fftdata, vline = i)
     }
   }, framerate = framerate, audio = audio, verbose = verbose, output = output, ...)
 }
-

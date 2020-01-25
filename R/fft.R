@@ -57,6 +57,7 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75,
     start_time = 0
   end_time <- attr(out, 'endtime')
   attr(out, 'endtime') = NULL
+  attr(out, 'duration') = end_time - start_time;
   attr(out, 'time') <- seq(start_time, end_time, length.out = ncol(out))
   attr(out, 'frequency') <-  seq(0, info$audio$sample_rate * 0.5, length.out = nrow(out))
   attr(out, 'input') <- as.list(info$audio)

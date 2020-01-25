@@ -10,3 +10,4 @@ src/Makevars
 windows
 .Rhistory
 src/transcoding
+configure.log
