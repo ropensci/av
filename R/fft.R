@@ -51,7 +51,13 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75,
   start_time <- as.numeric(start_time)
   end_time <- as.numeric(end_time)
   out <- .Call(R_audio_fft, audio, window, overlap, sample_rate, start_time, end_time)
-  attr(out, 'time') <- seq(0, info$duration, length.out = ncol(out))
+
+  # Get the real start/end times
+  if(!length(start_time) || start_time < 0)
+    start_time = 0
+  end_time <- attr(out, 'endtime')
+  attr(out, 'endtime') = NULL
+  attr(out, 'time') <- seq(start_time, end_time, length.out = ncol(out))
   attr(out, 'frequency') <-  seq(0, info$audio$sample_rate * 0.5, length.out = nrow(out))
   attr(out, 'input') <- as.list(info$audio)
   structure(out, class = 'av_fft')

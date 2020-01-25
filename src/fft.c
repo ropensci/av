@@ -200,6 +200,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   av_samples_alloc(&output->buf, NULL, 1, 4 * output->winsize, AV_SAMPLE_FMT_FLTP, 0);
   double winscale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
+  int64_t elapsed = 0;
   while(!eof){
 
     /* Step 1: fill the FIFO with audio samples */
@@ -216,7 +217,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
             bail_if(avcodec_send_packet(input->decoder, pkt), "avcodec_send_packet (audio)");
 
             /* Check for elapsed time limit */
-            int64_t elapsed = av_rescale_q(pkt->pts, input->stream->time_base, AV_TIME_BASE_Q);
+            elapsed = av_rescale_q(pkt->pts, input->stream->time_base, AV_TIME_BASE_Q);
             if(output->end_pts > 0 && elapsed > output->end_pts)
               eof = 1;
             av_packet_unref(pkt);
@@ -271,6 +272,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   SEXP out = PROTECT(Rf_allocVector(REALSXP, iter * output_range));
   memcpy(REAL(out), output->dst_data, iter * output_range * sizeof(*output->dst_data));
   Rf_setAttrib(out, R_DimSymbol, dims);
+  Rf_setAttrib(out, Rf_install("endtime"), Rf_ScalarReal((double) elapsed / AV_TIME_BASE));
   UNPROTECT(2);
   return out;
 }
