@@ -32,6 +32,10 @@ test_that("Read binary audio", {
   out2 <- read_audio_bin_old(wonderland)
   expect_identical(out1, out2)
 
+  out1 <- read_audio_bin(wonderland, channels = 1)
+  out2 <- read_audio_bin_old(wonderland, channels = 1)
+  expect_identical(out1, out2)
+
   out1_short <- read_audio_bin(wonderland, start_time = 5)
   out2_short <- read_audio_bin_old(wonderland, start_time = 5)
   expect_identical(out1_short, out2_short)
