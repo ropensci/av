@@ -15,11 +15,17 @@ You can install `av` from CRAN
 install.packages("av")
 ```
 
-You can install the development version from [GitHub](https://github.com/ropensci/av) with:
+On Debian/Ubuntu you first need to install [libavfilter-dev](https://packages.debian.org/bullseye/libavfilter-dev)
 
-```r
-# Install from GitHub
-remotes::install_github("ropensci/av")
+```sh
+sudo apt-get install libavfilter-dev
+```
+
+And on Fedora / CentOS / RHEL you need to install [ffmpeg-devel] from [rpmfusion](https://rpmfusion.org/Configuration). See [instructions here](https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm) on how to enable rpmfusion via the command line.
+
+```sh
+# Need to enable RPMFUSION first via link above!
+sudo yum install ffmpeg-devel
 ```
 
 ## Demo Video
