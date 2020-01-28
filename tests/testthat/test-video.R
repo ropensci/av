@@ -25,7 +25,7 @@ test_that("convert images into video formats", {
     filename <- paste0("test.", ext)
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE)
     expect_true(file.exists(filename))
-    info <- av_video_info(filename)
+    info <- av_media_info(filename)
 
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
@@ -38,7 +38,7 @@ test_that("convert images into video formats", {
 
       # Test converting video to video
       av_video_convert(filename, 'test2.mp4', verbose = FALSE)
-      info <- av_video_info('test2.mp4')
+      info <- av_media_info('test2.mp4')
       unlink('test2.mp4')
       expect_equal(info$video$width, width)
       expect_equal(info$video$height, height)
@@ -54,7 +54,7 @@ test_that("audio sampling works", {
     filename <- paste0("test.", ext)
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE, audio = wonderland)
     expect_true(file.exists(filename))
-    info <- av_video_info(filename)
+    info <- av_media_info(filename)
 
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
@@ -69,7 +69,7 @@ test_that("audio sampling works", {
 
     # Test converting video to video
     av_video_convert(filename, 'test2.mp4', verbose = FALSE)
-    info <- av_video_info('test2.mp4')
+    info <- av_media_info('test2.mp4')
     unlink('test2.mp4')
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
@@ -89,7 +89,7 @@ test_that("audio sampling works", {
 test_that("fractional framerates work", {
   framerate <- 1/5
   av::av_encode_video(png_files, 'test.mp4', framerate = framerate, verbose = FALSE)
-  info <- av_video_info('test.mp4')
+  info <- av_media_info('test.mp4')
   unlink('test.mp4')
 
   expect_equal(info$video$framerate, framerate)
@@ -102,7 +102,7 @@ test_that("speed up/down filters", {
     framerate <- 25
     filter <- sprintf("setpts=%s*PTS", as.character(x))
     av::av_encode_video(png_files, 'speed.mp4', framerate = framerate, vfilter = filter, verbose = FALSE)
-    info <- av_video_info('speed.mp4')
+    info <- av_media_info('speed.mp4')
     unlink('speed.mp4')
     expect_equal(info$video$framerate, (framerate / x))
     expect_equal(info$duration, length(png_files) / (framerate / x))

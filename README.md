@@ -65,7 +65,7 @@ You can add a custom [ffmpeg video filter chain](https://ffmpeg.org/ffmpeg-filte
 # Continue on the example above
 filter_render <- av_renderer('orange.mp4', vfilter = 'negate=1, fade=in:0:15:color=orange')
 df <- animate(p, renderer = filter_render, width = 720*q, height = 480*q, res = 72*q, fps = 25)
-av::av_video_info('orange.mp4')
+av::av_media_info('orange.mp4')
 utils::browseURL('orange.mp4')
 ```
 
@@ -74,7 +74,7 @@ Filters can also affect the final fps of the video. For example this filter will
 ```r
 fast_render <- av_renderer('fast.mp4', vfilter = "setpts=0.5*PTS")
 df <- animate(p, renderer = fast_render, fps = 25)
-av::av_video_info('fast.mp4')
+av::av_media_info('fast.mp4')
 utils::browseURL('fast.mp4')
 ```
 
@@ -98,6 +98,6 @@ makeplot <- function(){
 # Play 1 plot per sec, and use an interpolation filter to convert into 10 fps
 video_file <- file.path(tempdir(), 'output.mp4')
 av::av_capture_graphics(makeplot(), video_file, 1280, 720, res = 144, vfilter = 'framerate=fps=10')
-av::av_video_info(video_file)
+av::av_media_info(video_file)
 utils::browseURL(video_file)
 ```

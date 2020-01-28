@@ -66,7 +66,7 @@ av_encode_video <- function(input, output = "output.mp4", framerate = 24, vfilte
 #' @export
 #' @param video input video file with optionally also an audio track
 av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
-  info <- av_video_info(video)
+  info <- av_media_info(video)
   if(nrow(info$video) == 0)
     stop("No suitable input video stream found")
   framerate <- info$video$framerate[1]

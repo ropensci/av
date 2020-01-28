@@ -16,7 +16,7 @@
 av_video_images <- function(video, destdir = tempfile(), format = 'jpg', fps = NULL){
   stopifnot(length(video) == 1)
   vfilter <- ifelse(length(fps), paste0('fps=fps=', fps), 'null')
-  framerate <- av_video_info(video)$video$framerate
+  framerate <- av_media_info(video)$video$framerate
   dir.create(destdir)
   codec <- switch(format, jpeg = 'mjpeg', jpg = 'mjpeg', format)
   output <- file.path(destdir, paste0('image_%6d.', format))
