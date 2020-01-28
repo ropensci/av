@@ -39,9 +39,9 @@ rate from the input file.}
 \item{channels}{number of output channels, set to 1 to convert to mono sound}
 }
 \description{
-Fast implementation to read audio files in any format. Use \link{read_audio_bin} to read
-raw audio samples, and \link{read_audio_fft} to stream-convert directly to frequency domain
-(spectrum data) using FFmpeg built-in FFT.
+Reads raw audio data from any common audio or video format. Use \link{read_audio_bin} to
+get raw PCM audio samples, or \link{read_audio_fft} to stream-convert directly into
+frequency domain (spectrum) data using FFmpeg built-in FFT.
 }
 \details{
 Use the \code{plot()} method on data returned by \link{read_audio_fft} to show the spectrogram.

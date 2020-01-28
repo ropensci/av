@@ -1,8 +1,8 @@
 #' Read audio binary and frequency data
 #'
-#' Fast implementation to read audio files in any format. Use [read_audio_bin] to read
-#' raw audio samples, and [read_audio_fft] to stream-convert directly to frequency domain
-#' (spectrum data) using FFmpeg built-in FFT.
+#' Reads raw audio data from any common audio or video format. Use [read_audio_bin] to
+#' get raw PCM audio samples, or [read_audio_fft] to stream-convert directly into
+#' frequency domain (spectrum) data using FFmpeg built-in FFT.
 #'
 #' Use the `plot()` method on data returned by [read_audio_fft] to show the spectrogram.
 #' The [av_spectrogram_video] generates a video based on the spectrogram with a moving bar
@@ -69,10 +69,7 @@ read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL, start_tim
   sample_rate <- as.integer(sample_rate)
   start_time <- as.numeric(start_time)
   end_time <- as.numeric(end_time);
-  out <- .Call(R_audio_bin, audio, channels, sample_rate, start_time, end_time)
-  if(!length(channels))
-    channels <- av_media_info(audio)$audio$channels
-  structure(out, channels = channels)
+  .Call(R_audio_bin, audio, channels, sample_rate, start_time, end_time)
 }
 
 read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start_time = NULL, total_time = NULL){
@@ -85,7 +82,9 @@ read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start
   out <- readBin(tmp, integer(), file.info(tmp)$size)
   if(!length(channels))
     channels <- av_media_info(audio)$audio$channels
-  structure(out, channels = channels)
+  if(!length(sample_rate))
+    sample_rate <- av_media_info(audio)$audio$sample_rate
+  structure(out, channels = channels, sample_rate = sample_rate)
 }
 
 #' @export

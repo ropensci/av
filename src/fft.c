@@ -367,7 +367,10 @@ SEXP R_audio_fft(SEXP audio, SEXP window, SEXP overlap, SEXP sample_rate, SEXP s
     if(pos > 0)
       av_seek_frame(output->input->demuxer, -1, pos * AV_TIME_BASE, AVSEEK_FLAG_ANY);
   }
-  return R_UnwindProtect(calculate_audio_fft, output, close_spectrum_container, output, NULL);
+  SEXP out = PROTECT(R_UnwindProtect(calculate_audio_fft, output, close_spectrum_container, output, NULL));
+  Rf_setAttrib(out, PROTECT(Rf_install("sample_rate")), Rf_ScalarInteger(output_sample_rate));
+  UNPROTECT(2);
+  return out;
 }
 
 SEXP R_audio_bin(SEXP audio, SEXP channels, SEXP sample_rate, SEXP start_time, SEXP end_time){
@@ -386,5 +389,9 @@ SEXP R_audio_bin(SEXP audio, SEXP channels, SEXP sample_rate, SEXP start_time, S
   int output_channels = Rf_length(channels) ? Rf_asInteger(channels) : decoder->channels;
   output->channels = output_channels;
   output->swr = create_resampler_bin(output->input->decoder, output_sample_rate, output_channels);
-  return R_UnwindProtect(calculate_audio_bin, output, close_spectrum_container, output, NULL);
+  SEXP out = PROTECT(R_UnwindProtect(calculate_audio_bin, output, close_spectrum_container, output, NULL));
+  Rf_setAttrib(out, PROTECT(Rf_install("channels")), Rf_ScalarInteger(output_channels));
+  Rf_setAttrib(out, PROTECT(Rf_install("sample_rate")), Rf_ScalarInteger(output_sample_rate));
+  UNPROTECT(3);
+  return out;
 }

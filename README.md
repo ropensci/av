@@ -17,14 +17,14 @@ install.packages("av")
 
 On Debian/Ubuntu you first need to install [libavfilter-dev](https://packages.debian.org/bullseye/libavfilter-dev)
 
-```sh
+```
 sudo apt-get install libavfilter-dev
 ```
 
-And on Fedora / CentOS / RHEL you need to install [ffmpeg-devel] from [rpmfusion](https://rpmfusion.org/Configuration). See [instructions here](https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm) on how to enable rpmfusion via the command line.
+And on Fedora / CentOS / RHEL you need to install `ffmpeg-devel` from [rpmfusion](https://rpmfusion.org/Configuration). See [instructions here](https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm) on how to enable rpmfusion via the command line.
 
-```sh
-# Need to enable RPMFUSION first via link above!
+```
+# Need to enable rpmfusion repository first via link above!
 sudo yum install ffmpeg-devel
 ```
 
