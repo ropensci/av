@@ -48,6 +48,7 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75,
   info <- av_media_info(audio)
   start_time <- as.numeric(start_time)
   end_time <- as.numeric(end_time)
+  av_log_level(16)
   out <- .Call(R_audio_fft, audio, window, overlap, sample_rate, start_time, end_time)
 
   # Get the real start/end times
@@ -71,7 +72,8 @@ read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL, start_tim
   channels <- as.integer(channels)
   sample_rate <- as.integer(sample_rate)
   start_time <- as.numeric(start_time)
-  end_time <- as.numeric(end_time);
+  end_time <- as.numeric(end_time)
+  av_log_level(16)
   .Call(R_audio_bin, audio, channels, sample_rate, start_time, end_time)
 }
 
