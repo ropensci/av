@@ -4,9 +4,11 @@
 #' get raw PCM audio samples, or [read_audio_fft] to stream-convert directly into
 #' frequency domain (spectrum) data using FFmpeg built-in FFT.
 #'
-#' Use the `plot()` method on data returned by [read_audio_fft] to show the spectrogram.
-#' The [av_spectrogram_video] generates a video based on the spectrogram with a moving bar
-#' and background audio.
+#' Currently [read_audio_fft] automatically converts input audio to mono channel such
+#' that we get a single matrix. Use the `plot()` method on data returned by [read_audio_fft]
+#' to show the spectrogram. The [av_spectrogram_video] generates a video that plays
+#' the audio while showing an animated spectrogram with moving status bar, which is
+#' very cool.
 #'
 #' @export
 #' @rdname read_audio

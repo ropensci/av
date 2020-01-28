@@ -44,9 +44,11 @@ get raw PCM audio samples, or \link{read_audio_fft} to stream-convert directly i
 frequency domain (spectrum) data using FFmpeg built-in FFT.
 }
 \details{
-Use the \code{plot()} method on data returned by \link{read_audio_fft} to show the spectrogram.
-The \link{av_spectrogram_video} generates a video based on the spectrogram with a moving bar
-and background audio.
+Currently \link{read_audio_fft} automatically converts input audio to mono channel such
+that we get a single matrix. Use the \code{plot()} method on data returned by \link{read_audio_fft}
+to show the spectrogram. The \link{av_spectrogram_video} generates a video that plays
+the audio while showing an animated spectrogram with moving status bar, which is
+very cool.
 }
 \examples{
 # Use a 5 sec fragment
