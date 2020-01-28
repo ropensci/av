@@ -34,8 +34,7 @@ frequency range.}
 \item{sample_rate}{downsample audio to reduce FFT output size. Default keeps sample
 rate from the input file.}
 
-\item{start_time, end_time}{number (in seconds) to limit fft to given time interval of
-the input audio stream.}
+\item{start_time, end_time}{position (in seconds) to cut input stream to be processed.}
 
 \item{channels}{number of output channels, set to 1 to convert to mono sound}
 }

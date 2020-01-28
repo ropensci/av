@@ -1,6 +1,8 @@
-0.4.1
+0.5
+  - Ported read_audio_bin() to pure C, match parameters with read_audio_fft()
+  - Fix total_time parameter in av_audio_convert() to account for start time
   - Unit test now uses CPU time instead of elapsed time (BDR)
-  - Added start_time and end_time paramters to read_audio_fft()
+  - Added start_time and end_time parameters to read_audio_fft()
   - Minor tweaks to configure script
 
 0.4
