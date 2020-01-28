@@ -21,21 +21,17 @@
 #' @param start_time,end_time position (in seconds) to cut input stream to be processed.
 #' @examples # Use a 5 sec fragment
 #' wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
-#' av_audio_convert(wonderland, 'example.mp3', total_time = 5)
 #'
-#' # Read as frequency spectrum
-#' fft_data <- read_audio_fft('example.mp3')
+#' # Read initial 5 sec as as frequency spectrum
+#' fft_data <- read_audio_fft(wonderland, end_time = 5.0)
 #' dim(fft_data)
 #'
 #' # Plot the spectrogram
 #' plot(fft_data)
 #'
 #' # Show other parameters
-#' dim(read_audio_fft('example.mp3', hamming(2048)))
-#' dim(read_audio_fft('example.mp3', hamming(4096)))
-#'
-#' # Cleanup
-#' unlink('example.mp3')
+#' dim(read_audio_fft(wonderland, end_time = 5.0, hamming(2048)))
+#' dim(read_audio_fft(wonderland, end_time = 5.0, hamming(4096)))
 read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75,
                            sample_rate = NULL, start_time = NULL, end_time = NULL){
   audio <- normalizePath(audio, mustWork = TRUE)
