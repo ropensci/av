@@ -2,10 +2,11 @@
 % Please edit documentation in R/info.R
 \name{info}
 \alias{info}
+\alias{av_media_info}
 \alias{av_video_info}
 \title{Video Info}
 \usage{
-av_video_info(file)
+av_media_info(file)
 }
 \arguments{
 \item{file}{path to an existing file}

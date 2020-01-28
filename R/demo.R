@@ -10,7 +10,7 @@
 #' @family av
 av_demo <- function(output = "demo.mp4", width = 960, height = 720, framerate = 5, verbose = TRUE, ...){
   wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
-  info <- av_video_info(wonderland)
+  info <- av_media_info(wonderland)
   len <- framerate * round(info$duration)
   res <- round(72 * min(width, height) / 480)
 

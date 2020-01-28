@@ -3,6 +3,7 @@
   - Fix total_time parameter in av_audio_convert() to account for start time
   - Unit test now uses CPU time instead of elapsed time (BDR)
   - Added start_time and end_time parameters to read_audio_fft()
+  - Rename av_video_info to av_media_info
   - Minor tweaks to configure script
 
 0.4

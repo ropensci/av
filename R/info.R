@@ -3,12 +3,13 @@
 #' Get video info such as width, height, format, duration and framerate.
 #' This may also be used for audio input files.
 #'
-#' @export
+#' @export av_video_info av_media_info
+#' @aliases av_video_info av_media_info
 #' @name info
 #' @param file path to an existing file
 #' @useDynLib av R_video_info
 #' @family av
-av_video_info <- function(file){
+av_media_info <- function(file){
   file <- normalizePath(file, mustWork = TRUE)
   out <- .Call(R_video_info, file)
   if(length(out$video))
@@ -17,3 +18,5 @@ av_video_info <- function(file){
     out$audio <- data.frame(out$audio, stringsAsFactors = FALSE)
   out
 }
+
+av_video_info <- av_media_info

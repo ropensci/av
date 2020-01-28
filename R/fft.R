@@ -42,7 +42,7 @@ read_audio_fft <- function(audio, window = hanning(1024), overlap = 0.75,
   window <- as.numeric(window)
   if(!length(overlap) || overlap < 0 || overlap >= 1)
     stop("Overlap must be value between 0 and 1")
-  info <- av_video_info(audio)
+  info <- av_media_info(audio)
   start_time <- as.numeric(start_time)
   end_time <- as.numeric(end_time)
   out <- .Call(R_audio_fft, audio, window, overlap, sample_rate, start_time, end_time)
@@ -71,7 +71,7 @@ read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL, start_tim
   end_time <- as.numeric(end_time);
   out <- .Call(R_audio_bin, audio, channels, sample_rate, start_time, end_time)
   if(!length(channels))
-    channels <- av_video_info(audio)$audio$channels
+    channels <- av_media_info(audio)$audio$channels
   structure(out, channels = channels)
 }
 
@@ -84,7 +84,7 @@ read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start
                    sample_rate = sample_rate, start_time = start_time, total_time = total_time, verbose = FALSE)
   out <- readBin(tmp, integer(), file.info(tmp)$size)
   if(!length(channels))
-    channels <- av_video_info(audio)$audio$channels
+    channels <- av_media_info(audio)$audio$channels
   structure(out, channels = channels)
 }
 
