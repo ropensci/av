@@ -39,7 +39,7 @@ typedef struct {
   const char * output_file;
   const char * format_name;
   double duration;
-  int64_t max_len;
+  int64_t max_pts;
   int64_t count;
   int progress_pct;
   int channels;
@@ -420,12 +420,12 @@ static void sync_audio_stream(output_container * output, int64_t pts){
       pkt->stream_index = audio_stream->index;
       av_packet_rescale_ts(pkt, output->audio_encoder->time_base, audio_stream->time_base);
       bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
-      int64_t elapsed = av_rescale_q(av_stream_get_end_pts(audio_stream), audio_stream->time_base, AV_TIME_BASE_Q);
+      int64_t elapsed_pts = av_rescale_q(av_stream_get_end_pts(audio_stream), audio_stream->time_base, AV_TIME_BASE_Q);
       if(force_everything){
         av_log(NULL, AV_LOG_INFO, "\rAdding audio frame %d at timestamp %.2fsec",
-               (int) audio_stream->nb_frames + 1, (double) elapsed / AV_TIME_BASE);
+               (int) audio_stream->nb_frames + 1, (double) elapsed_pts / AV_TIME_BASE);
       }
-      if(output->max_len > 0 && output->max_len < elapsed){
+      if(output->max_pts > 0 && output->max_pts < elapsed_pts){
         force_flush = 1;
       };
       R_CheckUserInterrupt();
@@ -634,7 +634,7 @@ SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_format, SEXP out_channe
   if(start_pts > 0)
     av_seek_frame(output->audio_input->demuxer, -1, start_pts * AV_TIME_BASE, AVSEEK_FLAG_ANY);
   if(Rf_length(max_len))
-    output->max_len = (Rf_asReal(max_len) + start_pts) * AV_TIME_BASE;
+    output->max_pts = (Rf_asReal(max_len) + start_pts) * AV_TIME_BASE;
   output->output_file = CHAR(STRING_ELT(out_file, 0));
   R_UnwindProtect(encode_audio_input, output, close_output_file, output, NULL);
   return out_file;
