@@ -19,6 +19,7 @@ Other av:
 \code{\link{demo}()},
 \code{\link{encoding}},
 \code{\link{formats}},
-\code{\link{info}}
+\code{\link{info}},
+\code{\link{read_audio_fft}()}
 }
 \concept{av}

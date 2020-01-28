@@ -40,6 +40,7 @@ Other av:
 \code{\link{encoding}},
 \code{\link{formats}},
 \code{\link{info}},
-\code{\link{logging}}
+\code{\link{logging}},
+\code{\link{read_audio_fft}()}
 }
 \concept{av}

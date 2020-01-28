@@ -21,6 +21,7 @@ Other av:
 \code{\link{demo}()},
 \code{\link{encoding}},
 \code{\link{formats}},
-\code{\link{logging}}
+\code{\link{logging}},
+\code{\link{read_audio_fft}()}
 }
 \concept{av}

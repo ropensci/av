@@ -41,6 +41,7 @@ Other av:
 \code{\link{demo}()},
 \code{\link{encoding}},
 \code{\link{info}},
-\code{\link{logging}}
+\code{\link{logging}},
+\code{\link{read_audio_fft}()}
 }
 \concept{av}

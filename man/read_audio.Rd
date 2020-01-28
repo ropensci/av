@@ -63,3 +63,13 @@ plot(fft_data)
 dim(read_audio_fft(wonderland, end_time = 5.0, hamming(2048)))
 dim(read_audio_fft(wonderland, end_time = 5.0, hamming(4096)))
 }
+\seealso{
+Other av: 
+\code{\link{capturing}},
+\code{\link{demo}()},
+\code{\link{encoding}},
+\code{\link{formats}},
+\code{\link{info}},
+\code{\link{logging}}
+}
+\concept{av}

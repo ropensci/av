@@ -10,6 +10,7 @@
 #'
 #' @export
 #' @rdname read_audio
+#' @family av
 #' @useDynLib av R_audio_fft
 #' @param audio path to the input sound or video file containing the audio stream
 #' @param window vector with weights defining the moving [fft window function][hanning].
