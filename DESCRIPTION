@@ -1,14 +1,14 @@
 Package: av
 Type: Package
 Title: Working with Audio and Video in R
-Version: 0.4.0.9000
+Version: 0.5.0
 Authors@R: person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroen@berkeley.edu",
     comment = c(ORCID = "0000-0002-4035-0289"))
-Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for working with audio 
-    and video in R. Generate high quality videos files by capturing images from the R graphics
-    device combined with custom audio stream. Also offers tools to convert between countless 
-    audio / video formats, or convert images to video and vice versa. This package interfaces
-    directly to the C API and does not require any command line utilities.
+Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for working with 
+    audio and video in R. Generates high quality video from images or R graphics with 
+    custom audio. Also offers high performance tools for reading raw audio, creating
+    spectrograms, and converting between countless audio / video formats. This package 
+    interfaces directly to the C API and does not require any command line utilities.
 License: MIT + file LICENSE
 URL: https://docs.ropensci.org/av (website), 
     https://github.com/ropensci/av (devel)
