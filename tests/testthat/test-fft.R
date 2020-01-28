@@ -1,7 +1,8 @@
-context("Audio FFT")
+context("Read raw audio")
+
+wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
 
 test_that("Audio FFT", {
-  wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
   extensions <- c("wav", "mkv", "ac3", "flac")
   av_log_level(16) # muffle some warnings about ac3 vbr
   for(ext in extensions){
@@ -15,7 +16,6 @@ test_that("Audio FFT", {
 })
 
 test_that("FFT time cutting",{
-  wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
   fft_orig <- read_audio_fft(wonderland)
   fft0 <- read_audio_fft(wonderland, start_time = 0, end_time = 10)
   fft1 <- read_audio_fft(wonderland, start_time = 10, end_time = 20)
@@ -25,4 +25,14 @@ test_that("FFT time cutting",{
   expect_equal(ncol(fft1), ncol(fft_orig)/3, tol = 0.01)
   expect_equal(ncol(fft2), ncol(fft_orig)*2/3, tol = 0.01)
 
+})
+
+test_that("Read binary audio", {
+  out1 <- read_audio_bin(wonderland)
+  out2 <- read_audio_bin_old(wonderland)
+  expect_identical(out1, out2)
+
+  out1_short <- read_audio_bin(wonderland, start_time = 5)
+  out2_short <- read_audio_bin_old(wonderland, start_time = 5)
+  expect_identical(out1_short, out2_short)
 })
