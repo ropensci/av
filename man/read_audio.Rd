@@ -14,7 +14,13 @@ read_audio_fft(
   end_time = NULL
 )
 
-read_audio_bin(audio, channels = NULL, sample_rate = NULL)
+read_audio_bin(
+  audio,
+  channels = NULL,
+  sample_rate = NULL,
+  start_time = NULL,
+  end_time = NULL
+)
 }
 \arguments{
 \item{audio}{path to the input sound or video file containing the audio stream}
