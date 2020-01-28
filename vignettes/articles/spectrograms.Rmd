@@ -12,19 +12,14 @@ knitr::opts_chunk$set(
 )
 ```
 
-First we create a 5 sec audio fragment to test with:
-
-
-```{r}
-# Get a shorter fragment
-wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
-av_audio_convert(wonderland, 'short.mp3', total_time = 5)
-```
-
 Calculate the frequency data and plot the spectrogram:
 
 ```{r plot_spectrogram}
-fft_data <- read_audio_fft('short.mp3')
+# Demo sound included with av
+wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
+
+# Read first 5 sec of demo
+fft_data <- read_audio_fft(wonderland, end_time = 5.0)
 plot(fft_data)
 ```
 
@@ -39,6 +34,8 @@ plot(fft_data, dark = FALSE)
 You can also create a spectrogram video like this:
 
 ```{r spectrogram_video}
+# Create new audio file with first 5 sec
+av_audio_convert(wonderland, 'short.mp3', total_time = 5)
 av_spectrogram_video('short.mp3', output = 'spectrogram.mp4', width = 1280, height = 720, res = 144)
 ```
 
