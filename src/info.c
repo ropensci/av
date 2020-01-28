@@ -67,11 +67,11 @@ static SEXP get_audio_info(AVFormatContext *demuxer){
     if(!codec)
       Rf_error("Failed to find codec");
     SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));
-    SET_VECTOR_ELT(streamdata, 0, Rf_ScalarReal(stream->codecpar->channels));
-    SET_VECTOR_ELT(streamdata, 1, Rf_ScalarReal(stream->codecpar->sample_rate));
+    SET_VECTOR_ELT(streamdata, 0, Rf_ScalarInteger(stream->codecpar->channels));
+    SET_VECTOR_ELT(streamdata, 1, Rf_ScalarInteger(stream->codecpar->sample_rate));
     SET_VECTOR_ELT(streamdata, 2, Rf_mkString(codec->name));
-    SET_VECTOR_ELT(streamdata, 3, Rf_ScalarReal(stream->nb_frames ? stream->nb_frames : NA_REAL));
-    SET_VECTOR_ELT(streamdata, 4, Rf_ScalarReal(stream->codecpar->bit_rate));
+    SET_VECTOR_ELT(streamdata, 3, Rf_ScalarInteger(stream->nb_frames ? stream->nb_frames : NA_INTEGER));
+    SET_VECTOR_ELT(streamdata, 4, Rf_ScalarInteger(stream->codecpar->bit_rate));
 
     char layout[1024] = "";
     av_get_channel_layout_string(layout, 1024, stream->codecpar->channels, stream->codecpar->channel_layout);

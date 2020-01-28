@@ -83,6 +83,8 @@ read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL, start_tim
 read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start_time = NULL, total_time = NULL){
   tmp <- tempfile(fileext = '.bin')
   on.exit(unlink(tmp))
+  audio <- normalizePath(audio, mustWork = TRUE)
+  channels <- as.integer(channels)
   av_audio_convert(audio = audio, output = tmp, format = 's32le', channels = channels,
                    sample_rate = sample_rate, start_time = start_time, total_time = total_time, verbose = FALSE)
   out <- readBin(tmp, integer(), file.info(tmp)$size)
