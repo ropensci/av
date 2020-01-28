@@ -240,6 +240,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
         /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04
          * 4x is a conservative multiplier for when the input samle_fmt is smaller than 32 bit (such as flac)*/
         int out_samples = swr_convert (output->swr, &output->buf, 4 * output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
+        bail_if(out_samples, "swr_convert");
         av_frame_unref(frame);
         int nb_written = av_audio_fifo_write(output->fifo, (void **) &output->buf, out_samples);
         bail_if(nb_written, "av_audio_fifo_write");
@@ -291,7 +292,12 @@ static SEXP run_bin(spectrum_container *output){
   AVFrame *frame = av_frame_alloc();
   input_container * input = output->input;
   AVCodecContext *decoder = input->decoder;
-  av_samples_alloc(&output->buf, NULL, output->channels, decoder->frame_size, AV_SAMPLE_FMT_S32, 0);
+  int max_frame_size = av_get_audio_frame_duration(decoder, 0);
+  if(max_frame_size < 1){
+    REprintf("Unknown frame size for input audio format: %s\n", decoder->codec->name);
+    max_frame_size = 50000; /* Very high fallback, should hopefully never happen */
+  }
+  av_samples_alloc(&output->buf, NULL, output->channels, max_frame_size, AV_SAMPLE_FMT_S32, 0);
   int64_t elapsed = 0;
   int channels = output->channels;
   int samplesize = channels * av_get_bytes_per_sample(AV_SAMPLE_FMT_S32);
@@ -318,9 +324,10 @@ static SEXP run_bin(spectrum_container *output){
       break;
     } else {
       bail_if(ret, "avcodec_receive_frame");
-      int n_samples = swr_convert (output->swr, &output->buf, decoder->frame_size, (const uint8_t**) frame->extended_data, frame->nb_samples);
+      int n_samples = swr_convert (output->swr, &output->buf, max_frame_size, (const uint8_t**) frame->extended_data, frame->nb_samples);
+      bail_if(n_samples, "swr_convert");
       if(n_samples < frame->nb_samples)
-        Rf_warning("Insufficient memory to recode all samples");
+        REprintf("Insufficient memory to recode all samples");
       av_frame_unref(frame);
       output->dst_int = av_realloc(output->dst_int, round_up((total_samples + n_samples) * samplesize));
       memcpy(output->dst_int + total_samples * channels, output->buf, n_samples * samplesize);
