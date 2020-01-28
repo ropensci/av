@@ -18,8 +18,7 @@
 #' @param overlap value between 0 and 1 of overlap proportion between moving fft windows
 #' @param sample_rate downsample audio to reduce FFT output size. Default keeps sample
 #' rate from the input file.
-#' @param start_time,end_time number (in seconds) to limit fft to given time interval of
-#' the input audio stream.
+#' @param start_time,end_time position (in seconds) to cut input stream to be processed.
 #' @examples # Use a 5 sec fragment
 #' wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av')
 #' av_audio_convert(wonderland, 'example.mp3', total_time = 5)
