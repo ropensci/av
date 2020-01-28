@@ -18,7 +18,8 @@ LazyData: true
 RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
 SystemRequirements: FFmpeg (>= 3.2); with at least libx264 and lame (mp3) drivers.
-	INSTALL: libavfilter-dev (deb), ffmpeg-devel (rpm), ffmpeg (brew).
+	Debian/Ubuntu: libavfilter-dev, Fedora/CentOS: ffmpeg-devel (via https://rpmfusion.org), 
+	MacOS Homebrew: ffmpeg.
 Depends: R (>= 3.5)
 Suggests: 
     testthat,
