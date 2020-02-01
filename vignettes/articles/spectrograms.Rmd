@@ -46,14 +46,11 @@ Your browser does not support the video tag.
 
 ## Compare with tuneR/signal
 
-We convert the audio sample to `wav` so that we can read it with tuneR:
+For comparison, we show how the same thing can be achieved with the `tuneR` package:
 
 ```{r convert_to_wav}
-# Conver to wav audio with av
-av_audio_convert('short.mp3', 'short.wav', channels = 1)
-
 # Read wav with tuneR
-data <- tuneR::readWave('short.wav')
+data <- tuneR::readMP3('short.mp3')
 
 # demean to remove DC offset
 snd <- data@left - mean(data@left)
