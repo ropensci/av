@@ -22,6 +22,9 @@ matrix:
     - os: osx
       brew_packages: ffmpeg
     - os: osx
+      osx_image: xcode11.4
+      disable_homebrew: true
+    - os: osx
       disable_homebrew: true
       osx_image: xcode10.1
     - r: 3.6.3
