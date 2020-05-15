@@ -17,9 +17,9 @@ cache:
 
 environment:
   matrix:
-    - R_VERSION: release
+    - R_VERSION: 3.6.3
       R_CHECK_ARGS: '--no-manual --run-donttest'
-    - R_VERSION: devel
+    - R_VERSION: patched
       R_CHECK_ARGS: '--no-manual --run-donttest'
 
 build_script:
