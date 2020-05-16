@@ -92,15 +92,17 @@ read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start
   structure(out, channels = channels, sample_rate = sample_rate)
 }
 
+## Do not remove importfrom! https://github.com/ropensci/av/issues/29
+#' @importFrom graphics par image legend abline
 #' @export
 plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, useRaster = TRUE, vline = NULL, ...){
   if(!isTRUE(keep.par)){
     # This will also reset the coordinate scale of the plot
-    oldpar <- graphics::par(no.readonly = TRUE)
-    on.exit(graphics::par(oldpar))
+    oldpar <- par(no.readonly = TRUE)
+    on.exit(par(oldpar))
   }
   col <- if(isTRUE(dark)){
-    graphics::par(bg='black', col.axis='white', fg='white', family='mono',
+    par(bg='black', col.axis='white', fg='white', family='mono',
                   font=2, col.lab='white', col.main='white')
     #rev(viridisLite::inferno(12))
     c("#FCFFA4FF", "#F5DB4BFF", "#FCAD12FF", "#F78311FF", "#E65D2FFF", "#CB4149FF",
@@ -110,15 +112,15 @@ plot.av_fft <- function(x, y, dark = TRUE, legend = TRUE, keep.par = FALSE, useR
     c("#FFFFC8", "#FFF4B7", "#FBE49A", "#F8D074", "#F7BA3C", "#F5A100",
       "#F28400", "#ED6200", "#E13C00", "#C32200", "#A20706", "#7D0025")
   }
-  graphics::par(mar=c(5, 5, 3, 3), mex=0.6)
-  graphics::image(attr(x, 'time'), attr(x, 'frequency'), t(x),
+  par(mar=c(5, 5, 3, 3), mex=0.6)
+  image(attr(x, 'time'), attr(x, 'frequency'), t(x),
                   xlab = 'TIME', ylab = 'FREQUENCY (HZ)', col = col, useRaster = useRaster)
   if(isTRUE(legend)){
     input <- attr(x, 'input')
     label <- sprintf("%d channel, %dHz", input$channels, input$sample_rate)
-    graphics::legend("topright", legend = label, pch='', xjust = 1, yjust = 1, bty='o', cex = 0.7)
+    legend("topright", legend = label, pch='', xjust = 1, yjust = 1, bty='o', cex = 0.7)
   }
   if(length(vline)){
-    graphics::abline(v = vline, lwd = 2)
+    abline(v = vline, lwd = 2)
   }
 }
