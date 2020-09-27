@@ -1,4 +1,4 @@
-0.6
+0.5.1
   - Fix bug on Catalina that fails loading av if base packages aren't attached. (#29)
 
 0.5
