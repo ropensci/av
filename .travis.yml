@@ -8,8 +8,13 @@ r_check_args: '--run-donttest'
 matrix:
   include:
     - r: 3.5
-    - dist: bionic
-    - dist: xenial
+      dist: xenial
+      addons:
+        apt:
+          update: true
+          packages: libavdevice-dev
+          sources:
+            - sourceline: 'ppa:cran/ffmpeg-3'
     - dist: xenial
       addons:
         apt:
@@ -18,7 +23,9 @@ matrix:
           sources:
             - sourceline: 'ppa:cran/ffmpeg-4'
             - sourceline: 'ppa:cran/ffmpeg-3'
+    - dist: bionic
     - r: devel
+      dist: bionic
     - os: osx
       brew_packages: ffmpeg
     - os: osx
@@ -37,5 +44,3 @@ addons:
   apt:
     update: true
     packages: libavdevice-dev
-    sources:
-      - sourceline: 'ppa:cran/ffmpeg-3'
