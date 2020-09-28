@@ -8,7 +8,7 @@ r_check_args: '--run-donttest'
 matrix:
   include:
     - r: 3.5
-    - dist: trusty
+    - dist: bionic
     - dist: xenial
     - dist: xenial
       addons:

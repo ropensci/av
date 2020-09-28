@@ -1,5 +1,6 @@
 0.5.1
   - Fix bug on Catalina that fails loading av if base packages aren't attached. (#29)
+  - Workaround for false positives in CleanupReporter
 
 0.5
   - Ported read_audio_bin() to pure C, match parameters with read_audio_fft()
