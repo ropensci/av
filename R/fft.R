@@ -85,6 +85,7 @@ read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start
   av_audio_convert(audio = audio, output = tmp, format = 's32le', channels = channels,
                    sample_rate = sample_rate, start_time = start_time, total_time = total_time, verbose = FALSE)
   out <- readBin(tmp, integer(), file.info(tmp)$size)
+  out[is.na(out)] <- -2147483647L #-(.Machine$integer.max)
   if(!length(channels))
     channels <- av_media_info(audio)$audio$channels
   if(!length(sample_rate))
