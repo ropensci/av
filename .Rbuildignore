@@ -4,6 +4,7 @@
 ^src/transcoding$
 ^LICENSE\.md$
 ^.travis.yml$
+^.github$
 ^appveyor\.yml$
 ^[^/]+\.(mp4|mkv|mov|flv|gif)$
 ^README\.md$
