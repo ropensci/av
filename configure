@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Anticonf (tm) script by Jeroen Ooms (2020)
 # This script will query 'pkg-config' for the required cflags and ldflags.
 # If pkg-config is unavailable or does not find the library, try setting
@@ -18,7 +17,7 @@ PKG_LIBS="-lavfilter"
 pkg-config ${PKG_CONFIG_NAME} --max-version=5.99 2>/dev/null
 if [ $? -eq 0 ]; then
   echo "ERROR: Your version of FFmpeg is too old! Need at least FFmpeg (>= 3.2)" 1>&2
-  if [ "$(lsb_release -c 2>/dev/null | grep xenial)" ]; then
+  if [ "`lsb_release -c 2>/dev/null | grep xenial`" ]; then
     echo "On Ubuntu Trusty/Xenial use our PPA: " 2>/dev/null
     echo "  sudo add-apt-repository -y ppa:cran/ffmpeg-3" 2>/dev/null
     echo "  sudo apt-get update" 2>/dev/null
@@ -30,8 +29,8 @@ fi
 # FFMPEG 3 and 4 include libavfilter 6.0
 pkg-config ${PKG_CONFIG_NAME} --atleast-version=6 2>/dev/null
 if [ $? -eq 0 ]; then
-  PKGCONFIG_CFLAGS=$(pkg-config --cflags --silence-errors ${PKG_CONFIG_NAME})
-  PKGCONFIG_LIBS=$(pkg-config --libs ${PKG_CONFIG_NAME})
+  PKGCONFIG_CFLAGS=`pkg-config --cflags --silence-errors ${PKG_CONFIG_NAME}`
+  PKGCONFIG_LIBS=`pkg-config --libs ${PKG_CONFIG_NAME}`
 fi
 
 # Check for custom locations
@@ -43,14 +42,15 @@ elif [ "$PKGCONFIG_CFLAGS" ] || [ "$PKGCONFIG_LIBS" ]; then
   echo "Found pkg-config cflags and libs!"
   PKG_CFLAGS=${PKGCONFIG_CFLAGS}
   PKG_LIBS=${PKGCONFIG_LIBS}
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  if [ $(command -v brew) ]; then
-    BREWDIR=$(brew --prefix)
+elif [ `uname` = "Darwin" ]; then
+  brew --version 2>/dev/null
+  if [ $? -eq 0 ]; then
+    BREWDIR=`brew --prefix`
     PKG_CFLAGS="-I$BREWDIR/opt/$PKG_BREW_NAME/include"
     PKG_LIBS="-L$BREWDIR/opt/$PKG_BREW_NAME/lib $PKG_LIBS"
   else
     curl -sfL "https://autobrew.github.io/scripts/$PKG_BREW_NAME" > autobrew
-    source autobrew
+    . ./autobrew
   fi
 fi
 
@@ -59,9 +59,9 @@ echo "Using PKG_CFLAGS=$PKG_CFLAGS"
 echo "Using PKG_LIBS=$PKG_LIBS"
 
 # Find compiler
-CXX=$(${R_HOME}/bin/R CMD config CXX)
-CXXFLAGS=$(${R_HOME}/bin/R CMD config CXXFLAGS)
-CPPFLAGS=$(${R_HOME}/bin/R CMD config CPPFLAGS)
+CXX=`${R_HOME}/bin/R CMD config CXX`
+CXXFLAGS=`${R_HOME}/bin/R CMD config CXXFLAGS`
+CPPFLAGS=`${R_HOME}/bin/R CMD config CPPFLAGS`
 
 # Test for ffmpeg
 echo "#include $PKG_TEST_HEADER" | ${CXX} -E ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAGS} -xc++ - >/dev/null 2>configure.log
