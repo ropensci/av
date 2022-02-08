@@ -1,6 +1,8 @@
 #include <libavformat/avformat.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 
 #define R_NO_REMAP
@@ -25,7 +27,7 @@ typedef struct {
 } filter_container;
 
 typedef struct {
-  AVCodec *codec;
+  const AVCodec *codec;
   AVFormatContext *muxer;
   input_container *audio_input;
   input_container *video_input;
@@ -57,7 +59,7 @@ static void bail_if(int ret, const char * what){
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
 }
 
-static void bail_if_null(void * ptr, const char * what){
+static void bail_if_null(const void * ptr, const char * what){
   if(!ptr)
     bail_if(-1, what);
 }
@@ -165,7 +167,7 @@ static input_container *open_audio_input(const char *filename){
   /* Try all input streams */
   int si = find_stream_audio(demuxer, filename);
   AVStream *stream = demuxer->streams[si];
-  AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+  const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
   bail_if_null(codec, "avcodec_find_decoder");
   AVCodecContext *decoder = avcodec_alloc_context3(codec);
   bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
@@ -312,7 +314,7 @@ static void add_video_output(output_container *output, int width, int height){
 
 static void add_audio_output(output_container *container){
   AVCodecContext *audio_decoder = container->audio_input->decoder;
-  AVCodec *output_codec = avcodec_find_encoder(container->muxer->oformat->audio_codec);
+  const AVCodec *output_codec = avcodec_find_encoder(container->muxer->oformat->audio_codec);
   bail_if_null(output_codec, "Failed to find default audio codec");
   AVCodecContext *audio_encoder = avcodec_alloc_context3(output_codec);
   bail_if_null(audio_encoder, "avcodec_alloc_context3 (audio)");
@@ -371,7 +373,7 @@ static void sync_audio_stream(output_container * output, int64_t pts){
     frame = av_frame_alloc();
   }
   while(force_everything || force_flush ||
-        av_compare_ts(audio_stream->cur_dts, audio_stream->time_base,
+        av_compare_ts(audio_stream->duration, audio_stream->time_base,
                                      pts, output->video_stream->time_base) < 0) {
     int ret = avcodec_receive_packet(output->audio_encoder, pkt);
     if (ret == AVERROR(EAGAIN)){
@@ -522,7 +524,7 @@ static void read_from_input(const char *filename, output_container *output){
   bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
   int si = find_stream_video(demuxer, filename);
   AVStream *stream = demuxer->streams[si];
-  AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+  const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
   bail_if_null(codec, "avcodec_find_decoder");
   AVCodecContext *decoder = avcodec_alloc_context3(codec);
 
@@ -586,15 +588,15 @@ static SEXP encode_input_files(void *ptr){
   return R_NilValue;
 }
 
-static AVCodec *get_default_codec(const char *filename){
-  AVOutputFormat *frmt = av_guess_format(NULL, filename, NULL);
+static const AVCodec *get_default_codec(const char *filename){
+  const AVOutputFormat *frmt = av_guess_format(NULL, filename, NULL);
   bail_if_null(frmt, "av_guess_format");
   return avcodec_find_encoder(frmt->video_codec);
 }
 
 SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter,
                     SEXP enc, SEXP audio){
-  AVCodec *codec = Rf_length(enc) ?
+  const AVCodec *codec = Rf_length(enc) ?
     avcodec_find_encoder_by_name(CHAR(STRING_ELT(enc, 0))) :
     get_default_codec(CHAR(STRING_ELT(out_file, 0)));
   bail_if_null(codec, "avcodec_find_encoder_by_name");
