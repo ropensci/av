@@ -182,7 +182,7 @@ SEXP R_generate_window(SEXP size, SEXP type){
     float suggested_overlap = 0;
     SEXP out = PROTECT(Rf_allocVector(REALSXP, n));
     generate_window_func(REAL(out), n, funtype, &suggested_overlap);
-    Rf_setAttrib(out, Rf_install("overlap"), Rf_ScalarReal(suggested_overlap));
-    UNPROTECT(1);
+    Rf_setAttrib(out, PROTECT(Rf_install("overlap")), Rf_ScalarReal(suggested_overlap));
+    UNPROTECT(2);
     return out;
 }

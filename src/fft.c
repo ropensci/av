@@ -283,8 +283,8 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   SEXP out = PROTECT(Rf_allocVector(REALSXP, iter * output_range));
   memcpy(REAL(out), output->dst_dbl, iter * output_range * sizeof(*output->dst_dbl));
   Rf_setAttrib(out, R_DimSymbol, dims);
-  Rf_setAttrib(out, Rf_install("endtime"), Rf_ScalarReal((double) elapsed / AV_TIME_BASE));
-  UNPROTECT(2);
+  Rf_setAttrib(out, PROTECT(Rf_install("endtime")), Rf_ScalarReal((double) elapsed / AV_TIME_BASE));
+  UNPROTECT(3);
   return out;
 }
 
