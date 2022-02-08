@@ -100,8 +100,8 @@ SEXP R_list_muxers(){
     SET_STRING_ELT(desc, i, safe_string(muxer->long_name));
     SET_STRING_ELT(mime, i, safe_string(muxer->mime_type));
     SET_STRING_ELT(extensions, i, safe_string(muxer->extensions));
-    AVCodec *audio_codec = avcodec_find_encoder(muxer->audio_codec);
-    AVCodec *video_codec = avcodec_find_encoder(muxer->video_codec);
+    const AVCodec *audio_codec = avcodec_find_encoder(muxer->audio_codec);
+    const AVCodec *video_codec = avcodec_find_encoder(muxer->video_codec);
     SET_STRING_ELT(audio, i, safe_string(audio_codec ? audio_codec->name : NULL));
     SET_STRING_ELT(video, i, safe_string(video_codec ? video_codec->name : NULL));
     i++;

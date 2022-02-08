@@ -4,6 +4,7 @@
 #include <libavfilter/buffersrc.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
+#include <libavutil/channel_layout.h>
 
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
@@ -32,7 +33,7 @@ static SEXP get_video_info(AVFormatContext *demuxer){
     AVStream *stream = demuxer->streams[i];
     if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
       continue;
-    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if(!codec)
       Rf_error("Failed to find codec");
     AVRational framerate = av_guess_frame_rate(demuxer, stream, NULL);
@@ -63,7 +64,7 @@ static SEXP get_audio_info(AVFormatContext *demuxer){
     AVStream *stream = demuxer->streams[i];
     if(stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
       continue;
-    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if(!codec)
       Rf_error("Failed to find codec");
     SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));

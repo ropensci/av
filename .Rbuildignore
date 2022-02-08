@@ -11,3 +11,4 @@
 ^_pkgdown.yml$
 ^vignettes/articles
 ^configure.log$
+^\.github$

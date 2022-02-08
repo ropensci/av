@@ -1,4 +1,5 @@
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #include <libavcodec/avfft.h>
 #include <libavutil/audio_fifo.h>
 #include <libswresample/swresample.h>
@@ -56,7 +57,7 @@ static void bail_if(int ret, const char * what){
     Rf_errorcall(R_NilValue, "FFMPEG error in '%s': %s", what, av_err2str(ret));
 }
 
-static void bail_if_null(void * ptr, const char * what){
+static void bail_if_null(const void * ptr, const char * what){
   if(!ptr)
     bail_if(-1, what);
 }
@@ -133,7 +134,7 @@ static input_container *open_input(const char *filename){
   /* Try all input streams */
   int si = find_stream_audio(demuxer, filename);
   AVStream *stream = demuxer->streams[si];
-  AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+  const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
   bail_if_null(codec, "avcodec_find_decoder");
   AVCodecContext *decoder = avcodec_alloc_context3(codec);
   bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
