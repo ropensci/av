@@ -373,7 +373,7 @@ static void sync_audio_stream(output_container * output, int64_t pts){
     frame = av_frame_alloc();
   }
   while(force_everything || force_flush ||
-        av_compare_ts(audio_stream->cur_dts, audio_stream->time_base,
+        av_compare_ts(av_stream_get_end_pts(audio_stream), audio_stream->time_base,
                                      pts, output->video_stream->time_base) < 0) {
     int ret = avcodec_receive_packet(output->audio_encoder, pkt);
     if (ret == AVERROR(EAGAIN)){
