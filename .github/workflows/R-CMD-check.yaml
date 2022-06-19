@@ -19,7 +19,7 @@ jobs:
           - {os: macOS-latest,   r: 'release'}
           - {os: windows-latest, r: '3.6'}
           - {os: windows-latest, r: 'release'}
-          - {os: windows-2022,   r: 'devel'}
+          - {os: windows-latest,   r: 'devel'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
           - {os: ubuntu-18.04,   r: 'oldrel-3'}
