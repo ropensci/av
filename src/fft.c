@@ -8,6 +8,10 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+#define NEW_CHANNEL_API
+#endif
+
 enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
 
 extern int total_open_handles;
@@ -139,8 +143,13 @@ static input_container *open_input(const char *filename){
   AVCodecContext *decoder = avcodec_alloc_context3(codec);
   bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
   bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
-  if (!decoder->channel_layout) /* Is this needed ?*/
+#ifdef NEW_CHANNEL_API
+  if (decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+    av_channel_layout_default(&decoder->ch_layout, decoder->ch_layout.nb_channels);
+#else
+  if(!decoder->channel_layout)
     decoder->channel_layout = av_get_default_channel_layout(decoder->channels);
+#endif
   return new_input_container(demuxer, decoder, demuxer->streams[si]);
 }
 
@@ -160,19 +169,38 @@ static double amp_scale(double a, int ascale){
 }
 
 /* https://stackoverflow.com/questions/14989397/how-to-convert-sample-rate-from-av-sample-fmt-fltp-to-av-sample-fmt-s16 */
+#ifdef NEW_CHANNEL_API
+static SwrContext *create_resampler(AVCodecContext *decoder, int64_t sample_rate, AVChannelLayout layout, enum AVSampleFormat fmt){
+  SwrContext *swr = swr_alloc();
+  swr_alloc_set_opts2(&swr, &layout, fmt, sample_rate,
+                                       &decoder->ch_layout, decoder->sample_fmt, decoder->sample_rate, 0, NULL);
+#else
 static SwrContext *create_resampler(AVCodecContext *decoder, int64_t sample_rate, int64_t layout, enum AVSampleFormat fmt){
   SwrContext *swr = swr_alloc_set_opts(NULL, layout, fmt, sample_rate,
     decoder->channel_layout, decoder->sample_fmt, decoder->sample_rate, 0, NULL);
+#endif
   bail_if(swr_init(swr), "swr_init");
   return swr;
 }
 
 static SwrContext *create_resampler_fft(AVCodecContext *decoder, int64_t sample_rate){
+#ifdef NEW_CHANNEL_API
+  AVChannelLayout layout = {0};
+  av_channel_layout_default(&layout, 1);
+  return create_resampler(decoder, sample_rate, layout, AV_SAMPLE_FMT_FLTP);
+#else
   return create_resampler(decoder, sample_rate, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_FLTP);
+#endif
 }
 
 static SwrContext *create_resampler_bin(AVCodecContext *decoder, int64_t sample_rate, int channels){
+#ifdef NEW_CHANNEL_API
+  AVChannelLayout layout = {0};
+  av_channel_layout_default(&layout, channels);
+  return create_resampler(decoder, sample_rate, layout, AV_SAMPLE_FMT_S32);
+#else
   return create_resampler(decoder, sample_rate, av_get_default_channel_layout(channels), AV_SAMPLE_FMT_S32);
+#endif
 }
 
 static float *to_float(SEXP window){
@@ -392,7 +420,11 @@ SEXP R_audio_bin(SEXP audio, SEXP channels, SEXP sample_rate, SEXP start_time, S
   }
   AVCodecContext *decoder = output->input->decoder;
   int output_sample_rate = Rf_length(sample_rate) ? Rf_asInteger(sample_rate) : decoder->sample_rate;
+#ifdef NEW_CHANNEL_API
+  int output_channels = Rf_length(channels) ? Rf_asInteger(channels) : decoder->ch_layout.nb_channels;
+#else
   int output_channels = Rf_length(channels) ? Rf_asInteger(channels) : decoder->channels;
+#endif
   output->channels = output_channels;
   output->swr = create_resampler_bin(output->input->decoder, output_sample_rate, output_channels);
   SEXP out = PROTECT(R_UnwindProtect(calculate_audio_bin, output, close_spectrum_container, output, NULL));

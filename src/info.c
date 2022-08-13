@@ -10,6 +10,10 @@
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+#define NEW_CHANNEL_API
+#endif
+
 static SEXP safe_string(const char *x){
   if(x == NULL)
     return NA_STRING;
@@ -68,14 +72,22 @@ static SEXP get_audio_info(AVFormatContext *demuxer){
     if(!codec)
       Rf_error("Failed to find codec");
     SEXP streamdata = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));
+#ifdef NEW_CHANNEL_API
+    SET_VECTOR_ELT(streamdata, 0, Rf_ScalarInteger(stream->codecpar->ch_layout.nb_channels));
+#else
     SET_VECTOR_ELT(streamdata, 0, Rf_ScalarInteger(stream->codecpar->channels));
+#endif
     SET_VECTOR_ELT(streamdata, 1, Rf_ScalarInteger(stream->codecpar->sample_rate));
     SET_VECTOR_ELT(streamdata, 2, Rf_mkString(codec->name));
     SET_VECTOR_ELT(streamdata, 3, Rf_ScalarInteger(stream->nb_frames ? stream->nb_frames : NA_INTEGER));
     SET_VECTOR_ELT(streamdata, 4, Rf_ScalarInteger(stream->codecpar->bit_rate));
 
     char layout[1024] = "";
+#ifdef NEW_CHANNEL_API
+    av_channel_layout_describe(&stream->codecpar->ch_layout, layout, 1024);
+#else
     av_get_channel_layout_string(layout, 1024, stream->codecpar->channels, stream->codecpar->channel_layout);
+#endif
     SET_VECTOR_ELT(streamdata, 5, safe_string(layout));
     Rf_setAttrib(streamdata, R_NamesSymbol, names);
     UNPROTECT(2);
