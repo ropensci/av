@@ -11,6 +11,10 @@
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+#define NEW_CHANNEL_API
+#endif
+
 int total_open_handles = 0;
 
 typedef struct {
@@ -172,8 +176,13 @@ static input_container *open_audio_input(const char *filename){
   AVCodecContext *decoder = avcodec_alloc_context3(codec);
   bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
   bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
-  if (!decoder->channel_layout) /* Is this needed ?*/
+#ifdef NEW_CHANNEL_API
+  if (decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+    av_channel_layout_default(&decoder->ch_layout, decoder->ch_layout.nb_channels);
+#else
+  if(!decoder->channel_layout)
     decoder->channel_layout = av_get_default_channel_layout(decoder->channels);
+#endif
   return new_input_container(demuxer, decoder, demuxer->streams[si]);
 }
 
@@ -181,14 +190,23 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
 
   /* Create a new filter graph */
   AVFilterGraph *filter_graph = avfilter_graph_alloc();
-
   char input_args[512];
+
+#ifdef NEW_CHANNEL_API
+  char buf[64] = {0};
+  av_channel_layout_describe(&decoder->ch_layout, buf, sizeof(buf));
+  snprintf(input_args, sizeof(input_args),
+           "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s",
+           decoder->time_base.num, decoder->time_base.den, decoder->sample_rate,
+           av_get_sample_fmt_name(decoder->sample_fmt),
+           buf);
+#else
   snprintf(input_args, sizeof(input_args),
            "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
            decoder->time_base.num, decoder->time_base.den, decoder->sample_rate,
            av_get_sample_fmt_name(decoder->sample_fmt),
            decoder->channel_layout);
-
+#endif
   AVFilterContext *buffersrc_ctx = NULL;
   bail_if(avfilter_graph_create_filter(&buffersrc_ctx, avfilter_get_by_name("abuffer"), "audiosrc",
                                        input_args, NULL, filter_graph), "avfilter_graph_create_filter (audio/src)");
@@ -202,9 +220,15 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
   bail_if(av_opt_set_bin(buffersink_ctx, "sample_fmts",
                          (uint8_t*)&encoder->sample_fmt, sizeof(encoder->sample_fmt),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (sample_fmts)");
+#ifdef NEW_CHANNEL_API
+  av_channel_layout_describe(&encoder->ch_layout, buf, sizeof(buf));
+  bail_if(av_opt_set(buffersink_ctx, "ch_layouts",
+                   buf, AV_OPT_SEARCH_CHILDREN), "av_opt_set (ch_layouts)");
+#else
   bail_if(av_opt_set_bin(buffersink_ctx, "channel_layouts",
                          (uint8_t*)&encoder->channel_layout, sizeof(encoder->channel_layout),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (channel_layouts)");
+#endif
   bail_if(av_opt_set_bin(buffersink_ctx, "sample_rates",
                          (uint8_t*)&encoder->sample_rate, sizeof(encoder->sample_rate),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (sample_rates)");
@@ -318,8 +342,12 @@ static void add_audio_output(output_container *container){
   bail_if_null(output_codec, "Failed to find default audio codec");
   AVCodecContext *audio_encoder = avcodec_alloc_context3(output_codec);
   bail_if_null(audio_encoder, "avcodec_alloc_context3 (audio)");
+#ifdef NEW_CHANNEL_API
+  av_channel_layout_default(&audio_encoder->ch_layout, container->channels ? container->channels : audio_decoder->ch_layout.nb_channels);
+#else
   audio_encoder->channels = container->channels ? container->channels : audio_decoder->channels;
   audio_encoder->channel_layout = av_get_default_channel_layout(audio_encoder->channels);
+#endif
   audio_encoder->sample_rate = container->sample_rate ? container->sample_rate : audio_decoder->sample_rate;
   audio_encoder->sample_fmt = output_codec->sample_fmts[0];
   audio_encoder->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
