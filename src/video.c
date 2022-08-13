@@ -190,10 +190,10 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
 
   /* Create a new filter graph */
   AVFilterGraph *filter_graph = avfilter_graph_alloc();
-  char buf[64] = {0};
   char input_args[512];
 
 #ifdef NEW_CHANNEL_API
+  char buf[64] = {0};
   av_channel_layout_describe(&decoder->ch_layout, buf, sizeof(buf));
   snprintf(input_args, sizeof(input_args),
            "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s",
