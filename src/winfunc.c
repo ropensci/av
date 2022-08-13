@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include "libavutil/avassert.h"
+#include "libavutil/common.h"
 
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
