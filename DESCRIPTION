@@ -14,7 +14,7 @@ URL: https://docs.ropensci.org/av/ (website),
     https://github.com/ropensci/av (devel)
 BugReports: https://github.com/ropensci/av/issues
 Encoding: UTF-8
-RoxygenNote: 7.1.0
+RoxygenNote: 7.2.1
 Roxygen: list(markdown = TRUE)
 SystemRequirements: FFmpeg (>= 3.2); with at least libx264 and lame (mp3) drivers.
 	Debian/Ubuntu: libavfilter-dev, Fedora/CentOS: ffmpeg-devel (via https://rpmfusion.org), 
