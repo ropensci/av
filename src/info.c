@@ -9,10 +9,8 @@
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
+#include "compat.h"
 
-#if LIBAVCODEC_VERSION_MAJOR >= 59
-#define NEW_CHANNEL_API
-#endif
 
 static SEXP safe_string(const char *x){
   if(x == NULL)

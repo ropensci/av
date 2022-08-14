@@ -7,10 +7,7 @@
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
-
-#if LIBAVCODEC_VERSION_MAJOR >= 59
-#define NEW_CHANNEL_API
-#endif
+#include "compat.h"
 
 enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
 

@@ -10,10 +10,7 @@
 #define PTS_EVERYTHING 1e18
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
-
-#if LIBAVCODEC_VERSION_MAJOR >= 59
-#define NEW_CHANNEL_API
-#endif
+#include "compat.h"
 
 int total_open_handles = 0;
 
