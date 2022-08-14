@@ -10,7 +10,7 @@
 #define PTS_EVERYTHING 1e18
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>
-#include "compat.h"
+#include "avcompat.h"
 
 int total_open_handles = 0;
 

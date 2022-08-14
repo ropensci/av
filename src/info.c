@@ -9,7 +9,7 @@
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
-#include "compat.h"
+#include "avcompat.h"
 
 
 static SEXP safe_string(const char *x){
