@@ -1,4 +1,7 @@
-0.7.1
+0.8.1
+  - Better version check for new new AVChannelLayout (fixes build on ffmpeg 5.0)
+
+0.8.0
   - Fix build with ffmpeg 5.1
   - Switch to new AVChannelLayout APIs for ffmpeg 5.1
 
