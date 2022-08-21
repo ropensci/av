@@ -2,9 +2,6 @@
 
 > R Bindings to FFmpeg
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Build Status](https://travis-ci.org/ropensci/av.svg?branch=master)](https://travis-ci.org/ropensci/av)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ropensci/av?branch=master)](https://ci.appveyor.com/project/jeroen/av)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/av)](https://cran.r-project.org/package=av)
 
 ## Installation
