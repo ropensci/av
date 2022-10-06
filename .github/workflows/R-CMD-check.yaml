@@ -22,7 +22,7 @@ jobs:
           - {os: windows-latest,   r: 'devel'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
-          - {os: ubuntu-18.04,   r: 'oldrel-3'}
+          - {os: ubuntu-20.04,   r: 'oldrel-3'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
