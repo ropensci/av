@@ -1,3 +1,6 @@
+0.8.2
+  - Fix Wstrict-prototype warnings
+
 0.8.1
   - Better version check for new new AVChannelLayout (fixes build on ffmpeg 5.0)
 
