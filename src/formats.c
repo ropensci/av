@@ -25,7 +25,7 @@ static SEXP safe_string(const char *x){
 #define iterate_over_demuxer(x) (x = av_demuxer_iterate(&iter))
 #endif
 
-SEXP R_list_codecs(){
+SEXP R_list_codecs(void){
   const AVCodec *codec = NULL;
   void * iter = NULL;
   int count = 0;
@@ -57,7 +57,7 @@ SEXP R_list_codecs(){
   return out;
 }
 
-SEXP R_list_filters(){
+SEXP R_list_filters(void){
   const AVFilter *filter = NULL;
   void * iter = NULL;
   int count = 0;
@@ -79,7 +79,7 @@ SEXP R_list_filters(){
   return out;
 }
 
-SEXP R_list_muxers(){
+SEXP R_list_muxers(void){
   const AVOutputFormat *muxer = NULL;
   void * iter = NULL;
   int count = 0;
@@ -111,7 +111,7 @@ SEXP R_list_muxers(){
   return out;
 }
 
-SEXP R_list_demuxers(){
+SEXP R_list_demuxers(void){
   const AVInputFormat *muxer = NULL;
   void * iter = NULL;
   int count = 0;

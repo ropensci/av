@@ -35,11 +35,11 @@ attribute_visible void R_init_av(DllInfo *dll) {
   extern SEXP R_convert_audio(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_encode_video(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
   extern SEXP R_generate_window(SEXP, SEXP);
-  extern SEXP R_get_open_handles();
-  extern SEXP R_list_codecs();
-  extern SEXP R_list_demuxers();
-  extern SEXP R_list_filters();
-  extern SEXP R_list_muxers();
+  extern SEXP R_get_open_handles(void);
+  extern SEXP R_list_codecs(void);
+  extern SEXP R_list_demuxers(void);
+  extern SEXP R_list_filters(void);
+  extern SEXP R_list_muxers(void);
   extern SEXP R_log_level(SEXP);
   extern SEXP R_video_info(SEXP);
 

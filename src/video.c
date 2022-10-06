@@ -667,6 +667,6 @@ SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_format, SEXP out_channe
   return out_file;
 }
 
-SEXP R_get_open_handles(){
+SEXP R_get_open_handles(void){
   return Rf_ScalarInteger(total_open_handles);
 }
