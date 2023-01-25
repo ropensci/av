@@ -320,8 +320,8 @@ static SEXP run_bin(spectrum_container *output){
   AVCodecContext *decoder = input->decoder;
   int max_frame_size = av_get_audio_frame_duration(decoder, 0);
   if(max_frame_size < 1){
-    REprintf("Unknown frame size for input audio format: %s\n", decoder->codec->name);
-    max_frame_size = 50000; /* Very high fallback, should hopefully never happen */
+    //REprintf("Unknown frame size for input audio format: %s\n", decoder->codec->name);
+    max_frame_size = 50000; /* Very high fallback, should rarely happen */
   }
   av_samples_alloc(&output->buf, NULL, output->channels, max_frame_size, AV_SAMPLE_FMT_S32, 0);
   int64_t elapsed = 0;
