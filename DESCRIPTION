@@ -10,9 +10,8 @@ Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for workin
     'spectrograms', and converting between countless audio / video formats. This package 
     interfaces directly to the C API and does not require any command line utilities.
 License: MIT + file LICENSE
-URL: https://docs.ropensci.org/av/ (website), 
-    https://github.com/ropensci/av (devel),
-    https://ropensci.r-universe.dev/av 
+URL: https://ropensci.r-universe.dev/av,
+    https://docs.ropensci.org/av/
 BugReports: https://github.com/ropensci/av/issues
 Encoding: UTF-8
 RoxygenNote: 7.2.1
