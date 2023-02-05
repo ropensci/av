@@ -1,5 +1,6 @@
 0.8.3
   - Remove a harmless warning
+  - Windows: update to ffmpeg 4.4.3
 
 0.8.2
   - Fix Wstrict-prototype warnings
