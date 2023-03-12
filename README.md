@@ -18,16 +18,16 @@ On Debian/Ubuntu you first need to install [libavfilter-dev](https://packages.de
 sudo apt-get install libavfilter-dev
 ```
 
-And on Fedora / CentOS / RHEL you have two options. Either install `ffmpeg-free-devel` (on CentOS enable EPEL first)
+And on Fedora / CentOS-9 / RHEL-9 you have two options. Either install `ffmpeg-free-devel` (on CentOS/RHEL 9, enable EPEL first)
 
 
 ```
-# On CentOS/RHEL first run: yum install -y epel-release
+# On CentOS/RHEL 9 first run: yum install -y epel-release
 yum install ffmpeg-free-devel
 ```
 
 
-You can also install a more extensive version `ffmpeg-devel` from [rpmfusion](https://rpmfusion.org/Configuration). See [instructions here](https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm) on how to enable rpmfusion via the command line.
+Alternatively you can also install a more extensive version `ffmpeg-devel` from [rpmfusion](https://rpmfusion.org/Configuration). This version is also available for CentOS/RHEL 7 and 8. See [instructions here](https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm) on how to enable rpmfusion via the command line.
 
 ```
 # Need to enable rpmfusion repository first via link above!
