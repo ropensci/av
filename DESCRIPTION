@@ -17,8 +17,8 @@ Encoding: UTF-8
 RoxygenNote: 7.2.1
 Roxygen: list(markdown = TRUE)
 SystemRequirements: FFmpeg (>= 3.2); with at least libx264 and lame (mp3) drivers.
-	Debian/Ubuntu: libavfilter-dev, Fedora/CentOS: ffmpeg-devel (via https://rpmfusion.org), 
-	MacOS Homebrew: ffmpeg.
+	MacOS Homebrew: ffmpeg. Debian/Ubuntu: libavfilter-dev. Fedora/CentOS: either 
+	ffmpeg-free-devel or (via https://rpmfusion.org) ffmpeg-devel.
 Depends: R (>= 3.5)
 Imports: graphics
 Config/pkgdown: seewave, ggplot2, phonTools, signal, tuneR
