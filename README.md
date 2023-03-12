@@ -36,7 +36,7 @@ sudo yum install ffmpeg-devel
 
 ## Demo Video
 
-Generate a demo video with some random plots and free [demo music](https://freemusicarchive.org/music/Synapsis/~/Wonderland):
+Generate a demo video with some random plots and free [demo music](https://freemusicarchive.org/music/Synapsis/Goan_Psynapsia/04_Wonderland/):
 
 ```r
 av::av_demo()
