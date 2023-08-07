@@ -446,7 +446,7 @@ static void sync_audio_stream(output_container * output, int64_t pts){
       break;
     } else {
       pkt->stream_index = audio_stream->index;
-      output->end_pts = pkt->pts;
+      output->end_pts = pkt->pts + pkt->duration; //cf: av_stream_get_end_pts
       av_packet_rescale_ts(pkt, output->audio_encoder->time_base, audio_stream->time_base);
       bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
       int64_t elapsed_pts = av_rescale_q(output->end_pts, audio_stream->time_base, AV_TIME_BASE_Q);
