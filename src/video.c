@@ -42,6 +42,7 @@ typedef struct {
   const char * output_file;
   const char * format_name;
   double duration;
+  int64_t end_pts;
   int64_t max_pts;
   int64_t count;
   int progress_pct;
@@ -398,7 +399,7 @@ static void sync_audio_stream(output_container * output, int64_t pts){
     frame = av_frame_alloc();
   }
   while(force_everything || force_flush ||
-        av_compare_ts(av_stream_get_end_pts(audio_stream), audio_stream->time_base,
+        av_compare_ts(output->end_pts, audio_stream->time_base,
                                      pts, output->video_stream->time_base) < 0) {
     int ret = avcodec_receive_packet(output->audio_encoder, pkt);
     if (ret == AVERROR(EAGAIN)){
@@ -445,9 +446,10 @@ static void sync_audio_stream(output_container * output, int64_t pts){
       break;
     } else {
       pkt->stream_index = audio_stream->index;
+      output->end_pts = pkt->pts;
       av_packet_rescale_ts(pkt, output->audio_encoder->time_base, audio_stream->time_base);
       bail_if(av_interleaved_write_frame(output->muxer, pkt), "av_interleaved_write_frame");
-      int64_t elapsed_pts = av_rescale_q(av_stream_get_end_pts(audio_stream), audio_stream->time_base, AV_TIME_BASE_Q);
+      int64_t elapsed_pts = av_rescale_q(output->end_pts, audio_stream->time_base, AV_TIME_BASE_Q);
       if(force_everything){
         av_log(NULL, AV_LOG_INFO, "\rAdding audio frame %d at timestamp %.2fsec",
                (int) audio_stream->nb_frames + 1, (double) elapsed_pts / AV_TIME_BASE);
