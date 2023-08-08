@@ -1,3 +1,7 @@
+0.8.4
+  - Remove a deprecated function
+  - MacOS: update to ffmpeg 6.0
+
 0.8.3
   - Remove a harmless warning
   - Windows: update to ffmpeg 4.4.3
