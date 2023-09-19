@@ -1,9 +1,16 @@
-# Build against static libraries from rwinlib
-VERSION <- commandArgs(TRUE)
-if(!file.exists(sprintf("../windows/ffmpeg-%s/include/libavfilter/version.h", VERSION))){
-  if(getRversion() < "3.3.0") setInternet2()
-  download.file(sprintf("https://github.com/rwinlib/ffmpeg/archive/v%s.zip", VERSION), "lib.zip", quiet = TRUE)
+if(!file.exists("../windows/ffmpeg/include/libavfilter/avfilter.h")){
+  unlink("../windows", recursive = TRUE)
+  url <- if(grepl("aarch", R.version$platform)){
+    "https://github.com/r-windows/bundles/releases/download/ffmpeg-6.0/ffmpeg-6.0-clang-aarch64.tar.xz"
+  } else if(getRversion() >= "4.2") {
+    "https://github.com/r-windows/bundles/releases/download/ffmpeg-6.0/ffmpeg-6.0-ucrt-x86_64.tar.xz"
+  } else {
+    "https://github.com/rwinlib/ffmpeg/archive/v4.4.3.tar.gz"
+  }
+  download.file(url, basename(url), quiet = TRUE)
   dir.create("../windows", showWarnings = FALSE)
-  unzip("lib.zip", exdir = "../windows")
-  unlink("lib.zip")
+  untar(basename(url), exdir = "../windows", tar = 'internal')
+  unlink(basename(url))
+  setwd("../windows")
+  file.rename(list.files(), 'ffmpeg')
 }

@@ -1,3 +1,6 @@
+0.8.5
+  - Windows: update to ffmpeg 6.0
+
 0.8.4
   - Remove a deprecated function
   - MacOS: update to ffmpeg 6.0

@@ -1,14 +1,7 @@
-VERSION = 4.4.3
-
-# Need older build for R < 4.0
-ifeq ($(R_COMPILED_BY),gcc 4.9.3)
-VERSION = 4.2.2
-endif
-
-RWINLIB = ../windows/ffmpeg-$(VERSION)
+RWINLIB = ../windows/ffmpeg
 PKG_CPPFLAGS = -I$(RWINLIB)/include -D__USE_MINGW_ANSI_STDIO=1
 PKG_LIBS = -L$(RWINLIB)/lib${subst gcc,,$(COMPILED_BY)}$(R_ARCH) \
-	-L$(RWINLIB)/lib$(R_ARCH)\
+	-L$(RWINLIB)/lib \
 	-lavfilter -lswscale -lpostproc -lavformat -lavcodec -lswresample -lavutil \
 	-lvorbis -lvorbisenc -logg -lvpx \
 	-lbz2 -lsecur32 -lws2_32 -liconv -lz -lmp3lame -lx264 \
@@ -20,4 +13,4 @@ clean:
 	rm -f $(SHLIB) $(OBJECTS)
 
 winlibs:
-	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R" $(VERSION)
+	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R"
