@@ -5,7 +5,7 @@ PKG_LIBS = -L$(RWINLIB)/lib${subst gcc,,$(COMPILED_BY)}$(R_ARCH) \
 	-lavfilter -lswscale -lpostproc -lavformat -lavcodec -lswresample -lavutil \
 	-lvorbis -lvorbisenc -logg -lvpx \
 	-lbz2 -lsecur32 -lws2_32 -liconv -lz -lmp3lame -lx264 \
-	-lxvidcore -lole32 -lm -luser32 -lbcrypt -lmfplat -lmfuuid -lstrmiids
+	-lxvidcore -pthread -lole32 -lm -luser32 -lbcrypt -lmfplat -lmfuuid -lstrmiids
 
 all: winlibs clean
 
