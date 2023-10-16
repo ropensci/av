@@ -1,3 +1,6 @@
+0.8.6
+  - Fix pthread linking on Windows
+
 0.8.5
   - Windows: update to ffmpeg 6.0
 
