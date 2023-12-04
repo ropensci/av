@@ -3,11 +3,15 @@
 #include <libavcodec/avfft.h>
 #include <libavutil/audio_fifo.h>
 #include <libswresample/swresample.h>
+#include "avcompat.h"
+
+#ifdef NEW_FFT_TX_API
+#include <libavutil/tx.h>
+#endif
 
 #define R_NO_REMAP
 #define STRICT_R_HEADERS
 #include <Rinternals.h>
-#include "avcompat.h"
 
 enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
 
@@ -23,7 +27,12 @@ typedef struct {
 typedef struct {
   uint8_t *buf;
   SwrContext *swr;
+#ifdef NEW_FFT_TX_API
+  AVTXContext *tx_ctx;
+  av_tx_fn tx_fun;
+#else
   FFTContext *fft;
+#endif
   FFTComplex *fft_data;
   AVAudioFifo *fifo;
   input_container *input;
@@ -88,8 +97,13 @@ static void close_spectrum_container(void *ptr, Rboolean jump){
   spectrum_container *s = ptr;
   if(s->input)
     close_input(&s->input);
+#ifdef NEW_FFT_TX_API
+  if(s->tx_ctx)
+    av_tx_uninit(&s->tx_ctx);
+#else
   if(s->fft)
     av_fft_end(s->fft);
+#endif
   if(s->fifo)
     av_audio_fifo_free(s->fifo);
   if(s->swr)
@@ -228,7 +242,12 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   int hop_size = window_size * (1 - overlap);
   int output_range = window_size / 2;
   int iter = 0;
+#ifdef NEW_FFT_TX_API
+  float scale = 1.0f;
+  av_tx_init(&output->tx_ctx, &output->tx_fun, AV_TX_FLOAT_FFT, 0,  window_size, &scale, AV_TX_INPLACE);
+#else
   output->fft = av_fft_init(fft_bits, 0);
+#endif
   output->fft_data = av_calloc(window_size, sizeof(*output->fft_data));
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
@@ -289,8 +308,12 @@ static SEXP run_fft(spectrum_container *output, int ascale){
         fft_channel[n].re = 0;
         fft_channel[n].im = 0;
       }
+#ifdef NEW_FFT_TX_API
+      output->tx_fun(output->tx_ctx, fft_channel, fft_channel, sizeof(AVComplexFloat));
+#else
       av_fft_permute(output->fft, fft_channel);
       av_fft_calc(output->fft, fft_channel);
+#endif
       output->dst_dbl = av_realloc(output->dst_dbl, round_up((iter+1) * output_range * sizeof(*output->dst_dbl)));
       for (int n = 0; n < output_range; n++) {
         FFTSample re = fft_channel[n].re;
