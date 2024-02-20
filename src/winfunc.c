@@ -4,8 +4,6 @@
 #include "libavutil/avassert.h"
 #include "libavutil/common.h"
 
-#define R_NO_REMAP
-#define STRICT_R_HEADERS
 #include <Rinternals.h>
 
 enum WindowFunc     { WFUNC_RECT, WFUNC_HANNING, WFUNC_HAMMING, WFUNC_BLACKMAN,

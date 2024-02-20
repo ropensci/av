@@ -1,5 +1,5 @@
 PKG_CFLAGS = $(C_VISIBILITY)
-PKG_CPPFLAGS = @cflags@
+PKG_CPPFLAGS = @cflags@ -DR_NO_REMAP -DSTRICT_R_HEADERS
 PKG_LIBS = @libs@
 
 all: clean

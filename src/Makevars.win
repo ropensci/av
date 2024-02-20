@@ -1,5 +1,5 @@
 RWINLIB = ../windows/ffmpeg
-PKG_CPPFLAGS = -I$(RWINLIB)/include -D__USE_MINGW_ANSI_STDIO=1
+PKG_CPPFLAGS = -I$(RWINLIB)/include -D__USE_MINGW_ANSI_STDIO=1 -DR_NO_REMAP -DSTRICT_R_HEADERS
 PKG_LIBS = -L$(RWINLIB)/lib${subst gcc,,$(COMPILED_BY)}$(R_ARCH) \
 	-L$(RWINLIB)/lib \
 	-lavfilter -lswscale -lpostproc -lavformat -lavcodec -lswresample -lavutil \

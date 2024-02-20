@@ -5,8 +5,6 @@
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 
-#define R_NO_REMAP
-#define STRICT_R_HEADERS
 #define PTS_EVERYTHING 1e18
 #define VIDEO_TIME_BASE 1000
 #include <Rinternals.h>

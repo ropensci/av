@@ -6,8 +6,6 @@
 #include <libavutil/pixdesc.h>
 #include <libavutil/channel_layout.h>
 
-#define R_NO_REMAP
-#define STRICT_R_HEADERS
 #include <Rinternals.h>
 #include "avcompat.h"
 
