@@ -14,6 +14,10 @@ png_path <- file.path(tempdir(), "frame%03d.png")
 png_files <- sprintf(png_path, 1:n)
 wonderland <- system.file('samples/Synapsis-Wonderland.mp3', package='av', mustWork = TRUE)
 
+# If libx264 is available, it is usually the default.
+# Note that it is not available for libavfilter-free-devel in Fedora
+has_libx264 <- "libx264" %in% av_muxers()$video
+
 test_that("convert images into video formats", {
   png(png_path, width = width, height = height, res = 72 * q)
   par(ask = FALSE)
@@ -29,7 +33,9 @@ test_that("convert images into video formats", {
 
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
-    expect_equal(info$video$codec, switch(ext, gif='gif', flv='flv', 'h264'))
+    if(has_libx264){
+      expect_equal(info$video$codec, switch(ext, gif='gif', flv='flv', 'h264'))
+    }
     expect_equal(info$video$framerate, framerate)
 
     # Gif doesn't have video metadata (duration)
@@ -58,7 +64,9 @@ test_that("audio sampling works", {
 
     expect_equal(info$video$width, width)
     expect_equal(info$video$height, height)
-    expect_equal(info$video$codec, switch(ext, gif='gif', flv='flv', 'h264'))
+    if(has_libx264){
+      expect_equal(info$video$codec, switch(ext, flv='flv', 'h264'))
+    }
     expect_equal(info$video$framerate, framerate)
 
     expect_equal(info$audio$channels, 2)
