@@ -5,16 +5,23 @@
 #' track. If input contains video files, this effectively combines and converts them
 #' to the specified output format.
 #'
-#' The target container format is automatically determined from the file extension of
-#' the output file, for example `mp4`, `mkv`, `mov`, or `flv`. Most systems also
-#' support `gif` output, but the compression~quality for gif is quite bad.
-#' The [gifski](https://cran.r-project.org/package=gifski) package is better suited
-#' for generating animated gif files.
+#' The target container format and audio/video codes are automatically determined from
+#' the file extension of the output file, for example `mp4`, `mkv`, `mov`, or `flv`.
+#' For video output, most systems also support `gif` output, but the compression~quality
+#' for gif is really bad. The [gifski](https://cran.r-project.org/package=gifski) package
+#' is better suited for generating animated gif files. Still using a proper video format
+#' is results in much better quality.
 #'
 #' It is recommended to use let ffmpeg choose the suitable codec for a given container
 #' format. Most video formats default to the `libx264` video codec which has excellent
 #' compression and works on all modern [browsers](https://caniuse.com/#search=h264),
 #' operating systems, and digital TVs.
+#'
+#' To convert from/to raw PCM audio, use file extensions `".ub"` or `".sb"` for 8bit
+#' unsigned or signed respectively, or `".uw"` or `".sw"` for 16-bit, see `extensions`
+#' in [av_muxers()]. Alternatively can also convert to other raw audio PCM by setting
+#' for example `format = "u16le"` (i.e. unsigned 16-bit little-endian) or another option
+#' from the `name` column in [av_muxers()].
 #'
 #' It is safe to interrupt the encoding process by pressing CTRL+C, or via [setTimeLimit].
 #' When the encoding is interrupted, the output stream is properly finalized and all open

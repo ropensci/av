@@ -74,16 +74,23 @@ track. If input contains video files, this effectively combines and converts the
 to the specified output format.
 }
 \details{
-The target container format is automatically determined from the file extension of
-the output file, for example \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}. Most systems also
-support \code{gif} output, but the compression~quality for gif is quite bad.
-The \href{https://cran.r-project.org/package=gifski}{gifski} package is better suited
-for generating animated gif files.
+The target container format and audio/video codes are automatically determined from
+the file extension of the output file, for example \code{mp4}, \code{mkv}, \code{mov}, or \code{flv}.
+For video output, most systems also support \code{gif} output, but the compression~quality
+for gif is really bad. The \href{https://cran.r-project.org/package=gifski}{gifski} package
+is better suited for generating animated gif files. Still using a proper video format
+is results in much better quality.
 
 It is recommended to use let ffmpeg choose the suitable codec for a given container
 format. Most video formats default to the \code{libx264} video codec which has excellent
 compression and works on all modern \href{https://caniuse.com/#search=h264}{browsers},
 operating systems, and digital TVs.
+
+To convert from/to raw PCM audio, use file extensions \code{".ub"} or \code{".sb"} for 8bit
+unsigned or signed respectively, or \code{".uw"} or \code{".sw"} for 16-bit, see \code{extensions}
+in \code{\link[=av_muxers]{av_muxers()}}. Alternatively can also convert to other raw audio PCM by setting
+for example \code{format = "u16le"} (i.e. unsigned 16-bit little-endian) or another option
+from the \code{name} column in \code{\link[=av_muxers]{av_muxers()}}.
 
 It is safe to interrupt the encoding process by pressing CTRL+C, or via \link{setTimeLimit}.
 When the encoding is interrupted, the output stream is properly finalized and all open
