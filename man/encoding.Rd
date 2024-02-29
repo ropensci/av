@@ -55,7 +55,7 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 
 \item{video}{input video file with optionally also an audio track}
 
-\item{format}{a valid format name from the list of \code{av_muxers()}. Default
+\item{format}{a valid output format name from the list of \code{av_muxers()}. Default
 \code{NULL} tries to guess a format from the file extension.}
 
 \item{channels}{number of output channels. Default \code{NULL} is to match input}

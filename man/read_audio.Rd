@@ -3,6 +3,7 @@
 \name{read_audio_fft}
 \alias{read_audio_fft}
 \alias{read_audio_bin}
+\alias{write_audio_bin}
 \title{Read audio binary and frequency data}
 \usage{
 read_audio_fft(
@@ -21,6 +22,14 @@ read_audio_bin(
   start_time = NULL,
   end_time = NULL
 )
+
+write_audio_bin(
+  pcm_data,
+  pcm_channels = 1,
+  pcm_format = "s32le",
+  output = "output.mp3",
+  ...
+)
 }
 \arguments{
 \item{audio}{path to the input sound or video file containing the audio stream}
@@ -37,6 +46,17 @@ rate from the input file.}
 \item{start_time, end_time}{position (in seconds) to cut input stream to be processed.}
 
 \item{channels}{number of output channels, set to 1 to convert to mono sound}
+
+\item{pcm_data}{integer vector as returned by \link{read_audio_bin}}
+
+\item{pcm_channels}{number of channels in the data. Use the same value as you
+entered in \link{read_audio_bin}.}
+
+\item{pcm_format}{this is always \code{s32le} (signed 32-bit integer) for now}
+
+\item{output}{passed to \link{av_audio_convert}}
+
+\item{...}{other paramters for \link{av_audio_convert}}
 }
 \description{
 Reads raw audio data from any common audio or video format. Use \link{read_audio_bin} to
