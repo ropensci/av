@@ -26,6 +26,7 @@ av_audio_convert(
   format = NULL,
   channels = NULL,
   sample_rate = NULL,
+  bit_rate = NULL,
   start_time = NULL,
   total_time = NULL,
   verbose = TRUE
@@ -61,6 +62,8 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 \item{channels}{number of output channels. Default \code{NULL} is to match input}
 
 \item{sample_rate}{output sampling rate. Default \code{NULL} is to match input}
+
+\item{bit_rate}{output bitrate (quality). A common value is 192000.}
 
 \item{start_time}{number greater than 0, seeks in the input file to position.}
 

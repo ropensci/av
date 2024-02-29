@@ -25,7 +25,7 @@ read_audio_bin(
 
 write_audio_bin(
   pcm_data,
-  pcm_channels = 1,
+  pcm_channels = 1L,
   pcm_format = "s32le",
   output = "output.mp3",
   ...

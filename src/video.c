@@ -46,6 +46,7 @@ typedef struct {
   int progress_pct;
   int channels;
   int sample_rate;
+  int bit_rate;
   SEXP in_files;
 } output_container;
 
@@ -164,8 +165,8 @@ static input_container *open_audio_input(SEXP audio){
   const char *fmt = NULL;
   int channels = 0;
   if(Rf_inherits(audio, "pcm")){
-    fmt = CHAR(STRING_ELT(Rf_getAttrib(audio, Rf_install("fmt")), 0));
-    channels = INTEGER(Rf_getAttrib(audio, Rf_install("channels")))[0];
+    fmt = CHAR(Rf_asChar(Rf_getAttrib(audio, Rf_install("fmt"))));
+    channels = Rf_asInteger(Rf_getAttrib(audio, Rf_install("channels")));
   }
   AVFormatContext *demuxer = NULL;
   const AVInputFormat *pcm_format = fmt ? av_find_input_format(fmt) : NULL;
@@ -357,6 +358,7 @@ static void add_audio_output(output_container *container){
   audio_encoder->channel_layout = av_get_default_channel_layout(audio_encoder->channels);
 #endif
   audio_encoder->sample_rate = container->sample_rate ? container->sample_rate : audio_decoder->sample_rate;
+  audio_encoder->bit_rate = container->bit_rate ? container->bit_rate : audio_decoder->bit_rate;
   audio_encoder->sample_fmt = output_codec->sample_fmts[0];
   audio_encoder->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
@@ -660,12 +662,14 @@ static SEXP encode_audio_input(void *ptr){
 }
 
 SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_format, SEXP out_channels,
-                     SEXP sample_rate, SEXP start_pos, SEXP max_len){
+                     SEXP sample_rate, SEXP bit_rate, SEXP start_pos, SEXP max_len){
   output_container *output = av_mallocz(sizeof(output_container));
   if(Rf_length(out_channels))
     output->channels = Rf_asInteger(out_channels);
   if(Rf_length(sample_rate))
     output->sample_rate = Rf_asInteger(sample_rate);
+  if(Rf_length(bit_rate))
+    output->bit_rate = Rf_asInteger(bit_rate);
   if(Rf_length(out_format))
     output->format_name = CHAR(STRING_ELT(out_format, 0));
   output->audio_input = open_audio_input(audio);
