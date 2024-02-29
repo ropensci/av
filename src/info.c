@@ -53,13 +53,14 @@ static SEXP get_video_info(AVFormatContext *demuxer){
 }
 
 static SEXP get_audio_info(AVFormatContext *demuxer){
-  SEXP names = PROTECT(Rf_allocVector(STRSXP, 6));
+  SEXP names = PROTECT(Rf_allocVector(STRSXP, 7));
   SET_STRING_ELT(names, 0, Rf_mkChar("channels"));
   SET_STRING_ELT(names, 1, Rf_mkChar("sample_rate"));
   SET_STRING_ELT(names, 2, Rf_mkChar("codec"));
   SET_STRING_ELT(names, 3, Rf_mkChar("frames"));
   SET_STRING_ELT(names, 4, Rf_mkChar("bitrate"));
   SET_STRING_ELT(names, 5, Rf_mkChar("layout"));
+  SET_STRING_ELT(names, 6, Rf_mkChar("sample_fmt"));
   for (int i = 0; i < demuxer->nb_streams; i++) {
     AVStream *stream = demuxer->streams[i];
     if(stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
@@ -74,7 +75,7 @@ static SEXP get_audio_info(AVFormatContext *demuxer){
     SET_VECTOR_ELT(streamdata, 0, Rf_ScalarInteger(stream->codecpar->channels));
 #endif
     SET_VECTOR_ELT(streamdata, 1, Rf_ScalarInteger(stream->codecpar->sample_rate));
-    SET_VECTOR_ELT(streamdata, 2, Rf_mkString(codec->name));
+    SET_VECTOR_ELT(streamdata, 2, safe_string(codec->name));
     SET_VECTOR_ELT(streamdata, 3, Rf_ScalarInteger(stream->nb_frames ? stream->nb_frames : NA_INTEGER));
     SET_VECTOR_ELT(streamdata, 4, Rf_ScalarInteger(stream->codecpar->bit_rate));
 
@@ -85,6 +86,7 @@ static SEXP get_audio_info(AVFormatContext *demuxer){
     av_get_channel_layout_string(layout, 1024, stream->codecpar->channels, stream->codecpar->channel_layout);
 #endif
     SET_VECTOR_ELT(streamdata, 5, safe_string(layout));
+    SET_VECTOR_ELT(streamdata, 6, safe_string(av_get_sample_fmt_name(stream->codecpar->format)));
     Rf_setAttrib(streamdata, R_NamesSymbol, names);
     UNPROTECT(2);
     return streamdata;
