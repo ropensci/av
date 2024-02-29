@@ -87,7 +87,7 @@ av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
 #' @useDynLib av R_convert_audio
 #' @param channels number of output channels. Default `NULL` is to match input
 #' @param sample_rate output sampling rate. Default `NULL` is to match input
-#' @param format a valid format name from the list of `av_muxers()`. Default
+#' @param format a valid output format name from the list of `av_muxers()`. Default
 #' `NULL` tries to guess a format from the file extension.
 #' @param start_time number greater than 0, seeks in the input file to position.
 #' @param total_time approximate number of seconds at which to limit the duration
@@ -96,7 +96,8 @@ av_audio_convert <- function(audio, output = 'output.mp3', format = NULL,
                              channels = NULL, sample_rate = NULL, start_time = NULL,
                              total_time = NULL, verbose = TRUE){
   stopifnot(length(audio) > 0)
-  audio <- normalizePath(audio, mustWork = TRUE)
+  input <- normalizePath(audio, mustWork = TRUE)
+  attributes(input) <- attributes(audio)
   stopifnot(length(output) == 1)
   output <- normalizePath(output, mustWork = FALSE)
   stopifnot(file.exists(dirname(output)))
@@ -114,5 +115,5 @@ av_audio_convert <- function(audio, output = 'output.mp3', format = NULL,
   old_log_level <- av_log_level()
   on.exit(av_log_level(old_log_level), add = TRUE)
   av_log_level(verbose)
-  .Call(R_convert_audio, audio, output, format, channels, sample_rate, start_time, total_time)
+  .Call(R_convert_audio, input, output, format, channels, sample_rate, start_time, total_time)
 }

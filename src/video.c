@@ -159,9 +159,17 @@ static int find_stream_audio(AVFormatContext *demuxer, const char *file){
   return out;
 }
 
-static input_container *open_audio_input(const char *filename){
+static input_container *open_audio_input(SEXP audio){
+  const char *filename = CHAR(STRING_ELT(audio, 0));
+  const char *fmt = NULL;
+  int channels = 0;
+  if(Rf_inherits(audio, "pcm")){
+    fmt = CHAR(STRING_ELT(Rf_getAttrib(audio, Rf_install("fmt")), 0));
+    channels = INTEGER(Rf_getAttrib(audio, Rf_install("channels")))[0];
+  }
   AVFormatContext *demuxer = NULL;
-  bail_if(avformat_open_input(&demuxer, filename, NULL, NULL), "avformat_open_input");
+  const AVInputFormat *pcm_format = fmt ? av_find_input_format(fmt) : NULL;
+  bail_if(avformat_open_input(&demuxer, filename, pcm_format, NULL), "avformat_open_input");
   bail_if(avformat_find_stream_info(demuxer, NULL), "avformat_find_stream_info");
 
   /* Try all input streams */
@@ -173,9 +181,13 @@ static input_container *open_audio_input(const char *filename){
   bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
   bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
 #ifdef NEW_CHANNEL_API
+  if(channels)
+    decoder->ch_layout.nb_channels = channels;
   if (decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
     av_channel_layout_default(&decoder->ch_layout, decoder->ch_layout.nb_channels);
 #else
+  if(channels)
+    decoder->channels = channels;
   if(!decoder->channel_layout)
     decoder->channel_layout = av_get_default_channel_layout(decoder->channels);
 #endif
@@ -628,7 +640,7 @@ SEXP R_encode_video(SEXP in_files, SEXP out_file, SEXP framerate, SEXP vfilter,
 
   /* Start the output video */
   output_container *output = av_mallocz(sizeof(output_container));
-  output->audio_input = Rf_length(audio) ? open_audio_input(CHAR(STRING_ELT(audio, 0))) : NULL;
+  output->audio_input = Rf_length(audio) ? open_audio_input(audio) : NULL;
   output->output_file = CHAR(STRING_ELT(out_file, 0));
   output->duration = VIDEO_TIME_BASE / Rf_asReal(framerate);
   output->filter_string = CHAR(STRING_ELT(vfilter, 0));
@@ -656,7 +668,7 @@ SEXP R_convert_audio(SEXP audio, SEXP out_file, SEXP out_format, SEXP out_channe
     output->sample_rate = Rf_asInteger(sample_rate);
   if(Rf_length(out_format))
     output->format_name = CHAR(STRING_ELT(out_format, 0));
-  output->audio_input = open_audio_input(CHAR(STRING_ELT(audio, 0)));
+  output->audio_input = open_audio_input(audio);
   double start_pts = Rf_length(start_pos) ? Rf_asReal(start_pos) : 0;
   if(start_pts > 0)
     av_seek_frame(output->audio_input->demuxer, -1, start_pts * AV_TIME_BASE, AVSEEK_FLAG_ANY);
