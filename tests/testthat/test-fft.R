@@ -40,3 +40,15 @@ test_that("Read binary audio", {
   out2_short <- read_audio_bin_old(wonderland, start_time = 5)
   expect_identical(out1_short, out2_short)
 })
+
+test_that("Write binary audio", {
+  bin <- read_audio_bin(wonderland)
+  info <- av_media_info(wonderland)
+  channels <- info$audio$channels
+  bitrate <- info$audio$bitrate
+  output <- tempfile(fileext = '.mp3')
+  write_audio_bin(bin, pcm_channels = channels, bit_rate = bitrate, output = output, verbose=FALSE)
+  info2 <- av_media_info(output)
+  unlink(output)
+  expect_equal(info, info2, tolerance = 0.0001)
+})
