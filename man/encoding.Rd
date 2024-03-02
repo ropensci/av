@@ -57,13 +57,14 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 \item{video}{input video file with optionally also an audio track}
 
 \item{format}{a valid output format name from the list of \code{av_muxers()}. Default
-\code{NULL} tries to guess a format from the file extension.}
+\code{NULL} infers format from the file extension.}
 
-\item{channels}{number of output channels. Default \code{NULL} is to match input}
+\item{channels}{number of output channels. Default \code{NULL} will match input.}
 
-\item{sample_rate}{output sampling rate. Default \code{NULL} is to match input}
+\item{sample_rate}{output sampling rate. Default \code{NULL} will match input.}
 
-\item{bit_rate}{output bitrate (quality). A common value is 192000.}
+\item{bit_rate}{output bitrate (quality). A common value is 192000. Default
+\code{NULL} will match input.}
 
 \item{start_time}{number greater than 0, seeks in the input file to position.}
 

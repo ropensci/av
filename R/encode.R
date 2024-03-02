@@ -85,11 +85,12 @@ av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
 #' @rdname encoding
 #' @export
 #' @useDynLib av R_convert_audio
-#' @param channels number of output channels. Default `NULL` is to match input
-#' @param sample_rate output sampling rate. Default `NULL` is to match input
-#' @param bit_rate output bitrate (quality). A common value is 192000.
+#' @param channels number of output channels. Default `NULL` will match input.
+#' @param sample_rate output sampling rate. Default `NULL` will match input.
+#' @param bit_rate output bitrate (quality). A common value is 192000. Default
+#' `NULL` will match input.
 #' @param format a valid output format name from the list of `av_muxers()`. Default
-#' `NULL` tries to guess a format from the file extension.
+#' `NULL` infers format from the file extension.
 #' @param start_time number greater than 0, seeks in the input file to position.
 #' @param total_time approximate number of seconds at which to limit the duration
 #' of the output file.
