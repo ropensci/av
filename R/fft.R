@@ -84,14 +84,16 @@ read_audio_bin <- function(audio, channels = NULL, sample_rate = NULL, start_tim
 #' entered in [read_audio_bin].
 #' @param pcm_format this is always `s32le` (signed 32-bit integer) for now
 #' @param output passed to [av_audio_convert]
+#' @param bit_rate passed to [av_audio_convert]
 #' @param ... other paramters for [av_audio_convert]
-write_audio_bin <- function(pcm_data, pcm_channels = 1L, pcm_format = 's32le', output = "output.mp3", ...){
+write_audio_bin <- function(pcm_data, pcm_channels = 1L, pcm_format = 's32le',
+                            output = "output.mp3", bit_rate = 192000, ...){
   if(!is.integer(pcm_data))
     stop("Argument 'pcm_data' is supposed to be a integer vector obtained from read_audio_bin()")
   tmp <- structure(tempfile(), class = 'pcm', fmt = pcm_format, channels = pcm_channels)
   on.exit(unlink(tmp))
   writeBin(c(pcm_data), tmp)
-  av_audio_convert(tmp, output = output, ...)
+  av_audio_convert(tmp, output = output, bit_rate = bit_rate, ...)
 }
 
 read_audio_bin_old <- function(audio, channels = NULL, sample_rate = NULL, start_time = NULL, total_time = NULL){
