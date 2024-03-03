@@ -28,7 +28,6 @@ write_audio_bin(
   pcm_channels = 1L,
   pcm_format = "s32le",
   output = "output.mp3",
-  bit_rate = 192000,
   ...
 )
 }
@@ -56,8 +55,6 @@ entered in \link{read_audio_bin}.}
 \item{pcm_format}{this is always \code{s32le} (signed 32-bit integer) for now}
 
 \item{output}{passed to \link{av_audio_convert}}
-
-\item{bit_rate}{passed to \link{av_audio_convert}}
 
 \item{...}{other paramters for \link{av_audio_convert}}
 }
