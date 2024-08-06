@@ -77,7 +77,6 @@ static void close_input(input_container **x){
   input_container *input = *x;
   if(input == NULL)
     return;
-  avcodec_close(input->decoder);
   avcodec_free_context(&(input->decoder));
   avformat_close_input(&input->demuxer);
   avformat_free_context(input->demuxer);
@@ -111,12 +110,10 @@ static void close_output_file(void *ptr, Rboolean jump){
   }
   if(output->video_encoder != NULL){
     close_filter_container(output->video_filter);
-    avcodec_close(output->video_encoder);
     avcodec_free_context(&(output->video_encoder));
   }
   if(output->audio_encoder != NULL){
     close_filter_container(output->audio_filter);
-    avcodec_close(output->audio_encoder);
     avcodec_free_context(&(output->audio_encoder));
   }
   if(output->muxer != NULL){

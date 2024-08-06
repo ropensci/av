@@ -82,7 +82,6 @@ static void close_input(input_container **x){
   input_container *input = *x;
   if(input == NULL)
     return;
-  avcodec_close(input->decoder);
   avcodec_free_context(&(input->decoder));
   avformat_close_input(&input->demuxer);
   avformat_free_context(input->demuxer);
