@@ -16,7 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest,   r: 'release'}
+          - {os: macos-13,   r: 'release'}
+          - {os: macos-14,   r: 'release'}
+          - {os: macos-latest,   r: 'release', homebrew: true}
           - {os: windows-latest, r: '4.1'}
           - {os: windows-latest, r: '4.2'}
           - {os: windows-latest, r: 'release'}
@@ -30,9 +32,12 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: r-lib/actions/setup-pandoc@v2
+
+      - if: matrix.config.homebrew
+        run: brew install ffmpeg
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -46,3 +51,5 @@ jobs:
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-results: true
