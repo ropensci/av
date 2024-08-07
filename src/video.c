@@ -177,7 +177,6 @@ static input_container *open_audio_input(SEXP audio){
   bail_if_null(codec, "avcodec_find_decoder");
   AVCodecContext *decoder = avcodec_alloc_context3(codec);
   bail_if(avcodec_parameters_to_context(decoder, stream->codecpar), "avcodec_parameters_to_context");
-  bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
 #ifdef NEW_CHANNEL_API
   if(channels)
     decoder->ch_layout.nb_channels = channels;
@@ -189,6 +188,7 @@ static input_container *open_audio_input(SEXP audio){
   if(!decoder->channel_layout)
     decoder->channel_layout = av_get_default_channel_layout(decoder->channels);
 #endif
+  bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
   return new_input_container(demuxer, decoder, demuxer->streams[si]);
 }
 
