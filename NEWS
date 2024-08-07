@@ -1,4 +1,5 @@
 0.9.1
+  - Fixes for ffmpeg-7
   - Remove redunant and deprecated calls to avcodec_close()
 
 0.9.0
