@@ -180,9 +180,9 @@ static input_container *open_audio_input(SEXP audio){
   bail_if(avcodec_open2(decoder, codec, NULL), "avcodec_open2 (audio)");
 #ifdef NEW_CHANNEL_API
   if(channels)
-    decoder->ch_layout.nb_channels = channels;
-  if (channels || decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
-    av_channel_layout_default(&decoder->ch_layout, decoder->ch_layout.nb_channels);
+    av_channel_layout_default(&decoder->ch_layout, channels); //PCM input
+  if (decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+    av_channel_layout_default(&decoder->ch_layout, decoder->ch_layout.nb_channels); //other stuff
 #else
   if(channels)
     decoder->channels = channels;
