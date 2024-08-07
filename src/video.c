@@ -181,7 +181,7 @@ static input_container *open_audio_input(SEXP audio){
 #ifdef NEW_CHANNEL_API
   if(channels)
     decoder->ch_layout.nb_channels = channels;
-  if (decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+  if (channels || decoder->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
     av_channel_layout_default(&decoder->ch_layout, decoder->ch_layout.nb_channels);
 #else
   if(channels)
