@@ -87,7 +87,7 @@ is results in much better quality.
 
 It is recommended to use let ffmpeg choose the suitable codec for a given container
 format. Most video formats default to the \code{libx264} video codec which has excellent
-compression and works on all modern \href{https://caniuse.com/#search=h264}{browsers},
+compression and works on all modern \href{https://caniuse.com/?search=h264}{browsers},
 operating systems, and digital TVs.
 
 To convert from/to raw PCM audio, use file extensions \code{".ub"} or \code{".sb"} for 8bit

@@ -14,7 +14,7 @@
 #'
 #' It is recommended to use let ffmpeg choose the suitable codec for a given container
 #' format. Most video formats default to the `libx264` video codec which has excellent
-#' compression and works on all modern [browsers](https://caniuse.com/#search=h264),
+#' compression and works on all modern [browsers](https://caniuse.com/?search=h264),
 #' operating systems, and digital TVs.
 #'
 #' To convert from/to raw PCM audio, use file extensions `".ub"` or `".sb"` for 8bit
