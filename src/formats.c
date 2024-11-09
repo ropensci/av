@@ -9,23 +9,21 @@
 enum AVPixelFormat get_default_pix_fmt(const AVCodec *codec){
 #ifdef NEW_DEFAULT_CODEC_API
   const enum AVPixelFormat *p = NULL;
-  if(avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **) &p, NULL) < 0 || p == NULL)
-    return AV_PIX_FMT_NONE;
-  return *p;
+  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **) &p, NULL);
 #else
-  return codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_NONE;
+  const enum AVPixelFormat *p = codec->pix_fmts;
 #endif
+  return p ? p[0] : AV_PIX_FMT_NONE;
 }
 
 enum AVSampleFormat get_default_sample_fmt(const AVCodec *codec){
 #ifdef NEW_DEFAULT_CODEC_API
   const enum AVSampleFormat *p = NULL;
-  if(avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, (const void **) &p, NULL) < 0 || p == NULL)
-    return AV_SAMPLE_FMT_NONE;
-  return *p;
+  avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, (const void **) &p, NULL);
 #else
-  return codec->sample_fmts ? codec->sample_fmts[0] : AV_SAMPLE_FMT_NONE;
+  const enum AVSampleFormat *p = codec->sample_fmts;
 #endif
+  return p ? p[0] :AV_SAMPLE_FMT_NONE;
 }
 
 static SEXP safe_string(const char *x){
