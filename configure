@@ -1,4 +1,4 @@
-# Anticonf (tm) script by Jeroen Ooms (2020)
+# Anticonf (tm) script by Jeroen Ooms (2024)
 # This script will query 'pkg-config' for the required cflags and ldflags.
 # If pkg-config is unavailable or does not find the library, try setting
 # INCLUDE_DIR and LIB_DIR manually via e.g:
@@ -12,19 +12,6 @@ PKG_CSW_NAME="ffmpeg_dev"
 PKG_BREW_NAME="ffmpeg"
 PKG_TEST_HEADER="<libavfilter/version.h>"
 PKG_LIBS="-lavfilter"
-
-# Check if FFmpeg is too old
-pkg-config ${PKG_CONFIG_NAME} --max-version=5.99 2>/dev/null
-if [ $? -eq 0 ]; then
-  echo "ERROR: Your version of FFmpeg is too old! Need at least FFmpeg (>= 3.2)" 1>&2
-  if [ "`lsb_release -c 2>/dev/null | grep xenial`" ]; then
-    echo "On Ubuntu Trusty/Xenial use our PPA: " 2>/dev/null
-    echo "  sudo add-apt-repository -y ppa:cran/ffmpeg-3" 2>/dev/null
-    echo "  sudo apt-get update" 2>/dev/null
-    echo "  sudo apt-get dist-upgrade" 2>/dev/null
-  fi
-  exit 1
-fi
 
 # FFMPEG 3 and 4 include libavfilter 6.0
 pkg-config ${PKG_CONFIG_NAME} --atleast-version=6 2>/dev/null
@@ -68,14 +55,10 @@ echo "#include $PKG_TEST_HEADER" | ${CXX} -E ${CPPFLAGS} ${PKG_CFLAGS} ${CXXFLAG
 if [ $? -ne 0 ]; then
   echo "-----------------------------[ ANTICONF ]----------------------------------"
   echo "Configuration failed to find the $PKG_CONFIG_NAME library. Try installing:"
-  echo " * deb: $PKG_DEB_NAME (Debian, Ubuntu 18.04 and up)"
+  echo " * deb: $PKG_DEB_NAME (Debian, Ubuntu)"
   echo " * rpm: $PKG_RPM_NAME (Fedora, CentOS, RHEL)"
   echo " * csw: $PKG_CSW_NAME (Solaris)"
   echo " * brew: $PKG_BREW_NAME (MacOS)"
-  echo "For Ubuntu Trusty (14.04) and Xenial (16.04) use this PPA:"
-  echo "   sudo add-apt-repository -y ppa:cran/ffmpeg-3"
-  echo "   sudo apt-get update"
-  echo "   sudo apt-get install -y $PKG_DEB_NAME"
   echo "If $PKG_CONFIG_NAME is already installed, check that 'pkg-config' is in your"
   echo "PATH and PKG_CONFIG_PATH contains a $PKG_CONFIG_NAME.pc file. If pkg-config"
   echo "is unavailable you can set INCLUDE_DIR and LIB_DIR manually via:"

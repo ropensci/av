@@ -10,6 +10,9 @@
 #include <Rinternals.h>
 #include "avcompat.h"
 
+enum AVPixelFormat get_default_pix_fmt(const AVCodec *codec);
+enum AVSampleFormat get_default_sample_fmt(const AVCodec *codec);
+
 int total_open_handles = 0;
 
 typedef struct {
@@ -321,7 +324,7 @@ static void add_video_output(output_container *output, int width, int height){
   //video_encoder->gop_size = 25; //one keyframe every 25 frames
 
   /* Try to use codec preferred pixel format, otherwise default to YUV420 */
-  video_encoder->pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  video_encoder->pix_fmt = get_default_pix_fmt(output->codec);
   if (output->muxer->oformat->flags & AVFMT_GLOBALHEADER)
     video_encoder->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
@@ -356,7 +359,7 @@ static void add_audio_output(output_container *container){
 #endif
   audio_encoder->sample_rate = container->sample_rate ? container->sample_rate : audio_decoder->sample_rate;
   audio_encoder->bit_rate = container->bit_rate ? container->bit_rate : audio_decoder->bit_rate;
-  audio_encoder->sample_fmt = output_codec->sample_fmts[0];
+  audio_encoder->sample_fmt = get_default_sample_fmt(output_codec);
   audio_encoder->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
   /* Add the audio_stream to the muxer */
@@ -529,7 +532,7 @@ static int encode_output_frames(output_container *output){
  * a copy of that frame when we finalize the video.
  */
 static int feed_to_filter(AVFrame * image, output_container *output){
-  enum AVPixelFormat pix_fmt = output->codec->pix_fmts ? output->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+  enum AVPixelFormat pix_fmt = get_default_pix_fmt(output->codec);
   static AVFrame *previous = NULL;
   if(previous == NULL)
     previous = av_frame_alloc();
