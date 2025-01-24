@@ -2,7 +2,8 @@ PKG_CONFIG_NAME = libavfilter
 PKG_CONFIG ?= $(BINPREF)pkg-config
 PKG_LIBS := $(shell $(PKG_CONFIG) --libs $(PKG_CONFIG_NAME))
 
-ifneq ($(PKG_LIBS),)
+# See https://bugs.r-project.org/show_bug.cgi?id=18835
+ifneq ($(findstring mp3lame,$(PKG_LIBS)),)
 $(info using ffmpeg from Rtools)
 PKG_CPPFLAGS := $(shell $(PKG_CONFIG) --cflags $(PKG_CONFIG_NAME))
 else
