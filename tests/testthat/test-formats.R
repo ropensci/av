@@ -20,3 +20,13 @@ test_that("Listing formats", {
   expect_equal(names(decoders), c("type", "name", "description", "format"))
   expect_equal(names(filters), c("name", "description"))
 })
+
+test_that("Critical encoders", {
+  encoders <- av_encoders()
+  expect_contains(encoders$name, 'libmp3lame')
+  expect_contains(encoders$name, 'libvorbis')
+  expect_contains(encoders$name, 'libxvid')
+  skip_on_os('linux')
+  # libx264 is not supported on Fedora libavfilter-free-devel
+  expect_contains(encoders$name, 'libx264')
+})
