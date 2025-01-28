@@ -58,7 +58,7 @@ test_that("convert images into video formats", {
 test_that("audio sampling works", {
   for(ext in c("mkv", "mp4", "mov", "flv")){
     filename <- paste0("test.", ext)
-    if(grepl('redhat', R.version$platform)){
+    if(grepl("(Fedora|Red Hat)", osVersion)){
       # libavfilter-free-devel only supports certain bitrates?
       wonderland <- av_audio_convert(wonderland, tempfile(fileext = '.mka'), sample_rate = 48000, verbose = FALSE)
     }
