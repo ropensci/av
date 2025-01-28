@@ -1,3 +1,12 @@
+PKG_CONFIG_NAME = libavfilter
+PKG_CONFIG ?= $(BINPREF)pkg-config
+PKG_LIBS := $(shell $(PKG_CONFIG) --libs $(PKG_CONFIG_NAME))
+
+# See https://bugs.r-project.org/show_bug.cgi?id=18835
+ifneq ($(findstring mp3lame,$(PKG_LIBS)),)
+$(info using ffmpeg from Rtools)
+PKG_CPPFLAGS := $(shell $(PKG_CONFIG) --cflags $(PKG_CONFIG_NAME))
+else
 RWINLIB = ../windows/ffmpeg
 PKG_CPPFLAGS = -I$(RWINLIB)/include -D__USE_MINGW_ANSI_STDIO=1 -DR_NO_REMAP -DSTRICT_R_HEADERS
 PKG_LIBS = -L$(RWINLIB)/lib${subst gcc,,$(COMPILED_BY)}$(R_ARCH) \
@@ -6,11 +15,14 @@ PKG_LIBS = -L$(RWINLIB)/lib${subst gcc,,$(COMPILED_BY)}$(R_ARCH) \
 	-lvorbis -lvorbisenc -logg -lvpx \
 	-lbz2 -lsecur32 -lws2_32 -liconv -lz -lmp3lame -lx264 \
 	-lxvidcore -pthread -lole32 -lm -luser32 -lbcrypt -lmfplat -lmfuuid -lstrmiids
+endif
 
-all: winlibs clean
+all: $(SHLIB)
+
+$(OBJECTS): $(RWINLIB)
+
+$(RWINLIB):
+	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R"
 
 clean:
 	rm -f $(SHLIB) $(OBJECTS)
-
-winlibs:
-	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R"

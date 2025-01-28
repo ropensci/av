@@ -7,10 +7,11 @@ test_that("Audio FFT", {
   av_log_level(16) # muffle some warnings about ac3 vbr
   for(ext in extensions){
     filename <- paste0('wonderland.', ext)
-    av_audio_convert(wonderland, filename, verbose = FALSE)
+    # libopus on fedora does not do support input sample_rate 44100
+    av_audio_convert(wonderland, filename, verbose = FALSE, sample_rate = 48000)
     data <- read_audio_fft(filename, window = hanning(2048))
     expect_equal(dim(data)[1], 1024)
-    expect_equal(dim(data)[2], 2584, tol = 0.001)
+    expect_equal(dim(data)[2], 2813, tol = 0.001)
     unlink(filename)
   }
 })

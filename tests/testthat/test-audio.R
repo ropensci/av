@@ -10,7 +10,7 @@ test_that("Audio can be converted to various formats", {
   input_info <- av_media_info(wonderland)
 
   # Convert mp3 to mkv (defaults to libvorbis audio)
-  expect_equal(av_audio_convert(wonderland, tmp_mkv, verbose = FALSE), tmp_mkv)
+  expect_equal(av_audio_convert(wonderland, tmp_mkv, verbose = FALSE, sample_rate = 16000), tmp_mkv)
   expect_true(file.exists(tmp_mkv))
   mkv_info <- av_media_info(tmp_mkv)
   expect_equal(input_info$duration, mkv_info$duration, tolerance = 0.1)

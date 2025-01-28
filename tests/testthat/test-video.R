@@ -58,6 +58,11 @@ test_that("convert images into video formats", {
 test_that("audio sampling works", {
   for(ext in c("mkv", "mp4", "mov", "flv")){
     filename <- paste0("test.", ext)
+    if(ext == 'mkv' && grepl("(Fedora|Red Hat)", osVersion)){
+      # libavfilter-free-devel only supports certain audio bitrates
+      wonderland <- av_audio_convert(wonderland, tempfile(fileext = '.mka'), sample_rate = 48000, verbose = FALSE)
+    }
+    input_rate <- av_media_info(wonderland)$audio$sample_rate
     av::av_encode_video(png_files, filename, framerate = framerate, verbose = FALSE, audio = wonderland)
     expect_true(file.exists(filename))
     info <- av_media_info(filename)
@@ -70,7 +75,7 @@ test_that("audio sampling works", {
     expect_equal(info$video$framerate, framerate)
 
     expect_equal(info$audio$channels, 2)
-    expect_equal(info$audio$sample_rate, 44100)
+    expect_equal(info$audio$sample_rate, input_rate)
 
     # Audio stream may slightly alter the duration, 5% margin
     expect_equal(info$duration, n / framerate, tolerance = 0.05)
@@ -84,7 +89,7 @@ test_that("audio sampling works", {
     expect_equal(info$video$framerate, framerate)
 
     expect_equal(info$audio$channels, 2)
-    expect_equal(info$audio$sample_rate, 44100)
+    expect_equal(info$audio$sample_rate, input_rate)
 
     # Audio stream may slightly alter the duration, 5% margin
     expect_equal(info$duration, n / framerate, tolerance =  0.05)
