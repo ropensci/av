@@ -14,7 +14,7 @@ URL: https://ropensci.r-universe.dev/av,
     https://docs.ropensci.org/av/
 BugReports: https://github.com/ropensci/av/issues
 Encoding: UTF-8
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 SystemRequirements: FFmpeg (>= 3.2); with at least libx264 and lame (mp3) drivers.
 	MacOS Homebrew: ffmpeg. Debian/Ubuntu: libavfilter-dev. Fedora/RHEL: either 
@@ -24,6 +24,7 @@ Depends: R (>= 3.5)
 Imports: graphics
 Config/pkgdown: seewave, ggplot2, phonTools, signal, tuneR
 Suggests: 
+    curl,
     testthat,
     ps,
     ggplot2,

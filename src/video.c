@@ -512,9 +512,9 @@ static int encode_output_frames(output_container *output){
     if(ret == AVERROR(EAGAIN))
       return 0;
     if(ret == AVERROR_EOF){
-      output->early_end = 1; //trim filter can EOF before input is fully drained
       bail_if_null(output, "filter did not return any frames");
       bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame (flush video)");
+      output->early_end = 1; //trim filter can EOF before input is fully drained
     } else {
       bail_if(ret, "av_buffersink_get_frame");
       if(output->muxer == NULL)

@@ -1,6 +1,8 @@
 0.9.4
   - Windows: use ffmpeg from Rtools when available
   - Relax unit tests for libavfilter-free-devel on RedHat/Fedora
+  - av_video_images() gains a trim parameter
+  - Some internal fixes to support trim filters
 
 0.9.3
   - Fixes for ffmpeg 7.1

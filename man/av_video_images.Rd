@@ -4,7 +4,13 @@
 \alias{av_video_images}
 \title{Convert video to images}
 \usage{
-av_video_images(video, destdir = tempfile(), format = "jpg", fps = NULL)
+av_video_images(
+  video,
+  destdir = tempfile(),
+  format = "jpg",
+  fps = NULL,
+  trim = NULL
+)
 }
 \arguments{
 \item{video}{an input video}
@@ -14,6 +20,9 @@ av_video_images(video, destdir = tempfile(), format = "jpg", fps = NULL)
 \item{format}{image format such as \code{png} or \code{jpeg}, must be available from \code{av_encoders()}}
 
 \item{fps}{sample rate of images. Use \code{NULL} to get all images.}
+
+\item{trim}{string value for \href{https://ffmpeg.org/ffmpeg-filters.html#trim}{ffmpeg trim filter}
+for example \code{"10:15"} for seconds or \code{"start_frame=100:end_frame=110"} for frames.}
 }
 \description{
 Splits a video file in a set of image files. Default image format is
@@ -24,4 +33,10 @@ losless images.
 For large input videos you can set fps to sample only a limited number
 of images per second. This also works with fractions, for example \code{fps = 0.2}
 will output one image for every 5 sec of video.
+}
+\examples{
+\dontrun{
+curl::curl_download('https://jeroen.github.io/images/blackbear.mp4', 'blackbear.mp4')
+av_video_images('blackbear.mp4', fps = 1, trim = "10:20")
+}
 }
