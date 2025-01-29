@@ -50,6 +50,7 @@ typedef struct {
   int channels;
   int sample_rate;
   int bit_rate;
+  int early_end;
   SEXP in_files;
 } output_container;
 
@@ -511,6 +512,7 @@ static int encode_output_frames(output_container *output){
     if(ret == AVERROR(EAGAIN))
       return 0;
     if(ret == AVERROR_EOF){
+      output->early_end = 1; //trim filter can EOF before input is fully drained
       bail_if_null(output, "filter did not return any frames");
       bail_if(avcodec_send_frame(output->video_encoder, NULL), "avcodec_send_frame (flush video)");
     } else {
@@ -532,6 +534,8 @@ static int encode_output_frames(output_container *output){
  * a copy of that frame when we finalize the video.
  */
 static int feed_to_filter(AVFrame * image, output_container *output){
+  if(output->early_end)
+    return 1;
   enum AVPixelFormat pix_fmt = get_default_pix_fmt(output->codec);
   static AVFrame *previous = NULL;
   if(previous == NULL)
@@ -606,7 +610,7 @@ static void read_from_input(const char *filename, output_container *output){
     if(decoder->codec->id == AV_CODEC_ID_PNG || decoder->codec->id == AV_CODEC_ID_MJPEG)
       picture->pict_type = AV_PICTURE_TYPE_NONE;
     feed_to_filter(picture, output);
-  } while(ret != AVERROR_EOF);
+  } while(ret != AVERROR_EOF && !output->early_end);
   close_input(&output->video_input);
 }
 
