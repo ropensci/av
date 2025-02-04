@@ -2,8 +2,9 @@ Package: av
 Type: Package
 Title: Working with Audio and Video in R
 Version: 0.9.4
-Authors@R: person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroenooms@gmail.com",
-    comment = c(ORCID = "0000-0002-4035-0289"))
+Authors@R: 
+    person("Jeroen", "Ooms", , "jeroenooms@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4035-0289"))
 Description: Bindings to 'FFmpeg' <http://www.ffmpeg.org/> AV library for working with 
     audio and video in R. Generates high quality video from images or R graphics with 
     custom audio. Also offers high performance tools for reading raw audio, creating
