@@ -23,7 +23,7 @@ SystemRequirements: FFmpeg (>= 3.2); with at least libx264 and lame (mp3) driver
 	which is a more limited version available on Fedora/EPEL9.
 Depends: R (>= 3.5)
 Imports: graphics
-Config/pkgdown: seewave, ggplot2, phonTools, signal, tuneR
+Config/Needs/website: seewave, ggplot2, phonTools, signal, tuneR
 Suggests: 
     curl,
     testthat,
