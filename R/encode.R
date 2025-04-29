@@ -95,7 +95,7 @@ av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
 #' of the output file.
 av_audio_convert <- function(audio, output = 'output.mp3', format = NULL,
                              channels = NULL, sample_rate = NULL, bit_rate = NULL,
-                             start_time = NULL, total_time = NULL, verbose = TRUE){
+                             start_time = NULL, total_time = NULL, verbose = interactive()){
   stopifnot(length(audio) > 0)
   input <- normalizePath(audio, mustWork = TRUE)
   attributes(input) <- attributes(audio)

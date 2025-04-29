@@ -29,7 +29,7 @@ av_audio_convert(
   bit_rate = NULL,
   start_time = NULL,
   total_time = NULL,
-  verbose = TRUE
+  verbose = interactive()
 )
 }
 \arguments{

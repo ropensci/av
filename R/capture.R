@@ -48,7 +48,7 @@ av_capture_graphics <- function(expr, output = 'output.mp4', width = 720, height
 #' @export
 #' @param audio path to media file with audio stream
 #' @rdname capturing
-av_spectrogram_video <- function(audio, output = "output.mp4", framerate = 25, verbose = TRUE, ...){
+av_spectrogram_video <- function(audio, output = "output.mp4", framerate = 25, verbose = interactive(), ...){
   fftdata <- read_audio_fft(audio)
   duration <- attr(fftdata, 'duration')
   movie <- av_capture_graphics({

@@ -22,7 +22,7 @@ av_spectrogram_video(
   audio,
   output = "output.mp4",
   framerate = 25,
-  verbose = TRUE,
+  verbose = interactive(),
   ...
 )
 }
