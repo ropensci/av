@@ -26,7 +26,7 @@ test_that("Critical encoders", {
   expect_contains(encoders$name, 'libmp3lame')
   expect_contains(encoders$name, 'libvorbis')
   expect_contains(encoders$name, 'libxvid')
-  if(!grepl("(Fedora|Red Hat)", osVersion)){
+  if(!grepl("(Fedora|Rocky|Red Hat)", osVersion)){
     # libx264 is not supported on RHEL/Fedora libavfilter-free-devel but it is
     # in ffmpeg-devel from rpmfusion.
     expect_contains(encoders$name, 'libx264')
