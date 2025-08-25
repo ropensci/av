@@ -222,9 +222,7 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
                                        input_args, NULL, filter_graph), "avfilter_graph_create_filter (audio/src)");
 
   /* Initiate sink filter */
-  AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("abuffersink"), "audiosink",
-                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (audio/sink)");
+  AVFilterContext *buffersink_ctx = avfilter_graph_alloc_filter(filter_graph,avfilter_get_by_name("abuffersink"), "audiosink");
 
   /* Set output properties (copied from ffmpeg examples/transcoding.c) */
   bail_if(av_opt_set_bin(buffersink_ctx, "sample_fmts",
@@ -242,6 +240,8 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
   bail_if(av_opt_set_bin(buffersink_ctx, "sample_rates",
                          (uint8_t*)&encoder->sample_rate, sizeof(encoder->sample_rate),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (sample_rates)");
+
+  bail_if(avfilter_init_str(buffersink_ctx, NULL), "avfilter_graph_create_filter (audio/sink)");
 
   /* Endpoints for the filter graph. */
   AVFilterInOut *outputs = avfilter_inout_alloc();
@@ -281,15 +281,15 @@ static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat f
                                        input_args, NULL, filter_graph), "avfilter_graph_create_filter (video/src)");
 
   /* Initiate sink filter */
-  AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "videosink",
-                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (video/sink)");
+
+  AVFilterContext *buffersink_ctx = avfilter_graph_alloc_filter(filter_graph,avfilter_get_by_name("buffersink"), "videosink");
 
   /* I think this convert output YUV420P (copied from ffmpeg examples/transcoding.c) */
   bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
                          (uint8_t*)&fmt, sizeof(fmt),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
 
+  bail_if(avfilter_init_str(buffersink_ctx, NULL), "avfilter_graph_create_filter (audio/sink)");
 
   /* Endpoints for the filter graph. */
   AVFilterInOut *outputs = avfilter_inout_alloc();
