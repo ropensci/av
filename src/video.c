@@ -222,9 +222,16 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
                                        input_args, NULL, filter_graph), "avfilter_graph_create_filter (audio/src)");
 
   /* Initiate sink filter */
-  AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("abuffersink"), "audiosink",
-                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (audio/sink)");
+  AVFilterContext *buffersink_ctx = avfilter_graph_alloc_filter(filter_graph,avfilter_get_by_name("abuffersink"), "audiosink");
+
+#ifdef NEW_ARRAY_PARAMS
+  bail_if(av_opt_set_array(buffersink_ctx, "sample_formats", AV_OPT_SEARCH_CHILDREN,
+                           0, 1, AV_OPT_TYPE_SAMPLE_FMT, &encoder->sample_fmt),"av_opt_set_array (sample_formats)");
+  bail_if(av_opt_set_array(buffersink_ctx, "channel_layouts", AV_OPT_SEARCH_CHILDREN,
+                           0, 1, AV_OPT_TYPE_CHLAYOUT, &encoder->ch_layout),"av_opt_set_array (channel_layouts)");
+  bail_if(av_opt_set_array(buffersink_ctx, "samplerates", AV_OPT_SEARCH_CHILDREN,
+                           0, 1, AV_OPT_TYPE_INT, &encoder->sample_rate),"av_opt_set_array (samplerates)");
+#else
 
   /* Set output properties (copied from ffmpeg examples/transcoding.c) */
   bail_if(av_opt_set_bin(buffersink_ctx, "sample_fmts",
@@ -242,6 +249,8 @@ static filter_container *open_audio_filter(AVCodecContext *decoder, AVCodecConte
   bail_if(av_opt_set_bin(buffersink_ctx, "sample_rates",
                          (uint8_t*)&encoder->sample_rate, sizeof(encoder->sample_rate),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin (sample_rates)");
+#endif //NEW_ARRAY_PARAMS
+  bail_if(avfilter_init_str(buffersink_ctx, NULL), "avfilter_graph_create_filter (audio/sink)");
 
   /* Endpoints for the filter graph. */
   AVFilterInOut *outputs = avfilter_inout_alloc();
@@ -281,15 +290,19 @@ static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat f
                                        input_args, NULL, filter_graph), "avfilter_graph_create_filter (video/src)");
 
   /* Initiate sink filter */
-  AVFilterContext *buffersink_ctx = NULL;
-  bail_if(avfilter_graph_create_filter(&buffersink_ctx, avfilter_get_by_name("buffersink"), "videosink",
-                                       NULL, NULL, filter_graph), "avfilter_graph_create_filter (video/sink)");
+
+  AVFilterContext *buffersink_ctx = avfilter_graph_alloc_filter(filter_graph,avfilter_get_by_name("buffersink"), "videosink");
 
   /* I think this convert output YUV420P (copied from ffmpeg examples/transcoding.c) */
+#ifdef NEW_ARRAY_PARAMS
+  bail_if(av_opt_set_array(buffersink_ctx, "pixel_formats", AV_OPT_SEARCH_CHILDREN,
+                           0, 1, AV_OPT_TYPE_PIXEL_FMT, &fmt), "av_opt_set_array (pixel_formats)");
+#else
   bail_if(av_opt_set_bin(buffersink_ctx, "pix_fmts",
                          (uint8_t*)&fmt, sizeof(fmt),
                          AV_OPT_SEARCH_CHILDREN), "av_opt_set_bin");
-
+#endif
+  bail_if(avfilter_init_str(buffersink_ctx, NULL), "avfilter_graph_create_filter (audio/sink)");
 
   /* Endpoints for the filter graph. */
   AVFilterInOut *outputs = avfilter_inout_alloc();

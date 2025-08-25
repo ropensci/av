@@ -1,3 +1,6 @@
+0.9.5
+  - Fix build for ffmpeg 8.0
+
 0.9.4
   - Windows: use ffmpeg from Rtools when available
   - Relax unit tests for libavfilter-free-devel on RedHat/Fedora
