@@ -12,3 +12,9 @@
 #if LIBAVUTIL_VERSION_MAJOR > 59 || (LIBAVUTIL_VERSION_MAJOR == 59 && LIBAVUTIL_VERSION_MINOR >= 39)
 #define NEW_DEFAULT_CODEC_API
 #endif
+
+/* Old parameters exist but stopped working in ffmpeg 8.0
+   see: https://github.com/FFmpeg/FFmpeg/blob/master/doc/APIchanges#L220-L236 */
+#if LIBAVUTIL_VERSION_MAJOR > 60 || (LIBAVUTIL_VERSION_MAJOR == 60 && LIBAVUTIL_VERSION_MINOR >= 8)
+#define NEW_ARRAY_PARAMS
+#endif
