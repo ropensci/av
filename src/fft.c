@@ -1,12 +1,17 @@
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
-#include <libavcodec/avfft.h>
 #include <libavutil/audio_fifo.h>
 #include <libswresample/swresample.h>
 #include "avcompat.h"
 
 #ifdef NEW_FFT_TX_API
 #include <libavutil/tx.h>
+typedef float FFTSample;
+typedef struct FFTComplex {
+  FFTSample re, im;
+} FFTComplex;
+#else
+#include <libavcodec/avfft.h>
 #endif
 
 #include <Rinternals.h>
