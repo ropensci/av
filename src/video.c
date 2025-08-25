@@ -294,7 +294,7 @@ static filter_container *open_video_filter(AVFrame * input, enum AVPixelFormat f
   AVFilterContext *buffersink_ctx = avfilter_graph_alloc_filter(filter_graph,avfilter_get_by_name("buffersink"), "videosink");
 
   /* I think this convert output YUV420P (copied from ffmpeg examples/transcoding.c) */
-#ifdef NEW_CHANNEL_API
+#ifdef NEW_ARRAY_PARAMS
   bail_if(av_opt_set_array(buffersink_ctx, "pixel_formats", AV_OPT_SEARCH_CHILDREN,
                            0, 1, AV_OPT_TYPE_PIXEL_FMT, &fmt), "av_opt_set_array (pixel_formats)");
 #else
