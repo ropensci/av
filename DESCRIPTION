@@ -1,7 +1,7 @@
 Package: av
 Type: Package
 Title: Working with Audio and Video in R
-Version: 0.9.5
+Version: 0.9.6
 Authors@R: 
     person("Jeroen", "Ooms", , "jeroenooms@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4035-0289"))
