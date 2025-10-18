@@ -233,6 +233,14 @@ static double calc_window_scale(int winsize, float *winvec){
   return scale;
 }
 
+static int get_max_frame_size(AVCodecContext *decoder){
+  int max_frame_size = av_get_audio_frame_duration(decoder, 0);
+  if(max_frame_size < 1){
+    max_frame_size = 50000; /* Very high fallback. Normal is 1024 per channel */
+  }
+  return max_frame_size;
+}
+
 static SEXP run_fft(spectrum_container *output, int ascale){
   AVPacket *pkt = av_packet_alloc();
   AVFrame *frame = av_frame_alloc();
@@ -243,6 +251,9 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   int window_size = 1 << fft_bits;
   int hop_size = window_size * (1 - overlap);
   int output_range = window_size / 2;
+  /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04
+   * 4x is a conservative multiplier for when the input samle_fmt is smaller than 32 bit (such as flac)*/
+  int max_frame_size = 4 * get_max_frame_size(output->input->decoder);
   int iter = 0;
 #ifdef NEW_FFT_TX_API
   float scale = 1.0f;
@@ -253,7 +264,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   output->fft_data = av_calloc(window_size, sizeof(*output->fft_data));
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
-  av_samples_alloc(&output->buf, NULL, 1, 8 * output->winsize, AV_SAMPLE_FMT_FLTP, 0);
+  av_samples_alloc(&output->buf, NULL, 1, max_frame_size, AV_SAMPLE_FMT_FLTP, 0);
   double winscale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
   int64_t elapsed = 0;
@@ -284,10 +295,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
         break;
       } else {
         bail_if(ret, "avcodec_receive_frame");
-        /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04
-         * 4x is a conservative multiplier for when the input samle_fmt is smaller than 32 bit (such as flac)
-         * Update: further increase to 8x needed for s16 audio icw smallest possible window size 256 */
-        int out_samples = swr_convert (output->swr, &output->buf, 8 * output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
+        int out_samples = swr_convert (output->swr, &output->buf, max_frame_size, (const uint8_t**) frame->extended_data, frame->nb_samples);
         bail_if(out_samples, "swr_convert");
         av_frame_unref(frame);
         int nb_written = av_audio_fifo_write(output->fifo, (void **) &output->buf, out_samples);
@@ -344,11 +352,7 @@ static SEXP run_bin(spectrum_container *output){
   AVFrame *frame = av_frame_alloc();
   input_container * input = output->input;
   AVCodecContext *decoder = input->decoder;
-  int max_frame_size = av_get_audio_frame_duration(decoder, 0);
-  if(max_frame_size < 1){
-    //REprintf("Unknown frame size for input audio format: %s\n", decoder->codec->name);
-    max_frame_size = 50000; /* Very high fallback, should rarely happen */
-  }
+  int max_frame_size = get_max_frame_size(decoder);
   av_samples_alloc(&output->buf, NULL, output->channels, max_frame_size, AV_SAMPLE_FMT_S32, 0);
   int64_t elapsed = 0;
   int channels = output->channels;
