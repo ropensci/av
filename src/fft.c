@@ -253,7 +253,7 @@ static SEXP run_fft(spectrum_container *output, int ascale){
   output->fft_data = av_calloc(window_size, sizeof(*output->fft_data));
   output->src_data = av_calloc(window_size, sizeof(*output->src_data));
   output->fifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1, window_size);
-  av_samples_alloc(&output->buf, NULL, 1, 4 * output->winsize, AV_SAMPLE_FMT_FLTP, 0);
+  av_samples_alloc(&output->buf, NULL, 1, 8 * output->winsize, AV_SAMPLE_FMT_FLTP, 0);
   double winscale = calc_window_scale(output->winsize, output->winvec);
   int eof = 0;
   int64_t elapsed = 0;
@@ -285,8 +285,9 @@ static SEXP run_fft(spectrum_container *output, int ascale){
       } else {
         bail_if(ret, "avcodec_receive_frame");
         /* https://ffmpeg.org/doxygen/3.2/group__lavu__sampmanip.html#ga4db4c77f928d32c7d8854732f50b8c04
-         * 4x is a conservative multiplier for when the input samle_fmt is smaller than 32 bit (such as flac)*/
-        int out_samples = swr_convert (output->swr, &output->buf, 4 * output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
+         * 4x is a conservative multiplier for when the input samle_fmt is smaller than 32 bit (such as flac)
+         * Update: further increase to 8x needed for s16 audio icw smallest possible window size 256 */
+        int out_samples = swr_convert (output->swr, &output->buf, 8 * output->winsize, (const uint8_t**) frame->extended_data, frame->nb_samples);
         bail_if(out_samples, "swr_convert");
         av_frame_unref(frame);
         int nb_written = av_audio_fifo_write(output->fifo, (void **) &output->buf, out_samples);
