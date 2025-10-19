@@ -1,3 +1,6 @@
+0.9.6
+  - Fix two bugs bugs in read_audio_fft (#64, #63)
+
 0.9.5
   - Fix build for ffmpeg 8.0
 
