@@ -1,3 +1,5 @@
+name: Test R-universe
+
 on:
   push:
   pull_request:
@@ -6,6 +8,3 @@ jobs:
   build:
     name: Build and Check
     uses: r-universe-org/workflows/.github/workflows/build.yml@v3
-    with:
-      universe: ${{ github.repository_owner }}
-      organization: ropensci
