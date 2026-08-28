@@ -18,15 +18,17 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macos-13,        r: 'release'}
-          - {os: macos-14,        r: 'release'}
+          - {os: macos-15-intel,  r: 'release'}
+          - {os: macos-latest,    r: 'release'}
           - {os: windows-latest,  r: '4.1'}
           - {os: windows-latest,  r: '4.2'}
           - {os: windows-latest,  r: '4.3'}
           - {os: windows-latest,  r: '4.4'}
           - {os: windows-latest,  r: 'release'}
+          - {os: windows-11-arm,  r: 'release'}
+          - {os: windows-11-arm,  r: 'devel'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-24.04,   r: 'release'}
+          - {os: ubuntu-26.04,   r: 'release'}
           - {os: ubuntu-22.04,   r: 'oldrel-3'}
 
     env:
@@ -46,6 +48,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          pak-version: devel
           extra-packages: any::rcmdcheck
           needs: check
 
