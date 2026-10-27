@@ -360,7 +360,10 @@ static SEXP run_bin(spectrum_container *output){
   input_container * input = output->input;
   AVCodecContext *decoder = input->decoder;
   int max_frame_size = get_max_frame_size(decoder);
-  av_samples_alloc(&output->buf, NULL, output->channels, max_frame_size, AV_SAMPLE_FMT_S32, 0);
+  int max_out_size = swr_get_out_samples(output->swr, max_frame_size);
+  if(max_out_size < max_frame_size)
+    max_out_size = max_frame_size;
+  av_samples_alloc(&output->buf, NULL, output->channels, max_out_size, AV_SAMPLE_FMT_S32, 0);
   int64_t elapsed = 0;
   int channels = output->channels;
   int samplesize = channels * av_get_bytes_per_sample(AV_SAMPLE_FMT_S32);
@@ -387,10 +390,14 @@ static SEXP run_bin(spectrum_container *output){
       break;
     } else {
       bail_if(ret, "avcodec_receive_frame");
-      int n_samples = swr_convert (output->swr, &output->buf, max_frame_size, (const uint8_t**) frame->extended_data, frame->nb_samples);
+      int need = swr_get_out_samples(output->swr, frame->nb_samples);
+      if(need > max_out_size){
+        av_freep(&output->buf);
+        bail_if(av_samples_alloc(&output->buf, NULL, output->channels, need, AV_SAMPLE_FMT_S32, 0), "av_samples_alloc");
+        max_out_size = need;
+      }
+      int n_samples = swr_convert (output->swr, &output->buf, max_out_size, (const uint8_t**) frame->extended_data, frame->nb_samples);
       bail_if(n_samples, "swr_convert");
-      if(n_samples < frame->nb_samples)
-        REprintf("Insufficient memory to recode all samples");
       av_frame_unref(frame);
       size_t int_size = round_up((total_samples + n_samples) * (size_t) samplesize);
       if(int_size > output->dst_int_size){
