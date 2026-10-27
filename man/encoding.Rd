@@ -64,7 +64,9 @@ be \code{TRUE} or \code{FALSE} or an integer with a valid \link{av_log_level}.}
 \item{sample_rate}{output sampling rate. Default \code{NULL} will match input.}
 
 \item{bit_rate}{output bitrate (quality). A common value is 192000. Default
-\code{NULL} will match input.}
+\code{NULL} will match input, except for lossless input (such as wav or flac):
+its bitrate is far above what a lossy encoder accepts, so the encoder's own
+default is used instead.}
 
 \item{start_time}{number greater than 0, seeks in the input file to position.}
 

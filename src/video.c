@@ -372,7 +372,15 @@ static void add_audio_output(output_container *container){
   audio_encoder->channel_layout = av_get_default_channel_layout(audio_encoder->channels);
 #endif
   audio_encoder->sample_rate = container->sample_rate ? container->sample_rate : audio_decoder->sample_rate;
-  audio_encoder->bit_rate = container->bit_rate ? container->bit_rate : audio_decoder->bit_rate;
+  /* A lossless input reports a bit rate far above anything a lossy encoder will
+     accept, so inheriting it makes avcodec_open2() fail. Leave it unset in that
+     case and let the encoder choose its own default. */
+  const AVCodecDescriptor *input_desc = avcodec_descriptor_get(audio_decoder->codec_id);
+  if(container->bit_rate){
+    audio_encoder->bit_rate = container->bit_rate;
+  } else if(input_desc == NULL || !(input_desc->props & AV_CODEC_PROP_LOSSLESS)){
+    audio_encoder->bit_rate = audio_decoder->bit_rate;
+  }
   audio_encoder->sample_fmt = get_default_sample_fmt(output_codec);
   audio_encoder->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 

@@ -87,7 +87,9 @@ av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
 #' @param channels number of output channels. Default `NULL` will match input.
 #' @param sample_rate output sampling rate. Default `NULL` will match input.
 #' @param bit_rate output bitrate (quality). A common value is 192000. Default
-#' `NULL` will match input.
+#' `NULL` will match input, except for lossless input (such as wav or flac):
+#' its bitrate is far above what a lossy encoder accepts, so the encoder's own
+#' default is used instead.
 #' @param format a valid output format name from the list of `av_muxers()`. Default
 #' `NULL` infers format from the file extension.
 #' @param start_time number greater than 0, seeks in the input file to position.
