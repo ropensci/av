@@ -46,6 +46,8 @@ typedef struct {
   float *src_data;
   double *dst_dbl;
   int *dst_int;
+  size_t dst_dbl_size;
+  size_t dst_int_size;
   int64_t end_pts;
 } spectrum_container;
 
@@ -325,7 +327,12 @@ static SEXP run_fft(spectrum_container *output, int ascale){
       av_fft_permute(output->fft, fft_channel);
       av_fft_calc(output->fft, fft_channel);
 #endif
-      output->dst_dbl = av_realloc(output->dst_dbl, round_up((iter+1) * output_range * sizeof(*output->dst_dbl)));
+      size_t dbl_size = round_up((iter+1) * output_range * sizeof(*output->dst_dbl));
+      if(dbl_size > output->dst_dbl_size){
+        output->dst_dbl = av_realloc(output->dst_dbl, dbl_size);
+        bail_if_null(output->dst_dbl, "av_realloc");
+        output->dst_dbl_size = dbl_size;
+      }
       for (int n = 0; n < output_range; n++) {
         FFTSample re = fft_channel[n].re;
         FFTSample im = fft_channel[n].im;
@@ -385,7 +392,12 @@ static SEXP run_bin(spectrum_container *output){
       if(n_samples < frame->nb_samples)
         REprintf("Insufficient memory to recode all samples");
       av_frame_unref(frame);
-      output->dst_int = av_realloc(output->dst_int, round_up((total_samples + n_samples) * samplesize));
+      size_t int_size = round_up((total_samples + n_samples) * (size_t) samplesize);
+      if(int_size > output->dst_int_size){
+        output->dst_int = av_realloc(output->dst_int, int_size);
+        bail_if_null(output->dst_int, "av_realloc");
+        output->dst_int_size = int_size;
+      }
       memcpy(output->dst_int + total_samples * channels, output->buf, n_samples * samplesize);
       total_samples = total_samples + n_samples;
     }
