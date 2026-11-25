@@ -13,7 +13,7 @@ av_video_images(
 )
 }
 \arguments{
-\item{video}{an input video}
+\item{video}{character string giving the path to an existing video file}
 
 \item{destdir}{directory where to save the png files}
 
@@ -37,6 +37,6 @@ will output one image for every 5 sec of video.
 \examples{
 \dontrun{
 curl::curl_download('https://jeroen.github.io/images/blackbear.mp4', 'blackbear.mp4')
-av_video_images('blackbear.mp4', fps = 1, trim = "10:20")
+av_video_images(video = 'blackbear.mp4', fps = 1, trim = "10:20")
 }
 }
