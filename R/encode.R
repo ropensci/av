@@ -16,6 +16,10 @@
 #' format. Most video formats default to the `libx264` video codec which has excellent
 #' compression and works on all modern browsers, operating systems, and digital TVs.
 #'
+#' Use `vfilter = "scale=iw*2:ih*2"` with `av_video_convert()` to double
+#' the frame dimensions. This can help when converting a GIF with odd frame
+#' dimensions to a codec that requires even dimensions.
+#'
 #' To convert from/to raw PCM audio, use file extensions `".ub"` or `".sb"` for 8bit
 #' unsigned or signed respectively, or `".uw"` or `".sw"` for 16-bit, see `extensions`
 #' in [av_muxers()]. Alternatively can also convert to other raw audio PCM by setting
@@ -71,14 +75,15 @@ av_encode_video <- function(input, output = "output.mp4", framerate = 24, vfilte
 #' @rdname encoding
 #' @export
 #' @param video input video file with optionally also an audio track
-av_video_convert <- function(video, output = "output.mp4", verbose = TRUE){
+av_video_convert <- function(video, output = "output.mp4", verbose = TRUE,
+                             vfilter = "null"){
   info <- av_media_info(video)
   if(nrow(info$video) == 0)
     stop("No suitable input video stream found")
   framerate <- info$video$framerate[1]
   audio <- if(length(info$audio) && nrow(info$audio)) video
   av_encode_video(input = video, audio = audio, output = output,
-                  framerate = framerate, verbose = verbose)
+                  framerate = framerate, verbose = verbose, vfilter = vfilter)
 }
 
 #' @rdname encoding

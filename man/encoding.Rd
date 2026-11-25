@@ -18,7 +18,12 @@ av_encode_video(
   verbose = TRUE
 )
 
-av_video_convert(video, output = "output.mp4", verbose = TRUE)
+av_video_convert(
+  video,
+  output = "output.mp4",
+  verbose = TRUE,
+  vfilter = "null"
+)
 
 av_audio_convert(
   audio,
@@ -90,6 +95,10 @@ is results in much better quality.
 It is recommended to use let ffmpeg choose the suitable codec for a given container
 format. Most video formats default to the \code{libx264} video codec which has excellent
 compression and works on all modern browsers, operating systems, and digital TVs.
+
+Use \code{vfilter = "scale=iw*2:ih*2"} with \code{av_video_convert()} to double
+the frame dimensions. This can help when converting a GIF with odd frame
+dimensions to a codec that requires even dimensions.
 
 To convert from/to raw PCM audio, use file extensions \code{".ub"} or \code{".sb"} for 8bit
 unsigned or signed respectively, or \code{".uw"} or \code{".sw"} for 16-bit, see \code{extensions}
