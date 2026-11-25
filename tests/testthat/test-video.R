@@ -55,6 +55,28 @@ test_that("convert images into video formats", {
   }
 })
 
+test_that("av_video_convert applies a filter to an odd-sized GIF", {
+  input <- tempfile(fileext = ".gif")
+  output <- tempfile(fileext = ".mov")
+
+  tryCatch({
+    av_capture_graphics({
+      graphics::par(mar = rep(0, 4))
+      for (color in c("red", "green", "blue")) {
+        graphics::plot.new()
+        graphics::rect(0, 0, 1, 1, col = color, border = NA)
+      }
+    }, output = input, width = 63, height = 47, framerate = 2, verbose = FALSE)
+    info <- av_media_info(input)
+    expect_equal(c(info$video$width, info$video$height), c(63, 47))
+
+    av_video_convert(input, output, verbose = FALSE,
+                     vfilter = "scale=iw*2:ih*2")
+    info <- av_media_info(output)
+    expect_equal(c(info$video$width, info$video$height), c(126, 94))
+  }, finally = unlink(c(input, output)))
+})
+
 test_that("audio sampling works", {
   for(ext in c("mkv", "mp4", "mov", "flv")){
     filename <- paste0("test.", ext)
