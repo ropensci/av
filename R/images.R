@@ -9,7 +9,7 @@
 #' will output one image for every 5 sec of video.
 #'
 #' @export
-#' @param video an input video
+#' @param video character string giving the path to an existing video file
 #' @param destdir directory where to save the png files
 #' @param fps sample rate of images. Use `NULL` to get all images.
 #' @param trim string value for [ffmpeg trim filter](https://ffmpeg.org/ffmpeg-filters.html#trim)
@@ -17,7 +17,7 @@
 #' @param format image format such as `png` or `jpeg`, must be available from `av_encoders()`
 #' @examples \dontrun{
 #' curl::curl_download('https://jeroen.github.io/images/blackbear.mp4', 'blackbear.mp4')
-#' av_video_images('blackbear.mp4', fps = 1, trim = "10:20")
+#' av_video_images(video = 'blackbear.mp4', fps = 1, trim = "10:20")
 #' }
 av_video_images <- function(video, destdir = tempfile(), format = 'jpg', fps = NULL, trim = NULL){
   stopifnot(length(video) == 1)
